@@ -4,10 +4,35 @@
   --color-background: #0a0a0a;
   --color-foreground: #ededed;
   --font-inter: var(--font-inter);
+
+  /* Zenko Brand Colors */
+  --color-zenko-accent: #FDB022;
+  --color-zenko-purple: #7F56D9;
+  --color-badge-selected: #301C5C;
+  --color-badge-unselected: #1E2939;
 }
 
 body {
   color: var(--color-foreground);
   background: var(--color-background);
   font-family: var(--font-inter), Arial, Helvetica, sans-serif;
+}
+
+/* Infinite scroll animation for game carousel */
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-scroll {
+  animation: scroll 40s linear infinite;
+}
+
+/* Pause animation on hover */
+.group:hover .animate-scroll {
+  animation-play-state: paused;
 }
