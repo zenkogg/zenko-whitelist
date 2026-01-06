@@ -1,0 +1,40 @@
+// Prisma schema for Zenko Whitelist App
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL") // Uses connection pooling
+  directUrl = env("POSTGRES_URL_NON_POOLING") // Uses direct connection for migrations
+}
+
+model WhitelistEntry {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  games     String[] // Array of game names selected by user
+
+  // Metadata
+  ipAddress String?  @map("ip_address") @db.VarChar(45)
+  userAgent String?  @map("user_agent") @db.Text
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Status tracking
+  status    Status   @default(PENDING)
+
+  @@index([email])
+  @@index([createdAt])
+  @@index([status])
+  @@map("whitelist_entries")
+}
+
+enum Status {
+  PENDING    // Submitted, awaiting approval
+  APPROVED   // Approved by admin
+  INVITED    // Invitation email sent
+  REGISTERED // User has registered
+}
