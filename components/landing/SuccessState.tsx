@@ -27,14 +27,14 @@ export function SuccessState({ email, onSubmitAgain }: SuccessStateProps) {
 
       {/* Heading */}
       <h3 className="text-2xl font-bold text-white">
-        You're on the list!
+        {"You're on the list!"}
       </h3>
 
       {/* Message */}
       <p className="text-gray-300 max-w-sm">
-        You're officially on the Zenko waitlist. Watch{' '}
+        {"You're officially on the Zenko waitlist. Watch"}{' '}
         <span className="font-semibold text-white">{email}</span> for a
-        confirmation and future updates.
+        {"confirmation and future updates."}
       </p>
 
       {/* Submit Again Link */}
