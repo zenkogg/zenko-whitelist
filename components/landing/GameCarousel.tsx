@@ -2,7 +2,11 @@
 
 import Image from 'next/image';
 
-export function GameCarousel() {
+interface GameCarouselProps {
+  mobile?: boolean;
+}
+
+export function GameCarousel({ mobile = false }: GameCarouselProps) {
   // All game logos
   const games = [
     { name: 'League of Legends', logo: '/images/games/lol.svg' },
@@ -20,8 +24,13 @@ export function GameCarousel() {
     { name: 'Rocket League', logo: '/images/games/rocketleague.svg' },
   ];
 
+  const logoHeight = mobile ? 'h-6' : 'h-12';
+  const containerHeight = mobile ? 'h-6' : 'h-12';
+  const gap = mobile ? 'gap-4' : 'gap-8';
+  const padding = mobile ? 'py-2' : 'py-8';
+
   return (
-    <div className="relative w-full overflow-hidden py-8">
+    <div className={`relative w-full overflow-hidden ${padding}`}>
       {/* Gradient fade overlays */}
       <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-32 bg-linear-to-r from-transparent to-transparent" />
       <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-32 bg-linear-to-l from-transparent to-transparent" />
@@ -29,36 +38,36 @@ export function GameCarousel() {
       {/* Carousel track with duplicate slides for infinite loop */}
       <div className="flex">
         {/* First set of slides */}
-        <div className="flex shrink-0 animate-scroll items-center gap-8">
+        <div className={`flex shrink-0 animate-scroll items-center ${gap}`}>
           {games.map((game, index) => (
             <div
               key={`slide1-${index}`}
-              className="flex h-12 shrink-0 items-center justify-center"
+              className={`flex ${containerHeight} shrink-0 items-center justify-center`}
             >
               <Image
                 src={game.logo}
                 alt={game.name}
-                width={120}
-                height={48}
-                className="h-12 w-auto object-contain brightness-90 saturate-0 transition-all duration-300 ease-out hover:brightness-100 hover:saturate-100"
+                width={mobile ? 60 : 120}
+                height={mobile ? 24 : 48}
+                className={`${logoHeight} w-auto object-contain`}
               />
             </div>
           ))}
         </div>
 
         {/* Duplicate set of slides for seamless loop */}
-        <div className="flex shrink-0 animate-scroll items-center gap-8" aria-hidden="true">
+        <div className={`flex shrink-0 animate-scroll items-center ${gap}`} aria-hidden="true">
           {games.map((game, index) => (
             <div
               key={`slide2-${index}`}
-              className="flex h-12 shrink-0 items-center justify-center"
+              className={`flex ${containerHeight} shrink-0 items-center justify-center`}
             >
               <Image
                 src={game.logo}
                 alt={game.name}
-                width={120}
-                height={48}
-                className="h-12 w-auto object-contain brightness-90 saturate-0 transition-all duration-300 ease-out hover:brightness-100 hover:saturate-100"
+                width={mobile ? 60 : 120}
+                height={mobile ? 24 : 48}
+                className={`${logoHeight} w-auto object-contain`}
               />
             </div>
           ))}
