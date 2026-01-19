@@ -36,7 +36,7 @@ export function GameCarousel({ mobile = false }: GameCarouselProps) {
       <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-32 bg-linear-to-l from-transparent to-transparent" />
 
       {/* Carousel track with duplicate slides for infinite loop */}
-      <div className="flex">
+      <div className={`flex ${gap}`}>
         {/* First set of slides */}
         <div className={`flex shrink-0 animate-scroll items-center ${gap}`}>
           {games.map((game, index) => (

@@ -95,9 +95,8 @@ export function WhitelistForm({ onSuccess, onError }: WhitelistFormProps) {
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between text-sm font-medium">
           <label className="text-[#f7f7f7]">
-            Game of interest<span className="text-[#c70036]">*</span>
+            Select at least ONE game of interest below:<span className="text-[#c70036]">*</span>
           </label>
-          <span className="text-xs text-[#f7f7f7]/50">Select at least one</span>
         </div>
         <div className="flex flex-wrap gap-4">
           {GAMES.map((game) => (

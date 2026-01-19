@@ -159,10 +159,10 @@ export function GlassSidebar({ mobile = false, onStateChange }: GlassSidebarProp
   }
 
   return (
-    <div className="flex h-full w-full flex-col rounded-3xl border border-white/20 bg-black/40 backdrop-blur-xl shadow-2xl">
-      {/* Main Content - Vertically Centered */}
-      <div className="flex flex-1 flex-col items-center justify-center px-6">
-        <div className="w-full max-w-[384px]">
+    <div className="flex h-full w-full flex-col overflow-hidden rounded-3xl border border-white/20 bg-black/40 backdrop-blur-xl shadow-2xl">
+      {/* Main Content - Vertically Centered, scrollable on small screens */}
+      <div className="flex-1 overflow-y-auto px-6 py-6">
+        <div className="mx-auto flex min-h-full w-full max-w-[384px] flex-col justify-center">
           {/* Logo - Centered */}
           <div className="mb-4 flex justify-center">
             <div className="flex h-16 w-16 items-center justify-center">
