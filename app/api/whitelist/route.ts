@@ -71,17 +71,27 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Send welcome email (don't block the response)
-    resend
-      .emails.send({
-        from: 'Zenko <hello@zenko.gg>',
-        to: email.toLowerCase(),
-        subject: "You're on the Zenko waitlist!",
-        react: WelcomeEmail(),
-      })
-      .catch((err) => {
-        console.error('Failed to send welcome email:', err);
+    // Send welcome email
+    const { data, error } = await resend.emails.send({
+      from: 'Zenko <hello@zenko.gg>',
+      to: [email.toLowerCase()],
+      subject: "You're on the Zenko waitlist!",
+      react: WelcomeEmail(),
+    });
+
+    if (error) {
+      console.error('Failed to send welcome email:', {
+        error,
+        email: email.toLowerCase(),
       });
+      // Still return success for whitelist, but note email failed
+      return NextResponse.json(
+        { message: 'Joined whitelist, but email failed to send', id: entry.id },
+        { status: 201 }
+      );
+    }
+
+    console.log('Welcome email sent:', { emailId: data?.id, to: email.toLowerCase() });
 
     return NextResponse.json(
       { message: 'Successfully joined whitelist', id: entry.id },

@@ -23,7 +23,7 @@ export function WelcomeEmail() {
           {/* Header */}
           <div style={{ textAlign: 'center', marginBottom: '32px' }}>
             <img
-              src={`${BASE_URL}/images/zenko-head.svg`}
+              src={`${BASE_URL}/images/zenko-logo.png`}
               alt="Zenko"
               width="64"
               height="77"
@@ -67,7 +67,7 @@ export function WelcomeEmail() {
                 }}
               >
                 <img
-                  src={`${BASE_URL}/images/icons/instagram.svg`}
+                  src={`${BASE_URL}/images/icons/instagram.png`}
                   alt="Instagram"
                   width="24"
                   height="24"
@@ -78,7 +78,7 @@ export function WelcomeEmail() {
                 style={{ display: 'inline-block', verticalAlign: 'middle' }}
               >
                 <img
-                  src={`${BASE_URL}/images/icons/x.svg`}
+                  src={`${BASE_URL}/images/icons/X.png`}
                   alt="X"
                   width="24"
                   height="24"
