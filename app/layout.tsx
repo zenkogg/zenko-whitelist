@@ -11,6 +11,9 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Zenko - Join the Waitlist",
   description: "Sign up for exclusive early access to Zenko's competitive gaming platform",
+  icons: {
+    icon: "/images/zenko-head.svg",
+  },
 };
 
 export default function RootLayout({

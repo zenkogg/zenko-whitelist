@@ -12,11 +12,12 @@ export function GameBadge({ game, selected, onClick }: GameBadgeProps) {
       type="button"
       onClick={onClick}
       className={`
-        rounded-full border px-4 py-1.5 text-sm font-medium transition-all cursor-pointer
+        rounded-xl border px-3 py-2 text-sm font-medium leading-4 transition-all cursor-pointer shadow-[0px_1px_0.5px_0.05px_rgba(29,41,61,0.02)]
+        hover:border-[#301c5c] hover:bg-[#1e1238] hover:text-[#9978e0]
         ${
           selected
-            ? 'border-badge-selected bg-badge-selected/40 text-white shadow-xs'
-            : 'bg-badge-unselected border-badge-unselected text-gray-300 hover:bg-badge-unselected/80 hover:border-white/20'
+            ? 'border-[#7e56d8] bg-[#301c5c] text-[#cbbaee]'
+            : 'border-[#1e2939] bg-[#101828] text-white'
         }
       `}
     >
