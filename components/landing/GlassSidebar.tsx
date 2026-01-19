@@ -118,7 +118,7 @@ export function GlassSidebar({ mobile = false, onStateChange }: GlassSidebarProp
             <span className="text-gray-400">© 2026 Zenko, All rights reserved.</span>
             <div className="flex gap-4">
               <a
-                href="https://instagram.com/zenkogg"
+                href="https://www.instagram.com/zenkogg?igsh=YzdqYTc0N2ZuMzNx&utm_source=qr"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[#7F56D9] transition-colors hover:text-[#9b8afb]"
@@ -127,7 +127,7 @@ export function GlassSidebar({ mobile = false, onStateChange }: GlassSidebarProp
                 <InstagramIcon />
               </a>
               <a
-                href="https://x.com/zenkogg"
+                href="https://x.com/zenkogginc?s=21&t=aZd4S6kCPZBx-rpP3YEdAg"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[#7F56D9] transition-colors hover:text-[#9b8afb]"
@@ -197,7 +197,7 @@ export function GlassSidebar({ mobile = false, onStateChange }: GlassSidebarProp
             {/* Social Icons */}
             <div className="flex gap-6">
               <a
-                href="https://instagram.com/zenkogg"
+                href="https://www.instagram.com/zenkogg?igsh=YzdqYTc0N2ZuMzNx&utm_source=qr"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[#7F56D9] transition-colors hover:text-[#9b8afb]"
@@ -206,7 +206,7 @@ export function GlassSidebar({ mobile = false, onStateChange }: GlassSidebarProp
                 <InstagramIcon />
               </a>
               <a
-                href="https://x.com/zenkogg"
+                href="https://x.com/zenkogginc?s=21&t=aZd4S6kCPZBx-rpP3YEdAg"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[#7F56D9] transition-colors hover:text-[#9b8afb]"

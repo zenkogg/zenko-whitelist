@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
     // Send welcome email (don't block the response)
     resend
       .emails.send({
-        from: 'Zenko <noreply@zenko.gg>',
+        from: 'Zenko <hello@zenko.gg>',
         to: email.toLowerCase(),
         subject: "You're on the Zenko waitlist!",
         react: WelcomeEmail(),
