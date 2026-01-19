@@ -91,8 +91,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('Welcome email sent:', { emailId: data?.id, to: email.toLowerCase() });
-
     return NextResponse.json(
       { message: 'Successfully joined whitelist', id: entry.id },
       { status: 201 }
