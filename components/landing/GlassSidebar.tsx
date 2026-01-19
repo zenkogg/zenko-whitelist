@@ -84,7 +84,7 @@ export function GlassSidebar({ mobile = false, onStateChange }: GlassSidebarProp
     }
 
     return (
-      <div className="flex min-h-[calc(100vh-400px)] w-full flex-col bg-[#101828]">
+      <div className="flex min-h-[calc(100vh-400px)] w-full flex-col rounded-3xl border border-white/20 bg-black/40 backdrop-blur-xl shadow-2xl">
         {/* Header */}
         <div className="flex flex-col items-start px-4 pt-4">
           {/* Heading */}
@@ -145,7 +145,7 @@ export function GlassSidebar({ mobile = false, onStateChange }: GlassSidebarProp
   // Success/Error states get a simplified layout without header/footer
   if (formState === 'success' || formState === 'error') {
     return (
-      <div className="flex h-full w-full flex-col bg-[#101828]">
+      <div className="flex h-full w-full flex-col rounded-3xl border border-white/20 bg-black/40 backdrop-blur-xl shadow-2xl">
         <div className="flex flex-1 flex-col items-center justify-center px-6">
           <div className="w-full max-w-[384px]">
             {formState === 'success' && (
@@ -159,7 +159,7 @@ export function GlassSidebar({ mobile = false, onStateChange }: GlassSidebarProp
   }
 
   return (
-    <div className="flex h-full w-full flex-col bg-[#101828]">
+    <div className="flex h-full w-full flex-col rounded-3xl border border-white/20 bg-black/40 backdrop-blur-xl shadow-2xl">
       {/* Main Content - Vertically Centered */}
       <div className="flex flex-1 flex-col items-center justify-center px-6">
         <div className="w-full max-w-[384px]">

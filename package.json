@@ -17,12 +17,14 @@
     "@headlessui/react": "^2.2.0",
     "@heroicons/react": "^2.2.0",
     "@prisma/client": "^6.2.0",
+    "@react-email/render": "2.0.2",
     "@tailwindcss/postcss": "^4.1.18",
     "clsx": "^2.1.1",
     "motion": "^11.15.0",
     "next": "^15.1.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "resend": "^6.7.0",
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {

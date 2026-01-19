@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { resend } from '@/lib/resend';
+import { WelcomeEmail } from '@/emails/WelcomeEmail';
 
 export async function POST(request: NextRequest) {
   try {
@@ -68,6 +70,18 @@ export async function POST(request: NextRequest) {
         userAgent,
       },
     });
+
+    // Send welcome email (don't block the response)
+    resend
+      .emails.send({
+        from: 'Zenko <noreply@zenko.gg>',
+        to: email.toLowerCase(),
+        subject: "You're on the Zenko waitlist!",
+        react: WelcomeEmail(),
+      })
+      .catch((err) => {
+        console.error('Failed to send welcome email:', err);
+      });
 
     return NextResponse.json(
       { message: 'Successfully joined whitelist', id: entry.id },

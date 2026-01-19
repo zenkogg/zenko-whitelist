@@ -18,7 +18,7 @@ export function BackgroundLayer() {
       </div>
 
       {/* Dim Overlay */}
-      <div className="absolute inset-0 z-[2] bg-black/80 opacity-80" />
+      <div className="absolute inset-0 z-[2] bg-black/50" />
     </>
   );
 }
