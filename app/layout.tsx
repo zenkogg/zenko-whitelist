@@ -11,9 +11,55 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "Zenko - Join the Waitlist",
-  description: "Sign up for exclusive early access to Zenko's competitive gaming platform",
+  description:
+    "Zenko is where real performance determines the outcome. Join the waitlist.",
+  authors: [{ name: "Zenko" }],
+  creator: "Zenko",
+  publisher: "Zenko",
+  metadataBase: new URL("https://waitlist.zenko.gg"),
+  alternates: {
+    canonical: "/",
+  },
   icons: {
     icon: "/images/zenko-head.svg",
+    apple: "/images/zenko-head.svg",
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://waitlist.zenko.gg",
+    siteName: "Zenko",
+    title: "Zenko - Join the Waitlist",
+    description:
+      "Zenko is where real performance determines the outcome. Join the waitlist.",
+    images: [
+      {
+        url: "/images/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Zenko - Where Real Performance Determines the Outcome",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    site: "@zenkogginc",
+    creator: "@zenkogginc",
+    title: "Zenko - Join the Waitlist",
+    description:
+      "Zenko is where real performance determines the outcome. Join the waitlist.",
+    images: ["/images/og-image.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
 };
 
