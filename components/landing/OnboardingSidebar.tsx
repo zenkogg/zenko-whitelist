@@ -18,7 +18,7 @@ const GAMES = [
   { label: 'Fortnite', value: 'fortnite' },
 ];
 
-type OnboardingStep = 'login' | 'games';
+type OnboardingStep = 'login' | 'referral' | 'games';
 
 interface OnboardingSidebarProps {
   mobile?: boolean;
@@ -29,6 +29,7 @@ export function OnboardingSidebar({ mobile = false }: OnboardingSidebarProps) {
   const [step, setStep] = useState<OnboardingStep>('login');
   const [user, setUser] = useState<any>(null);
   const [selectedGames, setSelectedGames] = useState<string[]>([]);
+  const [referralCode, setReferralCode] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -42,8 +43,12 @@ export function OnboardingSidebar({ mobile = false }: OnboardingSidebarProps) {
       // If user has completed games, redirect to dashboard
       if (userData.games && userData.games.length > 0) {
         router.push('/dashboard');
-      } else {
+      } else if (userData.usedReferralCode) {
+        // If user already used a referral code, go to games
         setStep('games');
+      } else {
+        // Otherwise, show referral code step
+        setStep('referral');
       }
     } else {
       setStep('login');
@@ -52,6 +57,59 @@ export function OnboardingSidebar({ mobile = false }: OnboardingSidebarProps) {
 
   const handleOAuthSignIn = (provider: 'google' | 'twitch') => {
     signInWithOAuth(provider);
+  };
+
+  const handleApplyReferral = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (!referralCode.trim()) {
+      setError('Please enter a referral code');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch('/api/user/referral', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          referralCode: referralCode.trim().toUpperCase(),
+          userId: user?.id
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to apply referral code');
+      }
+
+      const { data } = await response.json();
+
+      // Update user in localStorage with referral info
+      if (user) {
+        const updatedUser = {
+          ...user,
+          usedReferralCode: data.user.usedReferralCode,
+          reputationPoints: data.user.reputationPoints
+        };
+        localStorage.setItem('waitlist_user', JSON.stringify(updatedUser));
+        setUser(updatedUser);
+      }
+
+      // Move to games step
+      setStep('games');
+    } catch (error: any) {
+      console.error('Apply referral error:', error);
+      setError(error.message || 'Failed to apply referral code. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSkipReferral = () => {
+    setStep('games');
   };
 
   const toggleGame = (gameValue: string) => {
@@ -162,7 +220,89 @@ export function OnboardingSidebar({ mobile = false }: OnboardingSidebarProps) {
             </>
           )}
 
-          {/* Step 2: Game Selection */}
+          {/* Step 2: Referral Code (Optional) */}
+          {step === 'referral' && (
+            <>
+              {/* Heading */}
+              <h2 className="mb-2 text-center text-3xl font-semibold leading-tight tracking-tight text-[#cbbaee]">
+                Have a Referral Code?
+              </h2>
+              <p className="mb-6 text-center text-sm text-gray-400">
+                Enter a friend&apos;s code to boost your reputation and skip ahead
+              </p>
+
+              {/* Connected Account Banner */}
+              {user && (
+                <div className="mb-6 flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-4 py-3">
+                  <div>
+                    <p className="text-sm font-medium text-white">
+                      Connected via {user.oauthProvider === 'google' ? 'Google' : 'Twitch'}
+                    </p>
+                    {user.oauthProvider === 'google' && user.email ? (
+                      <p className="text-xs text-gray-400">{user.email}</p>
+                    ) : user.oauthProvider === 'twitch' && user.displayName && user.displayName !== 'User' ? (
+                      <p className="text-xs text-gray-400">@{user.displayName}</p>
+                    ) : null}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      localStorage.removeItem('waitlist_user');
+                      window.location.href = '/';
+                    }}
+                    className="text-xs text-gray-400 transition-colors hover:text-white"
+                  >
+                    Sign out
+                  </button>
+                </div>
+              )}
+
+              {/* Referral Code Form */}
+              <form onSubmit={handleApplyReferral} className="w-full space-y-6">
+                <div className="flex flex-col gap-3">
+                  <label className="text-sm font-medium text-white">
+                    Referral Code
+                  </label>
+                  <input
+                    type="text"
+                    value={referralCode}
+                    onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                    placeholder="Enter 6-character code"
+                    maxLength={6}
+                    className="w-full rounded-lg border border-white/20 bg-white/5 px-4 py-3 text-white placeholder-gray-400 backdrop-blur-xl transition-colors focus:border-[#7F56D9] focus:outline-none"
+                  />
+                </div>
+
+                {/* Error Message */}
+                {error && (
+                  <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+                    {error}
+                  </div>
+                )}
+
+                {/* Buttons */}
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={handleSkipReferral}
+                    className="flex-1 rounded-lg border border-white/20 bg-white/5 px-4 py-3 text-sm font-medium text-white backdrop-blur-xl transition-colors hover:bg-white/10"
+                  >
+                    Skip
+                  </button>
+                  <Button
+                    type="submit"
+                    color="brand"
+                    disabled={isSubmitting || !referralCode.trim()}
+                    className="flex-1"
+                  >
+                    {isSubmitting ? 'Applying...' : 'Apply Code'}
+                  </Button>
+                </div>
+              </form>
+            </>
+          )}
+
+          {/* Step 3: Game Selection */}
           {step === 'games' && (
             <>
               {/* Heading */}
