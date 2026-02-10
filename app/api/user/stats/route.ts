@@ -64,9 +64,9 @@ export async function POST(request: NextRequest) {
           ) as rank
         FROM user_order
       )
-      SELECT rank
+      SELECT rank::int as rank
       FROM ranked_users
-      WHERE id = ${currentUser.id}::uuid;
+      WHERE id::text = ${currentUser.id};
     `;
 
     const estimatedRank = rankResult.length > 0 ? Number(rankResult[0].rank) : null;
