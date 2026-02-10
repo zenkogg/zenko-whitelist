@@ -16,6 +16,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 400 });
     }
 
+    // Log claims for debugging (remove in production)
+    console.log('OAuth claims received:', JSON.stringify(claims, null, 2));
+
     // Check if user already exists
     const existingUser = await prisma.waitlistUser.findUnique({
       where: {
@@ -27,6 +30,34 @@ export async function POST(req: NextRequest) {
     });
 
     if (existingUser) {
+      // Update user if we have better information
+      const displayName =
+        provider === 'twitch'
+          ? claims.preferred_username || claims.login || claims.display_name || existingUser.displayName
+          : claims.name || existingUser.displayName;
+
+      const avatarUrl =
+        provider === 'twitch'
+          ? claims.profile_image_url || claims.picture || existingUser.oauthAvatarUrl
+          : claims.picture || existingUser.oauthAvatarUrl;
+
+      const shouldUpdate =
+        (displayName && displayName !== existingUser.displayName) ||
+        (avatarUrl && avatarUrl !== existingUser.oauthAvatarUrl) ||
+        (claims.email && claims.email !== existingUser.email);
+
+      if (shouldUpdate) {
+        const updatedUser = await prisma.waitlistUser.update({
+          where: { id: existingUser.id },
+          data: {
+            displayName,
+            oauthAvatarUrl: avatarUrl,
+            email: claims.email || existingUser.email,
+          },
+        });
+        return NextResponse.json({ user: updatedUser });
+      }
+
       return NextResponse.json({ user: existingUser });
     }
 

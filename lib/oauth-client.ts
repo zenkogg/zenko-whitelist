@@ -55,6 +55,17 @@ export function signInWithOAuth(provider: OAuthProvider): void {
     nonce: crypto.randomUUID(),
   });
 
+  // For Twitch, explicitly request email and picture in ID token
+  if (provider === 'twitch') {
+    params.append('claims', JSON.stringify({
+      id_token: {
+        email: null,
+        email_verified: null,
+        picture: null,
+      },
+    }));
+  }
+
   // Redirect to OAuth provider
   window.location.href = `${config.authUrl}?${params.toString()}`;
 }
