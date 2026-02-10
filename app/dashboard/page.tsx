@@ -27,7 +27,6 @@ export default function DashboardPage() {
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
-  const [isConnectingTwitter, setIsConnectingTwitter] = useState(false);
 
   useEffect(() => {
     // Check localStorage for user
@@ -81,13 +80,6 @@ export default function DashboardPage() {
     navigator.clipboard.writeText(referralLink);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleConnectTwitter = async () => {
-    setIsConnectingTwitter(true);
-    // TODO: Implement Twitter OAuth connect
-    console.log('Twitter connect not yet implemented');
-    setIsConnectingTwitter(false);
   };
 
   const handleShareOnTwitter = () => {
@@ -277,30 +269,13 @@ export default function DashboardPage() {
 
             {/* Social Sharing */}
             <div className="space-y-3">
-              {userStats.twitterConnected ? (
-                <button
-                  onClick={handleShareOnTwitter}
-                  className="flex w-full items-center justify-center gap-3 rounded-lg border border-white/20 bg-white/10 px-4 py-3 text-base font-medium text-white backdrop-blur-xl transition-all hover:bg-white/20"
-                >
-                  <TwitterIcon />
-                  <span>Share on X</span>
-                </button>
-              ) : (
-                <button
-                  onClick={handleConnectTwitter}
-                  disabled={isConnectingTwitter}
-                  className="flex w-full items-center justify-center gap-3 rounded-lg border border-white/20 bg-white/10 px-4 py-3 text-base font-medium text-white backdrop-blur-xl transition-all hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {isConnectingTwitter ? (
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  ) : (
-                    <>
-                      <TwitterIcon />
-                      <span>Connect X to Share</span>
-                    </>
-                  )}
-                </button>
-              )}
+              <button
+                onClick={handleShareOnTwitter}
+                className="flex w-full items-center justify-center gap-3 rounded-lg border border-white/20 bg-white/10 px-4 py-3 text-base font-medium text-white backdrop-blur-xl transition-all hover:bg-white/20"
+              >
+                <TwitterIcon />
+                <span>Share on X</span>
+              </button>
             </div>
           </div>
 
