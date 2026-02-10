@@ -11,11 +11,11 @@ export function PresetSwitcher({ currentPreset, onPresetChange }: PresetSwitcher
   const [isOpen, setIsOpen] = useState(false);
 
   const presets = [
-    { id: 'current', name: '⚡ Current', description: 'Smooth & balanced' },
-    { id: 'energetic', name: '🔥 Energetic', description: 'Dynamic & bold' },
-    { id: 'calm', name: '🌙 Calm', description: 'Gentle & subtle' },
-    { id: 'vibrant', name: '✨ Vibrant', description: 'Bold colors' },
-    { id: 'smooth', name: '💫 Smooth', description: 'No grain animation' },
+    { id: 'current', name: 'Default', description: 'Deep purple gradient' },
+    { id: 'midnight', name: 'Midnight', description: 'Near-black, faint purple' },
+    { id: 'amethyst', name: 'Amethyst', description: 'Richer purple tones' },
+    { id: 'ember', name: 'Ember', description: 'Dark with warm accent' },
+    { id: 'abyss', name: 'Abyss', description: 'Almost fully black' },
   ];
 
   return (

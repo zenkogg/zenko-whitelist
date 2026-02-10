@@ -6,7 +6,9 @@ import Image from 'next/image';
 import Grainient from '@/components/Grainient';
 import { GRAINIENT_PRESETS } from '@/components/Grainient/presets';
 import { PresetSwitcher } from '@/components/Grainient/PresetSwitcher';
-import { ProfileCard, ReferralCodeCard, ApplyReferralCard } from '@/components/dashboard';
+import { ProfileCard, ReferralCodeCard, ApplyReferralCard, CardStyleSwitcher, BORDER_COLOR_PRESETS } from '@/components/dashboard';
+import type { CardStyleId } from '@/components/dashboard';
+import ReactBitsProfileCard from '@/components/ProfileCard';
 
 interface UserStats {
   referralCode: string;
@@ -34,6 +36,8 @@ export default function DashboardPage() {
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPreset, setCurrentPreset] = useState('current');
+  const [cardStyle, setCardStyle] = useState<CardStyleId>('electric');
+  const [borderColor, setBorderColor] = useState<string>(BORDER_COLOR_PRESETS[0].color);
 
   useEffect(() => {
     // Check localStorage for user
@@ -130,6 +134,12 @@ export default function DashboardPage() {
 
       {/* Preset Switcher (only in development) */}
       <PresetSwitcher currentPreset={currentPreset} onPresetChange={setCurrentPreset} />
+      <CardStyleSwitcher
+        cardStyle={cardStyle}
+        onCardStyleChange={setCardStyle}
+        currentColor={borderColor}
+        onColorChange={setBorderColor}
+      />
 
       {/* Header */}
       <header className="relative z-10 border-b border-white/10 bg-black/40 backdrop-blur-xl">
@@ -189,13 +199,31 @@ export default function DashboardPage() {
           {/* Top Section - Profile Card and Referral Cards */}
           <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
             {/* Left - Profile Card */}
-            <ProfileCard
-              displayName={user.displayName}
-              customAvatarUrl={user.customAvatarUrl}
-              createdAt={user.createdAt || new Date().toISOString()}
-              userId={user.id}
-              onAvatarUpdate={handleAvatarUpdate}
-            />
+            {cardStyle === 'electric' ? (
+              <ProfileCard
+                displayName={user.displayName}
+                customAvatarUrl={user.customAvatarUrl}
+                createdAt={user.createdAt || new Date().toISOString()}
+                userId={user.id}
+                onAvatarUpdate={handleAvatarUpdate}
+                borderColor={borderColor}
+              />
+            ) : (
+              <ReactBitsProfileCard
+                name={user.displayName}
+                handle={user.displayName}
+                avatarUrl={user.customAvatarUrl || '/images/default-avatar.svg'}
+                iconUrl="/images/zenko-head-mask.svg"
+                status="Waitlisted"
+                contactText="Upload"
+                showUserInfo
+                enableTilt
+                enableMobileTilt
+                behindGlowEnabled={false}
+                behindGlowColor="rgba(125, 190, 255, 0.67)"
+                innerGradient="linear-gradient(145deg,#60496e8c 0%,#71C4FF44 100%)"
+              />
+            )}
 
             {/* Right - Referral Cards Stack */}
             <div className="space-y-6">
