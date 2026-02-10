@@ -1,11 +1,12 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Image from 'next/image';
 import Grainient from '@/components/Grainient';
 import { GRAINIENT_PRESETS } from '@/components/Grainient/presets';
 import { PresetSwitcher } from '@/components/Grainient/PresetSwitcher';
+import { ProfileCard, ReferralCodeCard, ApplyReferralCard } from '@/components/dashboard';
 
 interface UserStats {
   referralCode: string;
@@ -24,6 +25,7 @@ interface User {
   oauthAvatarUrl: string | null;
   customAvatarUrl: string | null;
   games: string[];
+  createdAt?: string;
 }
 
 export default function DashboardPage() {
@@ -31,13 +33,6 @@ export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [copied, setCopied] = useState(false);
-  const [referralCode, setReferralCode] = useState('');
-  const [isApplyingReferral, setIsApplyingReferral] = useState(false);
-  const [referralError, setReferralError] = useState('');
-  const [referralSuccess, setReferralSuccess] = useState('');
-  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
-  const [avatarUploadError, setAvatarUploadError] = useState('');
   const [currentPreset, setCurrentPreset] = useState('current');
 
   useEffect(() => {
@@ -88,103 +83,20 @@ export default function DashboardPage() {
     }
   };
 
-  const handleCopyReferralLink = () => {
-    const referralLink = `${window.location.origin}/?ref=${userStats?.referralCode}`;
-    navigator.clipboard.writeText(referralLink);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  const handleAvatarUpdate = useCallback((avatarUrl: string) => {
+    if (!user) return;
 
-  const handleShareOnTwitter = () => {
-    if (!userStats?.referralCode) return;
+    // Update user in state and localStorage
+    const updatedUser = { ...user, customAvatarUrl: avatarUrl };
+    setUser(updatedUser);
+    localStorage.setItem('waitlist_user', JSON.stringify(updatedUser));
+  }, [user]);
 
-    const referralLink = `${window.location.origin}/?ref=${userStats.referralCode}`;
-    const tweetText = `Join me on Zenko - where real performance determines the outcome! 🎮\n\nUse my referral code to skip the waitlist: ${userStats.referralCode}`;
-    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(referralLink)}`;
-
-    window.open(twitterUrl, '_blank', 'width=550,height=420');
-  };
-
-  const handleApplyReferral = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setReferralError('');
-    setReferralSuccess('');
-
-    if (!referralCode.trim()) {
-      setReferralError('Please enter a referral code');
-      return;
+  const handleReferralApplied = useCallback(() => {
+    if (user) {
+      fetchUserStats(user.id);
     }
-
-    setIsApplyingReferral(true);
-
-    try {
-      const response = await fetch('/api/user/referral', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          referralCode: referralCode.trim().toUpperCase(),
-          userId: user?.id,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to apply referral code');
-      }
-
-      const { data } = await response.json();
-
-      // Update user stats with new reputation points
-      setReferralSuccess(`Referral code applied! You earned ${data.user.reputationPoints - (userStats?.reputationPoints || 0)} reputation points.`);
-      setReferralCode('');
-
-      // Refresh user stats
-      if (user) {
-        fetchUserStats(user.id);
-      }
-    } catch (error: any) {
-      console.error('Apply referral error:', error);
-      setReferralError(error.message || 'Failed to apply referral code');
-    } finally {
-      setIsApplyingReferral(false);
-    }
-  };
-
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
-
-    setIsUploadingAvatar(true);
-    setAvatarUploadError('');
-
-    try {
-      const formData = new FormData();
-      formData.append('avatar', file);
-      formData.append('userId', user.id);
-
-      const response = await fetch('/api/user/avatar', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to upload avatar');
-      }
-
-      const { data } = await response.json();
-
-      // Update user in state and localStorage
-      const updatedUser = { ...user, customAvatarUrl: data.avatarUrl };
-      setUser(updatedUser);
-      localStorage.setItem('waitlist_user', JSON.stringify(updatedUser));
-    } catch (error: any) {
-      console.error('Avatar upload error:', error);
-      setAvatarUploadError(error.message || 'Failed to upload avatar');
-    } finally {
-      setIsUploadingAvatar(false);
-    }
-  };
+  }, [user]);
 
   const handleLogout = () => {
     localStorage.removeItem('waitlist_user');
@@ -266,15 +178,38 @@ export default function DashboardPage() {
 
       {/* Content */}
       <div className="relative z-10 px-6 py-12">
-        <div className="mx-auto max-w-5xl space-y-6">
+        <div className="mx-auto max-w-6xl space-y-6">
           {/* Welcome Section */}
           <div className="text-center">
             <h1 className="mb-2 text-4xl font-semibold text-[#cbbaee]">
-              Welcome to the Waitlist!
+              Welcome To Zenko Waitlist
             </h1>
-            <p className="text-gray-300">
-              Refer friends to boost your reputation and get early access
-            </p>
+          </div>
+
+          {/* Top Section - Profile Card and Referral Cards */}
+          <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
+            {/* Left - Profile Card */}
+            <ProfileCard
+              displayName={user.displayName}
+              customAvatarUrl={user.customAvatarUrl}
+              createdAt={user.createdAt || new Date().toISOString()}
+              userId={user.id}
+              onAvatarUpdate={handleAvatarUpdate}
+            />
+
+            {/* Right - Referral Cards Stack */}
+            <div className="space-y-6">
+              {/* Your Referral Code Card */}
+              <ReferralCodeCard referralCode={userStats.referralCode} />
+
+              {/* Have a Referral Code Card */}
+              <ApplyReferralCard
+                userId={user.id}
+                usedReferralCode={userStats.usedReferralCode || null}
+                currentReputationPoints={userStats.reputationPoints}
+                onReferralApplied={handleReferralApplied}
+              />
+            </div>
           </div>
 
           {/* Stats Grid - 3 Cards */}
@@ -323,188 +258,6 @@ export default function DashboardPage() {
             <p className="mt-3 text-sm text-gray-300">
               Refer 50 friends to get priority beta access and bonus reputation
             </p>
-          </div>
-
-          {/* Referral Code Card */}
-          <div className="rounded-2xl border border-[#7F56D9]/30 bg-gradient-to-br from-[#7F56D9]/20 to-white/10 p-6 backdrop-blur-xl">
-            <h2 className="mb-4 text-lg font-semibold text-white">Your Referral Code</h2>
-
-            {/* Referral Code Display */}
-            <div className="mb-4 flex items-center gap-3">
-              <div className="flex-1 rounded-lg border border-white/20 bg-white/10 px-4 py-3 backdrop-blur-xl">
-                <div className="text-xs text-gray-300">Referral Code</div>
-                <div className="text-2xl font-bold tracking-wider text-[#fdb022]">
-                  {userStats.referralCode}
-                </div>
-              </div>
-              <button
-                onClick={handleCopyReferralLink}
-                className="flex h-full items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-4 py-3 text-sm font-medium text-white backdrop-blur-xl transition-colors hover:bg-white/20"
-              >
-                {copied ? (
-                  <>
-                    <CheckIcon />
-                    <span>Copied!</span>
-                  </>
-                ) : (
-                  <>
-                    <CopyIcon />
-                    <span>Copy Link</span>
-                  </>
-                )}
-              </button>
-            </div>
-
-            {/* Social Sharing */}
-            <div className="space-y-3">
-              <button
-                onClick={handleShareOnTwitter}
-                className="flex w-full items-center justify-center gap-3 rounded-lg border border-white/20 bg-white/10 px-4 py-3 text-base font-medium text-white backdrop-blur-xl transition-all hover:bg-white/20"
-              >
-                <TwitterIcon />
-                <span>Share on X</span>
-              </button>
-            </div>
-
-            {/* OG Preview */}
-            <div className="mt-6 space-y-3">
-              <h3 className="text-sm font-medium text-gray-300">Share Preview</h3>
-              <p className="text-xs text-gray-400">
-                This is how your referral link will appear when shared on social media
-              </p>
-              <div className="overflow-hidden rounded-lg border border-white/20 bg-black/40">
-                <Image
-                  src={`/api/og?ref=${userStats.referralCode}&t=${Date.now()}`}
-                  alt="Referral share preview"
-                  key={Date.now()}
-                  width={1200}
-                  height={630}
-                  className="w-full h-auto"
-                  unoptimized
-                />
-              </div>
-              <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2">
-                <p className="text-xs text-gray-400">Share link:</p>
-                <p className="text-sm text-[#7F56D9] break-all">
-                  {typeof window !== 'undefined' && `${window.location.origin}/r/${userStats.referralCode}`}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Use Referral Code Card */}
-          <div className="rounded-2xl border border-green-500/30 bg-green-500/10 p-6 backdrop-blur-xl">
-            <h2 className="mb-2 text-lg font-semibold text-white">
-              {userStats.usedReferralCode ? 'Referral Code Applied' : 'Have a Referral Code?'}
-            </h2>
-
-            {userStats.usedReferralCode ? (
-              <div className="space-y-3">
-                <p className="text-sm text-gray-300">
-                  You&apos;ve already used a referral code
-                </p>
-                <div className="rounded-lg border border-green-500/20 bg-green-500/20 px-4 py-3">
-                  <div className="text-xs text-green-300 mb-1">Applied Code</div>
-                  <div className="text-2xl font-bold tracking-wider text-green-400">
-                    {userStats.usedReferralCode}
-                  </div>
-                </div>
-                <p className="text-xs text-gray-400">
-                  ✓ You can only use one referral code per account
-                </p>
-              </div>
-            ) : (
-              <>
-                <p className="mb-4 text-sm text-gray-300">
-                  Enter a friend&apos;s code to boost your reputation
-                </p>
-
-                <form onSubmit={handleApplyReferral} className="space-y-3">
-                  <div className="flex gap-3">
-                    <input
-                      type="text"
-                      value={referralCode}
-                      onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
-                      placeholder="Enter 6-character code"
-                      maxLength={6}
-                      disabled={isApplyingReferral}
-                      className="flex-1 rounded-lg border border-white/20 bg-white/10 px-4 py-3 text-white placeholder-gray-400 backdrop-blur-xl transition-colors focus:border-green-500 focus:outline-none disabled:opacity-50"
-                    />
-                    <button
-                      type="submit"
-                      disabled={isApplyingReferral || !referralCode.trim()}
-                      className="rounded-lg border border-green-500/30 bg-green-500/20 px-6 py-3 text-sm font-medium text-white backdrop-blur-xl transition-colors hover:bg-green-500/30 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {isApplyingReferral ? 'Applying...' : 'Apply'}
-                    </button>
-                  </div>
-
-                  {referralError && (
-                    <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-                      {referralError}
-                    </div>
-                  )}
-
-                  {referralSuccess && (
-                    <div className="rounded-lg border border-green-500/20 bg-green-500/10 px-4 py-3 text-sm text-green-400">
-                      {referralSuccess}
-                    </div>
-                  )}
-                </form>
-              </>
-            )}
-          </div>
-
-          {/* Profile Card */}
-          <div className="rounded-2xl border border-white/20 bg-white/10 p-6 backdrop-blur-xl">
-            <h2 className="mb-4 text-lg font-semibold text-white">Your Profile</h2>
-
-            <div className="flex items-center gap-6">
-              {/* Avatar Display */}
-              <div className="relative">
-                <Image
-                  src={user.customAvatarUrl || '/images/default-avatar.svg'}
-                  alt={user.displayName}
-                  width={100}
-                  height={100}
-                  className="h-24 w-24 rounded-full object-cover ring-2 ring-white/20"
-                />
-                {isUploadingAvatar && (
-                  <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/60">
-                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#7F56D9] border-t-transparent" />
-                  </div>
-                )}
-              </div>
-
-              {/* Upload Section */}
-              <div className="flex-1">
-                <div className="mb-2">
-                  <label
-                    htmlFor="avatar-upload"
-                    className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-xl transition-colors hover:bg-white/20"
-                  >
-                    <UploadIcon />
-                    <span>{user.customAvatarUrl ? 'Change Avatar' : 'Upload Avatar'}</span>
-                  </label>
-                  <input
-                    id="avatar-upload"
-                    type="file"
-                    accept="image/jpeg,image/jpg,image/png,image/webp"
-                    onChange={handleAvatarUpload}
-                    disabled={isUploadingAvatar}
-                    className="hidden"
-                  />
-                </div>
-                <p className="text-xs text-gray-400">
-                  Upload a custom avatar (JPEG, PNG, or WebP, max 5MB)
-                </p>
-                {avatarUploadError && (
-                  <div className="mt-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-400">
-                    {avatarUploadError}
-                  </div>
-                )}
-              </div>
-            </div>
           </div>
 
           {/* Info Card */}
@@ -600,50 +353,6 @@ function ProviderIcon({ provider }: { provider: string }) {
   );
 }
 
-function CopyIcon() {
-  return (
-    <svg
-      className="h-5 w-5"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-      />
-    </svg>
-  );
-}
-
-function CheckIcon() {
-  return (
-    <svg
-      className="h-5 w-5 text-green-400"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M5 13l4 4L19 7"
-      />
-    </svg>
-  );
-}
-
-function TwitterIcon() {
-  return (
-    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-    </svg>
-  );
-}
-
 function InfoIcon() {
   return (
     <svg
@@ -676,10 +385,3 @@ function XIcon() {
   );
 }
 
-function UploadIcon() {
-  return (
-    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-    </svg>
-  );
-}
