@@ -1,6 +1,5 @@
 'use client';
 
-import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
@@ -13,36 +12,50 @@ interface UserStats {
   twitterHandle?: string;
 }
 
+interface User {
+  id: string;
+  email: string | null;
+  displayName: string;
+  oauthProvider: string;
+  oauthAvatarUrl: string | null;
+  games: string[];
+}
+
 export default function DashboardPage() {
-  const { data: session, status } = useSession();
   const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [isConnectingTwitter, setIsConnectingTwitter] = useState(false);
 
   useEffect(() => {
-    // Redirect to home if not authenticated
-    if (status === 'unauthenticated') {
+    // Check localStorage for user
+    const storedUser = localStorage.getItem('waitlist_user');
+    if (!storedUser) {
       router.push('/');
       return;
     }
 
-    // Redirect to home if not completed games
-    if (status === 'authenticated' && !(session?.user as any)?.hasCompletedGames) {
-      router.push('/');
+    const userData = JSON.parse(storedUser);
+
+    // Redirect if no games selected
+    if (!userData.games || userData.games.length === 0) {
+      router.push('/?step=games');
       return;
     }
 
-    // Fetch user stats
-    if (status === 'authenticated') {
-      fetchUserStats();
-    }
-  }, [status, session, router]);
+    setUser(userData);
+    fetchUserStats(userData.id);
+  }, [router]);
 
-  const fetchUserStats = async () => {
+  const fetchUserStats = async (userId: string) => {
     try {
-      const response = await fetch('/api/user/stats');
+      const response = await fetch('/api/user/stats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      });
       if (!response.ok) throw new Error('Failed to fetch stats');
       const result = await response.json();
 
@@ -72,9 +85,9 @@ export default function DashboardPage() {
 
   const handleConnectTwitter = async () => {
     setIsConnectingTwitter(true);
-    // Use NextAuth to connect Twitter/X
-    const { signIn } = await import('next-auth/react');
-    await signIn('twitter', { callbackUrl: '/dashboard' });
+    // TODO: Implement Twitter OAuth connect
+    console.log('Twitter connect not yet implemented');
+    setIsConnectingTwitter(false);
   };
 
   const handleShareOnTwitter = () => {
@@ -87,11 +100,12 @@ export default function DashboardPage() {
     window.open(twitterUrl, '_blank', 'width=550,height=420');
   };
 
-  const handleLogout = async () => {
-    await signOut({ callbackUrl: '/' });
+  const handleLogout = () => {
+    localStorage.removeItem('waitlist_user');
+    router.push('/');
   };
 
-  if (status === 'loading' || isLoading) {
+  if (isLoading || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-black">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#7F56D9] border-t-transparent" />
@@ -99,12 +113,11 @@ export default function DashboardPage() {
     );
   }
 
-  if (status !== 'authenticated' || !session || !userStats) {
+  if (!userStats) {
     return null;
   }
 
-  const user = session.user;
-  const oauthProvider = (user as any)?.oauthProvider || 'google';
+  const oauthProvider = user.oauthProvider || 'google';
   const progress = Math.min((userStats.referralCount / 50) * 100, 100);
 
   return (
@@ -142,10 +155,10 @@ export default function DashboardPage() {
           {/* User Info & Logout */}
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3 rounded-lg border border-white/20 bg-white/10 px-4 py-2 backdrop-blur-xl">
-              {user.image && (
+              {user.oauthAvatarUrl && (
                 <Image
-                  src={user.image}
-                  alt={user.name || 'User'}
+                  src={user.oauthAvatarUrl}
+                  alt={user.displayName}
                   width={32}
                   height={32}
                   className="h-8 w-8 rounded-full"
@@ -153,7 +166,7 @@ export default function DashboardPage() {
               )}
               <div className="flex flex-col">
                 <span className="text-sm font-medium text-white">
-                  {user.name || user.email}
+                  {oauthProvider === 'google' ? user.displayName : `@${user.displayName}`}
                 </span>
                 <span className="flex items-center gap-1.5 text-xs text-gray-400">
                   <ProviderIcon provider={oauthProvider} />
