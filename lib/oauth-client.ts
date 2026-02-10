@@ -77,6 +77,10 @@ export function parseJwtClaims(jwt: string): {
   email?: string;
   name?: string;
   picture?: string;
+  preferred_username?: string;
+  display_name?: string;
+  login?: string;
+  profile_image_url?: string;
 } | null {
   try {
     const [, payloadBase64] = jwt.split('.');
@@ -84,8 +88,14 @@ export function parseJwtClaims(jwt: string): {
     return {
       sub: payload.sub,
       email: payload.email,
+      // Standard OIDC claims
       name: payload.name,
       picture: payload.picture,
+      // Twitch-specific claims
+      preferred_username: payload.preferred_username,
+      display_name: payload.display_name,
+      login: payload.login,
+      profile_image_url: payload.profile_image_url,
     };
   } catch {
     return null;

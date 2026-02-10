@@ -36,8 +36,13 @@ export async function POST(req: NextRequest) {
     // Create new waitlist user
     const displayName =
       provider === 'twitch'
-        ? claims.preferred_username || claims.name || 'User'
+        ? claims.preferred_username || claims.login || claims.display_name || 'User'
         : claims.name || 'User';
+
+    const avatarUrl =
+      provider === 'twitch'
+        ? claims.profile_image_url || claims.picture || null
+        : claims.picture || null;
 
     const newUser = await prisma.waitlistUser.create({
       data: {
@@ -46,7 +51,7 @@ export async function POST(req: NextRequest) {
         email: claims.email || null,
         emailVerified: provider === 'google',
         displayName,
-        oauthAvatarUrl: claims.picture || null,
+        oauthAvatarUrl: avatarUrl,
         referralCode,
         games: [],
         status: 'PENDING',
