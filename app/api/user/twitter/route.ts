@@ -1,21 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {
   try {
-    // Authenticate user
-    const session = await auth();
-    if (!session?.user?.email) {
+    // Parse request body
+    const body = await request.json();
+    const { twitterId, twitterHandle, userId } = body;
+
+    // Validate userId
+    if (!userId) {
       return NextResponse.json(
-        { error: 'Unauthorized', message: 'You must be logged in' },
+        { error: 'Unauthorized', message: 'User ID is required' },
         { status: 401 }
       );
     }
-
-    // Parse request body
-    const body = await request.json();
-    const { twitterId, twitterHandle } = body;
 
     // Validate Twitter data
     if (!twitterId || typeof twitterId !== 'string') {
@@ -35,9 +33,9 @@ export async function POST(request: NextRequest) {
     // Normalize Twitter handle (remove @ if present)
     const normalizedHandle = twitterHandle.trim().replace(/^@/, '');
 
-    // Find current user
-    const currentUser = await prisma.waitlistUser.findFirst({
-      where: { email: session.user.email },
+    // Find current user by ID
+    const currentUser = await prisma.waitlistUser.findUnique({
+      where: { id: userId },
     });
 
     if (!currentUser) {

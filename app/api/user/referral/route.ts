@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 // Configuration from environment or defaults
@@ -9,18 +8,17 @@ const REFERRAL_MAX_COUNT = parseInt(process.env.REFERRAL_MAX_COUNT || '50');
 
 export async function POST(request: NextRequest) {
   try {
-    // Authenticate user
-    const session = await auth();
-    if (!session?.user?.email) {
+    // Parse request body
+    const body = await request.json();
+    const { referralCode, userId } = body;
+
+    // Validate userId
+    if (!userId) {
       return NextResponse.json(
-        { error: 'Unauthorized', message: 'You must be logged in' },
+        { error: 'Unauthorized', message: 'User ID is required' },
         { status: 401 }
       );
     }
-
-    // Parse request body
-    const body = await request.json();
-    const { referralCode } = body;
 
     // Validate referral code
     if (!referralCode || typeof referralCode !== 'string') {
@@ -42,9 +40,9 @@ export async function POST(request: NextRequest) {
 
     // Use transaction to handle race conditions
     const result = await prisma.$transaction(async (tx) => {
-      // Find current user
-      const currentUser = await tx.waitlistUser.findFirst({
-        where: { email: session.user.email },
+      // Find current user by ID
+      const currentUser = await tx.waitlistUser.findUnique({
+        where: { id: userId },
       });
 
       if (!currentUser) {
