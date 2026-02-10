@@ -393,47 +393,67 @@ export default function DashboardPage() {
           </div>
 
           {/* Use Referral Code Card */}
-          {!userStats.usedReferralCode && (
-            <div className="rounded-2xl border border-green-500/30 bg-green-500/10 p-6 backdrop-blur-xl">
-              <h2 className="mb-2 text-lg font-semibold text-white">Have a Referral Code?</h2>
-              <p className="mb-4 text-sm text-gray-300">
-                Enter a friend&apos;s code to boost your reputation
-              </p>
+          <div className="rounded-2xl border border-green-500/30 bg-green-500/10 p-6 backdrop-blur-xl">
+            <h2 className="mb-2 text-lg font-semibold text-white">
+              {userStats.usedReferralCode ? 'Referral Code Applied' : 'Have a Referral Code?'}
+            </h2>
 
-              <form onSubmit={handleApplyReferral} className="space-y-3">
-                <div className="flex gap-3">
-                  <input
-                    type="text"
-                    value={referralCode}
-                    onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
-                    placeholder="Enter 6-character code"
-                    maxLength={6}
-                    disabled={isApplyingReferral}
-                    className="flex-1 rounded-lg border border-white/20 bg-white/10 px-4 py-3 text-white placeholder-gray-400 backdrop-blur-xl transition-colors focus:border-green-500 focus:outline-none disabled:opacity-50"
-                  />
-                  <button
-                    type="submit"
-                    disabled={isApplyingReferral || !referralCode.trim()}
-                    className="rounded-lg border border-green-500/30 bg-green-500/20 px-6 py-3 text-sm font-medium text-white backdrop-blur-xl transition-colors hover:bg-green-500/30 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {isApplyingReferral ? 'Applying...' : 'Apply'}
-                  </button>
+            {userStats.usedReferralCode ? (
+              <div className="space-y-3">
+                <p className="text-sm text-gray-300">
+                  You&apos;ve already used a referral code
+                </p>
+                <div className="rounded-lg border border-green-500/20 bg-green-500/20 px-4 py-3">
+                  <div className="text-xs text-green-300 mb-1">Applied Code</div>
+                  <div className="text-2xl font-bold tracking-wider text-green-400">
+                    {userStats.usedReferralCode}
+                  </div>
                 </div>
+                <p className="text-xs text-gray-400">
+                  ✓ You can only use one referral code per account
+                </p>
+              </div>
+            ) : (
+              <>
+                <p className="mb-4 text-sm text-gray-300">
+                  Enter a friend&apos;s code to boost your reputation
+                </p>
 
-                {referralError && (
-                  <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-                    {referralError}
+                <form onSubmit={handleApplyReferral} className="space-y-3">
+                  <div className="flex gap-3">
+                    <input
+                      type="text"
+                      value={referralCode}
+                      onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                      placeholder="Enter 6-character code"
+                      maxLength={6}
+                      disabled={isApplyingReferral}
+                      className="flex-1 rounded-lg border border-white/20 bg-white/10 px-4 py-3 text-white placeholder-gray-400 backdrop-blur-xl transition-colors focus:border-green-500 focus:outline-none disabled:opacity-50"
+                    />
+                    <button
+                      type="submit"
+                      disabled={isApplyingReferral || !referralCode.trim()}
+                      className="rounded-lg border border-green-500/30 bg-green-500/20 px-6 py-3 text-sm font-medium text-white backdrop-blur-xl transition-colors hover:bg-green-500/30 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {isApplyingReferral ? 'Applying...' : 'Apply'}
+                    </button>
                   </div>
-                )}
 
-                {referralSuccess && (
-                  <div className="rounded-lg border border-green-500/20 bg-green-500/10 px-4 py-3 text-sm text-green-400">
-                    {referralSuccess}
-                  </div>
-                )}
-              </form>
-            </div>
-          )}
+                  {referralError && (
+                    <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+                      {referralError}
+                    </div>
+                  )}
+
+                  {referralSuccess && (
+                    <div className="rounded-lg border border-green-500/20 bg-green-500/10 px-4 py-3 text-sm text-green-400">
+                      {referralSuccess}
+                    </div>
+                  )}
+                </form>
+              </>
+            )}
+          </div>
 
           {/* Profile Card */}
           <div className="rounded-2xl border border-white/20 bg-white/10 p-6 backdrop-blur-xl">
