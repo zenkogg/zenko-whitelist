@@ -3,6 +3,9 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
+import Grainient from '@/components/Grainient';
+import { GRAINIENT_PRESETS } from '@/components/Grainient/presets';
+import { PresetSwitcher } from '@/components/Grainient/PresetSwitcher';
 
 interface UserStats {
   referralCode: string;
@@ -35,6 +38,7 @@ export default function DashboardPage() {
   const [referralSuccess, setReferralSuccess] = useState('');
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [avatarUploadError, setAvatarUploadError] = useState('');
+  const [currentPreset, setCurrentPreset] = useState('current');
 
   useEffect(() => {
     // Check localStorage for user
@@ -204,20 +208,16 @@ export default function DashboardPage() {
 
   return (
     <main className="relative min-h-screen w-full overflow-x-hidden bg-black">
-      {/* Background Image */}
+      {/* Grainient Background */}
       <div className="absolute inset-0 z-0">
-        <Image
-          src="/images/mushrooms.png"
-          alt="Background"
-          fill
-          className="object-cover blur-[2px]"
-          priority
-          quality={90}
-        />
+        <Grainient {...GRAINIENT_PRESETS[currentPreset as keyof typeof GRAINIENT_PRESETS]} />
       </div>
 
-      {/* Dim Overlay */}
-      <div className="absolute inset-0 z-[1] bg-black/60" />
+      {/* Overlay */}
+      <div className="absolute inset-0 z-[1] bg-black/40 pointer-events-none" />
+
+      {/* Preset Switcher (only in development) */}
+      <PresetSwitcher currentPreset={currentPreset} onPresetChange={setCurrentPreset} />
 
       {/* Header */}
       <header className="relative z-10 border-b border-white/10 bg-black/40 backdrop-blur-xl">

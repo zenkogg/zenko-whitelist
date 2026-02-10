@@ -16,13 +16,17 @@ export default function Home() {
         <BackgroundLayer />
 
         {/* Left Column - Hero Section */}
-        <div className="relative z-10 flex-1">
-          <HeroColumn />
+        <div className="relative z-10 flex-1 pointer-events-none">
+          <div className="pointer-events-auto">
+            <HeroColumn />
+          </div>
         </div>
 
         {/* Right Column - Form Sidebar */}
-        <div className="relative z-10 flex w-[560px] shrink p-6">
-          <OnboardingSidebar />
+        <div className="relative z-10 flex w-[560px] shrink p-6 pointer-events-none">
+          <div className="pointer-events-auto">
+            <OnboardingSidebar />
+          </div>
         </div>
       </div>
 

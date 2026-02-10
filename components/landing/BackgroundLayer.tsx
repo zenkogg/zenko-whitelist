@@ -1,25 +1,25 @@
 'use client';
 
-import Image from 'next/image';
+import { useState } from 'react';
+import Grainient from '@/components/Grainient';
+import { GRAINIENT_PRESETS } from '@/components/Grainient/presets';
+import { PresetSwitcher } from '@/components/Grainient/PresetSwitcher';
 
 export function BackgroundLayer() {
+  const [currentPreset, setCurrentPreset] = useState('current');
+  const preset = GRAINIENT_PRESETS[currentPreset as keyof typeof GRAINIENT_PRESETS];
+
   return (
     <>
-      {/* Background Image */}
       <div className="absolute inset-0 z-0">
-        <Image
-          src="/images/mushrooms.png"
-          alt="Background"
-          fill
-          sizes="100vw"
-          className="object-cover blur-[2px]"
-          priority
-          quality={90}
-        />
+        <Grainient {...preset} />
       </div>
 
-      {/* Dim Overlay */}
-      <div className="absolute inset-0 z-[2] bg-black/50" />
+      {/* Overlay */}
+      <div className="absolute inset-0 z-[1] bg-black/30 pointer-events-none" />
+
+      {/* Preset Switcher (only in development) */}
+      <PresetSwitcher currentPreset={currentPreset} onPresetChange={setCurrentPreset} />
     </>
   );
 }
