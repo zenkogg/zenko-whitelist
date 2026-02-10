@@ -8,6 +8,76 @@ datasource db {
   directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
+// ============================================================================
+// NEW SCHEMA - OAuth + Referral System
+// ============================================================================
+
+model WaitlistUser {
+  id                String   @id @default(uuid())
+
+  // OAuth Identity (for zkLogin matching)
+  oauthProvider     String   @map("oauth_provider")      // "google" | "twitch"
+  oauthId           String   @map("oauth_id")            // Provider's user ID (sub/twitch_id)
+  email             String?                              // Null if Twitch user didn't share
+  emailVerified     Boolean  @default(false) @map("email_verified")
+
+  // Profile
+  displayName       String?  @map("display_name")
+  oauthAvatarUrl    String?  @map("oauth_avatar_url")    // From OAuth
+  customAvatarUrl   String?  @map("custom_avatar_url")   // User-uploaded avatar
+
+  // X/Twitter (optional, for sharing)
+  twitterId         String?  @unique @map("twitter_id")
+  twitterHandle     String?  @map("twitter_handle")
+  twitterConnectedAt DateTime? @map("twitter_connected_at")
+
+  // Game Interests
+  games             String[]                             // ["lol", "tft", "valorant"]
+
+  // Referral System
+  referralCode      String   @unique @map("referral_code") // Generated 6-char code
+  usedReferralCode  String?  @map("used_referral_code")    // Code they entered (one-time)
+  referredById      String?  @map("referred_by_id")        // FK to referrer
+  referredBy        WaitlistUser? @relation("Referrals", fields: [referredById], references: [id], onDelete: SetNull)
+  referrals         WaitlistUser[] @relation("Referrals")
+
+  // Stats (cached for performance)
+  referralCount     Int      @default(0) @map("referral_count")
+  reputationPoints  Int      @default(0) @map("reputation_points")
+
+  // Beta Access Status
+  status            WaitlistStatus @default(PENDING)
+  invitedAt         DateTime? @map("invited_at")
+  registeredAt      DateTime? @map("registered_at")
+
+  // Metadata
+  ipAddress         String?  @map("ip_address") @db.VarChar(45)
+  userAgent         String?  @map("user_agent")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@unique([oauthProvider, oauthId])
+  @@index([email])
+  @@index([referralCode])
+  @@index([usedReferralCode])
+  @@index([createdAt])
+  @@index([status])
+  @@index([reputationPoints])
+  @@map("waitlist_users")
+}
+
+enum WaitlistStatus {
+  PENDING     // Waiting for beta access
+  APPROVED    // Selected for closed beta
+  INVITED     // Invitation email sent
+  REGISTERED  // Created Zenko account
+}
+
+// ============================================================================
+// OLD SCHEMA - Keep for existing email-only users (28 users)
+// Can be migrated or deprecated later
+// ============================================================================
+
 model WhitelistEntry {
   id        String   @id @default(uuid())
   email     String   @unique
