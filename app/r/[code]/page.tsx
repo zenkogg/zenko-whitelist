@@ -3,11 +3,12 @@ import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 
 interface Props {
-  params: { code: string };
+  params: Promise<{ code: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const code = params.code.toUpperCase();
+  const { code: rawCode } = await params;
+  const code = rawCode.toUpperCase();
 
   try {
     const user = await prisma.waitlistUser.findUnique({
@@ -65,7 +66,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default function ReferralPage({ params }: Props) {
+export default async function ReferralPage({ params }: Props) {
+  const { code } = await params;
   // Redirect to home with referral code in query param
-  redirect(`/?ref=${params.code}`);
+  redirect(`/?ref=${code}`);
 }
