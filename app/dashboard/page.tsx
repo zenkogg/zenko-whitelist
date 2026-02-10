@@ -19,6 +19,7 @@ interface User {
   displayName: string;
   oauthProvider: string;
   oauthAvatarUrl: string | null;
+  customAvatarUrl: string | null;
   games: string[];
 }
 
@@ -32,6 +33,8 @@ export default function DashboardPage() {
   const [isApplyingReferral, setIsApplyingReferral] = useState(false);
   const [referralError, setReferralError] = useState('');
   const [referralSuccess, setReferralSuccess] = useState('');
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [avatarUploadError, setAvatarUploadError] = useState('');
 
   useEffect(() => {
     // Check localStorage for user
@@ -143,6 +146,42 @@ export default function DashboardPage() {
     }
   };
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    setIsUploadingAvatar(true);
+    setAvatarUploadError('');
+
+    try {
+      const formData = new FormData();
+      formData.append('avatar', file);
+      formData.append('userId', user.id);
+
+      const response = await fetch('/api/user/avatar', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to upload avatar');
+      }
+
+      const { data } = await response.json();
+
+      // Update user in state and localStorage
+      const updatedUser = { ...user, customAvatarUrl: data.avatarUrl };
+      setUser(updatedUser);
+      localStorage.setItem('waitlist_user', JSON.stringify(updatedUser));
+    } catch (error: any) {
+      console.error('Avatar upload error:', error);
+      setAvatarUploadError(error.message || 'Failed to upload avatar');
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('waitlist_user');
     router.push('/');
@@ -198,15 +237,13 @@ export default function DashboardPage() {
           {/* User Info & Logout */}
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3 rounded-lg border border-white/20 bg-white/10 px-4 py-2 backdrop-blur-xl">
-              {user.oauthAvatarUrl && (
-                <Image
-                  src={user.oauthAvatarUrl}
-                  alt={user.displayName}
-                  width={32}
-                  height={32}
-                  className="h-8 w-8 rounded-full"
-                />
-              )}
+              <Image
+                src={user.customAvatarUrl || '/images/default-avatar.svg'}
+                alt={user.displayName}
+                width={32}
+                height={32}
+                className="h-8 w-8 rounded-full object-cover"
+              />
               <div className="flex flex-col">
                 <span className="text-sm font-medium text-white">
                   {oauthProvider === 'google' ? user.displayName : `@${user.displayName}`}
@@ -328,6 +365,31 @@ export default function DashboardPage() {
                 <span>Share on X</span>
               </button>
             </div>
+
+            {/* OG Preview */}
+            <div className="mt-6 space-y-3">
+              <h3 className="text-sm font-medium text-gray-300">Share Preview</h3>
+              <p className="text-xs text-gray-400">
+                This is how your referral link will appear when shared on social media
+              </p>
+              <div className="overflow-hidden rounded-lg border border-white/20 bg-black/40">
+                <Image
+                  src={`/api/og?ref=${userStats.referralCode}&t=${Date.now()}`}
+                  alt="Referral share preview"
+                  key={Date.now()}
+                  width={1200}
+                  height={630}
+                  className="w-full h-auto"
+                  unoptimized
+                />
+              </div>
+              <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+                <p className="text-xs text-gray-400">Share link:</p>
+                <p className="text-sm text-[#7F56D9] break-all">
+                  {typeof window !== 'undefined' && `${window.location.origin}/r/${userStats.referralCode}`}
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Use Referral Code Card */}
@@ -372,6 +434,58 @@ export default function DashboardPage() {
               </form>
             </div>
           )}
+
+          {/* Profile Card */}
+          <div className="rounded-2xl border border-white/20 bg-white/10 p-6 backdrop-blur-xl">
+            <h2 className="mb-4 text-lg font-semibold text-white">Your Profile</h2>
+
+            <div className="flex items-center gap-6">
+              {/* Avatar Display */}
+              <div className="relative">
+                <Image
+                  src={user.customAvatarUrl || '/images/default-avatar.svg'}
+                  alt={user.displayName}
+                  width={100}
+                  height={100}
+                  className="h-24 w-24 rounded-full object-cover ring-2 ring-white/20"
+                />
+                {isUploadingAvatar && (
+                  <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/60">
+                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#7F56D9] border-t-transparent" />
+                  </div>
+                )}
+              </div>
+
+              {/* Upload Section */}
+              <div className="flex-1">
+                <div className="mb-2">
+                  <label
+                    htmlFor="avatar-upload"
+                    className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-xl transition-colors hover:bg-white/20"
+                  >
+                    <UploadIcon />
+                    <span>{user.customAvatarUrl ? 'Change Avatar' : 'Upload Avatar'}</span>
+                  </label>
+                  <input
+                    id="avatar-upload"
+                    type="file"
+                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                    onChange={handleAvatarUpload}
+                    disabled={isUploadingAvatar}
+                    className="hidden"
+                  />
+                </div>
+                <p className="text-xs text-gray-400">
+                  Upload a custom avatar (JPEG, PNG, or WebP, max 5MB)
+                </p>
+                {avatarUploadError && (
+                  <div className="mt-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-400">
+                    {avatarUploadError}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
 
           {/* Info Card */}
           <div className="rounded-2xl border border-blue-500/30 bg-blue-500/10 p-6 backdrop-blur-xl">
@@ -538,6 +652,14 @@ function XIcon() {
   return (
     <svg className="size-6" fill="currentColor" viewBox="0 0 24 24">
       <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  );
+}
+
+function UploadIcon() {
+  return (
+    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
     </svg>
   );
 }

@@ -40,3 +40,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# uploaded avatars (keep directory structure)
+/public/avatars/*
+!/public/avatars/.gitkeep
