@@ -11,6 +11,7 @@ export function BackgroundLayer() {
           src="/images/mushrooms.png"
           alt="Background"
           fill
+          sizes="100vw"
           className="object-cover blur-[2px]"
           priority
           quality={90}

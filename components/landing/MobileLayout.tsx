@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import { BackgroundLayer } from './BackgroundLayer';
 import { HeroColumn } from './HeroColumn';
+import { OnboardingSidebar } from './OnboardingSidebar';
 import { GlassSidebar, FormState } from './GlassSidebar';
 
 export function MobileLayout() {
@@ -30,7 +31,7 @@ export function MobileLayout() {
 
       {/* Form Section */}
       <div className={`relative z-10 flex-1 ${!showHero ? 'pt-24' : ''}`}>
-        <GlassSidebar mobile onStateChange={handleStateChange} />
+        <OnboardingSidebar mobile />
       </div>
     </div>
   );

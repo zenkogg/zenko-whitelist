@@ -1,9 +1,13 @@
+'use client';
+
 import { BackgroundLayer } from '@/components/landing/BackgroundLayer';
 import { HeroColumn } from '@/components/landing/HeroColumn';
-import { GlassSidebar } from '@/components/landing/GlassSidebar';
+import { OnboardingSidebar } from '@/components/landing/OnboardingSidebar';
 import { MobileLayout } from '@/components/landing/MobileLayout';
 
 export default function Home() {
+  // OnboardingSidebar handles its own session management
+
   return (
     <main className="relative min-h-screen w-full overflow-x-hidden bg-black">
       {/* Desktop Layout - Side by side */}
@@ -18,7 +22,7 @@ export default function Home() {
 
         {/* Right Column - Form Sidebar */}
         <div className="relative z-10 flex w-[560px] shrink p-6">
-          <GlassSidebar />
+          <OnboardingSidebar />
         </div>
       </div>
 

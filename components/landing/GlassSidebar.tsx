@@ -110,6 +110,7 @@ export function GlassSidebar({ mobile = false, onStateChange }: GlassSidebarProp
               width={46}
               height={16}
               className="h-4 w-auto"
+              style={{ width: "auto" }}
             />
           </div>
 

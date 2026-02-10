@@ -50,6 +50,7 @@ export function GameCarousel({ mobile = false }: GameCarouselProps) {
                 width={mobile ? 60 : 120}
                 height={mobile ? 24 : 48}
                 className={`${logoHeight} w-auto object-contain`}
+                style={{ height: "auto" }}
               />
             </div>
           ))}
@@ -68,6 +69,7 @@ export function GameCarousel({ mobile = false }: GameCarouselProps) {
                 width={mobile ? 60 : 120}
                 height={mobile ? 24 : 48}
                 className={`${logoHeight} w-auto object-contain`}
+                style={{ height: "auto" }}
               />
             </div>
           ))}
