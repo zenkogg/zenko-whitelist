@@ -3,7 +3,7 @@
  * Uses implicit flow to avoid server-side HTTP requests
  */
 
-export type OAuthProvider = 'google' | 'twitch';
+export type OAuthProvider = 'google' | 'twitch' | 'twitter';
 
 interface OAuthConfig {
   authUrl: string;
@@ -34,6 +34,16 @@ function getProviderConfig(provider: OAuthProvider): OAuthConfig {
         redirectUri,
         scope: 'openid user:read:email',
         responseType: 'id_token',
+      };
+    case 'twitter':
+      return {
+        authUrl: 'https://twitter.com/i/oauth2/authorize',
+        clientId: process.env.NEXT_PUBLIC_TWITTER_CLIENT_ID!,
+        redirectUri: typeof window !== 'undefined'
+          ? `${window.location.origin}/auth/twitter/callback`
+          : 'http://localhost:3000/auth/twitter/callback',
+        scope: 'tweet.read users.read',
+        responseType: 'code',
       };
   }
 }
