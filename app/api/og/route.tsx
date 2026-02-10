@@ -7,6 +7,9 @@ import path from 'path';
 // Use Node.js runtime for Prisma compatibility
 export const runtime = 'nodejs';
 
+// Force dynamic rendering (uses query params)
+export const dynamic = 'force-dynamic';
+
 // Cache OG images for 1 hour (3600 seconds)
 export const revalidate = 3600;
 
