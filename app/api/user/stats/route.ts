@@ -44,17 +44,25 @@ export async function POST(request: NextRequest) {
     // Calculate rank using weighted score formula from WAITLIST.md
     // Score = 40% registration order + 60% reputation points
     const rankResult = await prisma.$queryRaw<Array<{ rank: bigint }>>`
-      WITH ranked_users AS (
+      WITH user_order AS (
+        SELECT
+          id,
+          ROW_NUMBER() OVER (ORDER BY created_at) as registration_order,
+          COUNT(*) OVER () as total_users,
+          reputation_points
+        FROM waitlist_users
+        WHERE status = 'PENDING'
+      ),
+      ranked_users AS (
         SELECT
           id,
           ROW_NUMBER() OVER (
             ORDER BY
-              (1.0 - (ROW_NUMBER() OVER (ORDER BY created_at) / (COUNT(*) OVER ())::float)) * 0.4 +
+              (1.0 - (registration_order / total_users::float)) * 0.4 +
               (LEAST(reputation_points, ${REFERRAL_MAX_POINTS}) / ${REFERRAL_MAX_POINTS}::float) * 0.6
             DESC
           ) as rank
-        FROM waitlist_users
-        WHERE status = 'PENDING'
+        FROM user_order
       )
       SELECT rank
       FROM ranked_users
