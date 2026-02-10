@@ -10,6 +10,7 @@ interface UserStats {
   reputationPoints: number;
   twitterConnected: boolean;
   twitterHandle?: string;
+  usedReferralCode?: string | null;
 }
 
 interface User {
@@ -27,6 +28,10 @@ export default function DashboardPage() {
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [referralCode, setReferralCode] = useState('');
+  const [isApplyingReferral, setIsApplyingReferral] = useState(false);
+  const [referralError, setReferralError] = useState('');
+  const [referralSuccess, setReferralSuccess] = useState('');
 
   useEffect(() => {
     // Check localStorage for user
@@ -66,6 +71,7 @@ export default function DashboardPage() {
           reputationPoints: result.data.stats.reputationPoints,
           twitterConnected: !!result.data.user.twitterHandle,
           twitterHandle: result.data.user.twitterHandle,
+          usedReferralCode: result.data.user.usedReferralCode,
         });
       }
     } catch (error) {
@@ -90,6 +96,51 @@ export default function DashboardPage() {
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(referralLink)}`;
 
     window.open(twitterUrl, '_blank', 'width=550,height=420');
+  };
+
+  const handleApplyReferral = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setReferralError('');
+    setReferralSuccess('');
+
+    if (!referralCode.trim()) {
+      setReferralError('Please enter a referral code');
+      return;
+    }
+
+    setIsApplyingReferral(true);
+
+    try {
+      const response = await fetch('/api/user/referral', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          referralCode: referralCode.trim().toUpperCase(),
+          userId: user?.id,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to apply referral code');
+      }
+
+      const { data } = await response.json();
+
+      // Update user stats with new reputation points
+      setReferralSuccess(`Referral code applied! You earned ${data.user.reputationPoints - (userStats?.reputationPoints || 0)} reputation points.`);
+      setReferralCode('');
+
+      // Refresh user stats
+      if (user) {
+        fetchUserStats(user.id);
+      }
+    } catch (error: any) {
+      console.error('Apply referral error:', error);
+      setReferralError(error.message || 'Failed to apply referral code');
+    } finally {
+      setIsApplyingReferral(false);
+    }
   };
 
   const handleLogout = () => {
@@ -278,6 +329,49 @@ export default function DashboardPage() {
               </button>
             </div>
           </div>
+
+          {/* Use Referral Code Card */}
+          {!userStats.usedReferralCode && (
+            <div className="rounded-2xl border border-green-500/30 bg-green-500/10 p-6 backdrop-blur-xl">
+              <h2 className="mb-2 text-lg font-semibold text-white">Have a Referral Code?</h2>
+              <p className="mb-4 text-sm text-gray-300">
+                Enter a friend&apos;s code to boost your reputation
+              </p>
+
+              <form onSubmit={handleApplyReferral} className="space-y-3">
+                <div className="flex gap-3">
+                  <input
+                    type="text"
+                    value={referralCode}
+                    onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                    placeholder="Enter 6-character code"
+                    maxLength={6}
+                    disabled={isApplyingReferral}
+                    className="flex-1 rounded-lg border border-white/20 bg-white/10 px-4 py-3 text-white placeholder-gray-400 backdrop-blur-xl transition-colors focus:border-green-500 focus:outline-none disabled:opacity-50"
+                  />
+                  <button
+                    type="submit"
+                    disabled={isApplyingReferral || !referralCode.trim()}
+                    className="rounded-lg border border-green-500/30 bg-green-500/20 px-6 py-3 text-sm font-medium text-white backdrop-blur-xl transition-colors hover:bg-green-500/30 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isApplyingReferral ? 'Applying...' : 'Apply'}
+                  </button>
+                </div>
+
+                {referralError && (
+                  <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+                    {referralError}
+                  </div>
+                )}
+
+                {referralSuccess && (
+                  <div className="rounded-lg border border-green-500/20 bg-green-500/10 px-4 py-3 text-sm text-green-400">
+                    {referralSuccess}
+                  </div>
+                )}
+              </form>
+            </div>
+          )}
 
           {/* Info Card */}
           <div className="rounded-2xl border border-blue-500/30 bg-blue-500/10 p-6 backdrop-blur-xl">
