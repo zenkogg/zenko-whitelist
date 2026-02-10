@@ -34,13 +34,18 @@ export async function POST(req: NextRequest) {
     const referralCode = await generateUniqueReferralCode();
 
     // Create new waitlist user
+    const displayName =
+      provider === 'twitch'
+        ? claims.preferred_username || claims.name || 'User'
+        : claims.name || 'User';
+
     const newUser = await prisma.waitlistUser.create({
       data: {
         oauthProvider: provider,
         oauthId: claims.sub,
         email: claims.email || null,
         emailVerified: provider === 'google',
-        displayName: claims.name || 'User',
+        displayName,
         oauthAvatarUrl: claims.picture || null,
         referralCode,
         games: [],

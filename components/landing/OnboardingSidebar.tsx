@@ -180,9 +180,11 @@ export function OnboardingSidebar({ mobile = false }: OnboardingSidebarProps) {
                     <p className="text-sm font-medium text-white">
                       Connected via {user.oauthProvider === 'google' ? 'Google' : 'Twitch'}
                     </p>
-                    {user.email && (
+                    {user.email ? (
                       <p className="text-xs text-gray-400">{user.email}</p>
-                    )}
+                    ) : user.displayName && user.displayName !== 'User' ? (
+                      <p className="text-xs text-gray-400">{user.displayName}</p>
+                    ) : null}
                   </div>
                   <button
                     type="button"
