@@ -15,6 +15,11 @@ const nextConfig: NextConfig = {
         hostname: 'static-cdn.jtvnw.net',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: '*.public.blob.vercel-storage.com',
+        pathname: '/**',
+      },
     ],
   },
 };
