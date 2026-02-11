@@ -1,136 +1,31 @@
-// Grainient preset configurations for Zenko
-// Dark base: #0A090B, #110722, #24163C, #341669
-// Purple scale: #431B8A (900), #511FAC (800), #5E23CE (700), #7138E0 (600), #8757E7 (500), #9E77ED (400)
-// Accents: #7F56D9 (zenko purple), #FDB022 (zenko orange)
+// Grainient preset configuration for Zenko Gaming Platform
+// Tactical theme - Subtle movement, static grain, sharp defined zones, professional gaming aesthetic
+// Using dark purple gradient: #110722 (dark purple) → #24163C (medium dark purple) → #431B8A (purple-900)
+// Optimized for dark gaming aesthetic with subtle, professional movement
 
 export const GRAINIENT_PRESETS = {
-  // Default — dark base with visible purple-700 waves
-  current: {
-    color1: "#5E23CE",
-    color2: "#110722",
-    color3: "#0A090B",
-    timeSpeed: 0.4,
-    colorBalance: -0.3,
-    warpStrength: 0.7,
-    warpFrequency: 2.5,
-    warpSpeed: 0.8,
-    warpAmplitude: 25,
+  tactical: {
+    color1: "#431B8A", // purple-900 - deep purple accent
+    color2: "#24163C", // medium dark purple
+    color3: "#110722", // dark purple base
+    timeSpeed: 0.35, // Slow but noticeable movement
+    colorBalance: -0.35, // More balanced
+    warpStrength: 0.5, // Subtle but visible warping
+    warpFrequency: 2.0, // Low-medium frequency
+    warpSpeed: 0.55, // Gentle, deliberate movement
+    warpAmplitude: 20, // Noticeable waves
     blendAngle: 0,
-    blendSoftness: 0.12,
-    rotationAmount: 250,
-    noiseScale: 3,
-    grainAmount: 0.1,
-    grainScale: 5,
-    grainAnimated: true,
-    contrast: 1.15,
-    gamma: 1,
-    saturation: 0.85,
-    centerX: 0,
-    centerY: 0,
-    zoom: 0.9,
-  },
-
-  // Midnight — deep black with purple-800 hints surfacing
-  midnight: {
-    color1: "#511FAC",
-    color2: "#0A090B",
-    color3: "#110722",
-    timeSpeed: 0.3,
-    colorBalance: -0.4,
-    warpStrength: 0.5,
-    warpFrequency: 2,
-    warpSpeed: 0.5,
-    warpAmplitude: 20,
-    blendAngle: 0,
-    blendSoftness: 0.18,
-    rotationAmount: 180,
-    noiseScale: 2.5,
-    grainAmount: 0.08,
-    grainScale: 4,
-    grainAnimated: true,
-    contrast: 1.1,
-    gamma: 1,
-    saturation: 0.75,
-    centerX: 0,
-    centerY: 0,
-    zoom: 0.9,
-  },
-
-  // Amethyst — richer purple-600 & 900 layered on dark plum
-  amethyst: {
-    color1: "#7138E0",
-    color2: "#431B8A",
-    color3: "#0A090B",
-    timeSpeed: 0.5,
-    colorBalance: -0.2,
-    warpStrength: 0.8,
-    warpFrequency: 3,
-    warpSpeed: 0.9,
-    warpAmplitude: 28,
-    blendAngle: 0,
-    blendSoftness: 0.1,
-    rotationAmount: 300,
-    noiseScale: 3.5,
-    grainAmount: 0.1,
-    grainScale: 5,
-    grainAnimated: true,
-    contrast: 1.2,
-    gamma: 1,
-    saturation: 0.9,
-    centerX: 0,
-    centerY: 0,
-    zoom: 0.9,
-  },
-
-  // Ember — dark purple base with warm orange accent glow
-  ember: {
-    color1: "#511FAC",
-    color2: "#24163C",
-    color3: "#FDB022",
-    timeSpeed: 0.4,
-    colorBalance: -0.45,
-    warpStrength: 0.8,
-    warpFrequency: 2.8,
-    warpSpeed: 0.7,
-    warpAmplitude: 30,
-    blendAngle: 0,
-    blendSoftness: 0.15,
-    rotationAmount: 350,
-    noiseScale: 3,
-    grainAmount: 0.12,
-    grainScale: 5,
-    grainAnimated: true,
-    contrast: 1.2,
-    gamma: 1,
-    saturation: 0.8,
-    centerX: 0,
-    centerY: 0,
-    zoom: 0.9,
-  },
-
-  // Abyss — near-black with subtle purple-900 waves
-  abyss: {
-    color1: "#431B8A",
-    color2: "#0A090B",
-    color3: "#0A090B",
-    timeSpeed: 0.25,
-    colorBalance: -0.4,
-    warpStrength: 0.4,
-    warpFrequency: 1.8,
-    warpSpeed: 0.4,
-    warpAmplitude: 15,
-    blendAngle: 0,
-    blendSoftness: 0.2,
-    rotationAmount: 150,
+    blendSoftness: 0.05, // Sharp, defined edges
+    rotationAmount: 180, // Moderate rotation
     noiseScale: 2,
-    grainAmount: 0.06,
-    grainScale: 4,
-    grainAnimated: false,
-    contrast: 1.1,
-    gamma: 1,
-    saturation: 0.7,
+    grainAmount: 0.15, // More visible grain
+    grainScale: 6, // Larger grain texture
+    grainAnimated: false, // Static grain for stability
+    contrast: 1.3, // High contrast for defined zones
+    gamma: 1.12, // Brighter
+    saturation: 0.75, // Moderate saturation
     centerX: 0,
     centerY: 0,
-    zoom: 0.9,
+    zoom: 0.95,
   },
 };

@@ -3,12 +3,15 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import Image from 'next/image';
-import Grainient from '@/components/Grainient';
-import { GRAINIENT_PRESETS } from '@/components/Grainient/presets';
-import { PresetSwitcher } from '@/components/Grainient/PresetSwitcher';
-import { ProfileCard, ReferralCodeCard, ApplyReferralCard, CardStyleSwitcher, BORDER_COLOR_PRESETS } from '@/components/dashboard';
-import type { CardStyleId } from '@/components/dashboard';
-import ReactBitsProfileCard from '@/components/ProfileCard';
+import { ArrowRightStartOnRectangleIcon, HashtagIcon } from '@heroicons/react/24/outline';
+import { BackgroundLayer } from '@/components/landing/BackgroundLayer';
+import { ProfileCard, ReferralCodeCard, ApplyReferralCard } from '@/components/dashboard';
+
+interface ReferrerInfo {
+  displayName: string;
+  avatarUrl: string | null;
+  oauthProvider: string;
+}
 
 interface UserStats {
   referralCode: string;
@@ -17,6 +20,7 @@ interface UserStats {
   twitterConnected: boolean;
   twitterHandle?: string;
   usedReferralCode?: string | null;
+  referrerInfo?: ReferrerInfo | null;
 }
 
 interface User {
@@ -35,9 +39,6 @@ export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentPreset, setCurrentPreset] = useState('current');
-  const [cardStyle, setCardStyle] = useState<CardStyleId>('electric');
-  const [borderColor, setBorderColor] = useState<string>(BORDER_COLOR_PRESETS[0].color);
 
   useEffect(() => {
     // Check localStorage for user
@@ -78,6 +79,7 @@ export default function DashboardPage() {
           twitterConnected: !!result.data.user.twitterHandle,
           twitterHandle: result.data.user.twitterHandle,
           usedReferralCode: result.data.user.usedReferralCode,
+          referrerInfo: result.data.referrerInfo || null,
         });
       }
     } catch (error) {
@@ -110,7 +112,7 @@ export default function DashboardPage() {
   if (isLoading || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-black">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#7F56D9] border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-600 border-t-transparent" />
       </div>
     );
   }
@@ -124,184 +126,151 @@ export default function DashboardPage() {
 
   return (
     <main className="relative min-h-screen w-full overflow-x-hidden bg-black">
-      {/* Grainient Background */}
-      <div className="absolute inset-0 z-0">
-        <Grainient {...GRAINIENT_PRESETS[currentPreset as keyof typeof GRAINIENT_PRESETS]} />
-      </div>
-
-      {/* Overlay */}
-      <div className="absolute inset-0 z-[1] bg-black/40 pointer-events-none" />
-
-      {/* Preset Switcher (only in development) */}
-      <PresetSwitcher currentPreset={currentPreset} onPresetChange={setCurrentPreset} />
-      <CardStyleSwitcher
-        cardStyle={cardStyle}
-        onCardStyleChange={setCardStyle}
-        currentColor={borderColor}
-        onColorChange={setBorderColor}
-      />
+      {/* Shared Background Layer with Preset Switcher */}
+      <BackgroundLayer />
 
       {/* Header */}
-      <header className="relative z-10 border-b border-white/10 bg-black/40 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+      <header className="relative z-10">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6">
           {/* Logo */}
-          <div className="flex items-center gap-3">
-            <Image
-              src="/images/zenko-head.svg"
-              alt="Zenko Logo"
-              width={40}
-              height={40}
-              className="h-10 w-10"
-            />
-            <span className="text-xl font-semibold text-[#fdb022]">Zenko</span>
-          </div>
+          <Image
+            src="/logo-primary.svg"
+            alt="Zenko Logo"
+            width={129}
+            height={28}
+            className="h-7 w-auto"
+          />
 
-          {/* User Info & Logout */}
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3 rounded-lg border border-white/20 bg-white/10 px-4 py-2 backdrop-blur-xl">
-              <Image
-                src={user.customAvatarUrl || '/images/default-avatar.svg'}
-                alt={user.displayName}
-                width={32}
-                height={32}
-                className="h-8 w-8 rounded-full object-cover"
-              />
-              <div className="flex flex-col">
-                <span className="text-sm font-medium text-white">
-                  {oauthProvider === 'google' ? user.displayName : `@${user.displayName}`}
-                </span>
-                <span className="flex items-center gap-1.5 text-xs text-gray-400">
-                  <ProviderIcon provider={oauthProvider} />
-                  {oauthProvider === 'google' ? 'Google' : 'Twitch'}
-                </span>
-              </div>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-xl transition-colors hover:bg-white/20"
-            >
+          {/* Logout Button */}
+          <button
+            onClick={handleLogout}
+            className="group flex items-center gap-2 rounded-lg border border-purple-300/30 px-4 py-2 transition-all hover:bg-white/5 hover:border-purple-300/50"
+            aria-label="Log out"
+          >
+            <ArrowRightStartOnRectangleIcon className="h-5 w-5 text-purple-300 transition-colors group-hover:text-purple-50" />
+            <span className="text-sm font-medium text-purple-300 transition-colors group-hover:text-purple-50">
               Log Out
-            </button>
-          </div>
+            </span>
+          </button>
         </div>
       </header>
 
       {/* Content */}
       <div className="relative z-10 px-6 py-12">
-        <div className="mx-auto max-w-6xl space-y-6">
-          {/* Welcome Section */}
-          <div className="text-center">
-            <h1 className="mb-2 text-4xl font-semibold text-[#cbbaee]">
-              Welcome To Zenko Waitlist
-            </h1>
-          </div>
-
-          {/* Top Section - Profile Card and Referral Cards */}
-          <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
-            {/* Left - Profile Card */}
-            {cardStyle === 'electric' ? (
+        <div className="mx-auto max-w-6xl">
+          {/* Bento Grid Layout */}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-6">
+            {/* Profile Card - Left column, spans 2 columns and 2 rows */}
+            <div className="lg:col-span-2 lg:row-span-2">
               <ProfileCard
                 displayName={user.displayName}
                 customAvatarUrl={user.customAvatarUrl}
                 createdAt={user.createdAt || new Date().toISOString()}
                 userId={user.id}
+                oauthProvider={user.oauthProvider}
                 onAvatarUpdate={handleAvatarUpdate}
-                borderColor={borderColor}
               />
-            ) : (
-              <ReactBitsProfileCard
-                name={user.displayName}
-                handle={user.displayName}
-                avatarUrl={user.customAvatarUrl || '/images/default-avatar.svg'}
-                iconUrl="/images/zenko-head-mask.svg"
-                status="Waitlisted"
-                contactText="Upload"
-                showUserInfo
-                enableTilt
-                enableMobileTilt
-                behindGlowEnabled={false}
-                behindGlowColor="rgba(125, 190, 255, 0.67)"
-                innerGradient="linear-gradient(145deg,#60496e8c 0%,#71C4FF44 100%)"
+            </div>
+
+            {/* Referral Code Card - Top right, spans 4 columns */}
+            <div className="lg:col-span-4">
+              <ReferralCodeCard
+                referralCode={userStats.referralCode}
+                referralCount={userStats.referralCount}
               />
-            )}
+            </div>
 
-            {/* Right - Referral Cards Stack */}
-            <div className="space-y-6">
-              {/* Your Referral Code Card */}
-              <ReferralCodeCard referralCode={userStats.referralCode} />
-
-              {/* Have a Referral Code Card */}
+            {/* Apply Referral Card - Below referral code, spans 4 columns */}
+            <div className="lg:col-span-4">
               <ApplyReferralCard
                 userId={user.id}
                 usedReferralCode={userStats.usedReferralCode || null}
                 currentReputationPoints={userStats.reputationPoints}
                 onReferralApplied={handleReferralApplied}
+                referrerInfo={userStats.referrerInfo}
               />
             </div>
-          </div>
 
-          {/* Stats Grid - 3 Cards */}
-          <div className="grid gap-6 md:grid-cols-3">
-            {/* Referrals Card */}
-            <div className="rounded-2xl border border-white/20 bg-white/10 p-6 backdrop-blur-xl">
-              <div className="mb-2 text-sm font-medium text-gray-300">Referrals</div>
-              <div className="text-3xl font-bold text-white">{userStats.referralCount}</div>
-              <div className="mt-1 text-xs text-gray-400">out of 50 for priority access</div>
-            </div>
+            {/* Referral Progress + Stats Combined - Full width row */}
+            <div className="lg:col-span-6 rounded-2xl bg-white/5 p-6 backdrop-blur-md border-2 border-purple-300/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)]">
+              <h2 className="text-xl font-semibold text-white mb-2">Referrals</h2>
+              <p className="text-sm text-neutral-800 mb-1">
+                Perform 50 referrals, earn up to 500 points.
+              </p>
+              <p className="text-sm text-neutral-800 mb-4">
+                Earn reputation points to boost your profile when Zenko goes live!
+              </p>
 
-            {/* Reputation Card */}
-            <div className="rounded-2xl border border-white/20 bg-white/10 p-6 backdrop-blur-xl">
-              <div className="mb-2 text-sm font-medium text-gray-300">Reputation</div>
-              <div className="text-3xl font-bold text-[#fdb022]">
-                {userStats.reputationPoints}
+              <div className="flex items-center justify-between text-sm mb-2">
+                <span className="text-neutral-700">{userStats.referralCount}/50 referrals</span>
+                <span className="text-amber-500 font-medium">
+                  {50 - userStats.referralCount} more to go
+                </span>
               </div>
-              <div className="mt-1 text-xs text-gray-400">points earned</div>
-            </div>
-
-            {/* Status Card */}
-            <div className="rounded-2xl border border-white/20 bg-white/10 p-6 backdrop-blur-xl">
-              <div className="mb-2 text-sm font-medium text-gray-300">Status</div>
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-yellow-500" />
-                <span className="text-lg font-semibold text-white">Pending</span>
+              <div className="h-3 w-full overflow-hidden rounded-full bg-white/20 mb-6">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-amber-500 to-amber-500/80 transition-all duration-500"
+                  style={{ width: `${progress}%` }}
+                />
               </div>
-              <div className="mt-1 text-xs text-gray-400">Waiting for beta access</div>
-            </div>
-          </div>
 
-          {/* Referral Progress Card */}
-          <div className="rounded-2xl border border-white/20 bg-white/10 p-6 backdrop-blur-xl">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-white">Referral Progress</h2>
-              <span className="text-sm text-gray-300">
-                {userStats.referralCount}/50 referrals
-              </span>
-            </div>
-            <div className="h-3 w-full overflow-hidden rounded-full bg-white/20">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-[#7F56D9] to-[#9b8afb] transition-all duration-500"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-            <p className="mt-3 text-sm text-gray-300">
-              Refer 50 friends to get priority beta access and bonus reputation
-            </p>
-          </div>
-
-          {/* Info Card */}
-          <div className="rounded-2xl border border-blue-500/30 bg-blue-500/10 p-6 backdrop-blur-xl">
-            <div className="flex gap-4">
-              <div className="mt-1">
-                <InfoIcon />
+              {/* Stats Badges */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center justify-between rounded-lg bg-white/5 px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <div className={`h-2 w-2 rounded-full ${
+                      userStats.referralCount >= 50 ? 'bg-purple-300' : 'bg-amber-500'
+                    }`} />
+                    <span className="text-sm text-neutral-700">Early Access</span>
+                  </div>
+                  <div className={`text-lg font-bold ${
+                    userStats.referralCount >= 50 ? 'text-purple-300' : 'text-amber-500'
+                  }`}>
+                    {userStats.referralCount >= 50 ? 'Access Granted' : 'On Waitlist'}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between rounded-lg bg-white/5 px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <Image
+                      src="/images/icons/zenko-rp.svg"
+                      alt="Reputation"
+                      width={20}
+                      height={20}
+                      className="h-5 w-5"
+                      style={{ filter: 'brightness(0) saturate(100%) invert(65%) sepia(85%) saturate(1574%) hue-rotate(359deg) brightness(101%) contrast(98%)' }}
+                    />
+                    <span className="text-sm text-neutral-700">Reputation Points</span>
+                  </div>
+                  <div className="text-2xl font-bold text-amber-500">{userStats.reputationPoints} XP</div>
+                </div>
               </div>
-              <div>
-                <h3 className="mb-1 font-semibold text-white">How to Earn Reputation</h3>
-                <ul className="space-y-1 text-sm text-gray-300">
-                  <li>• Share your referral code with friends (+10 points per referral)</li>
-                  <li>• Connect your X/Twitter account (+5 points)</li>
-                  <li>• Share on X/Twitter (+5 points per share)</li>
-                  <li>• Reach 50 referrals for priority beta access</li>
-                </ul>
+            </div>
+
+            {/* Info Card - spans full width */}
+            <div className="lg:col-span-6 rounded-2xl bg-white/5 p-6 backdrop-blur-md border-2 border-purple-300/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)]">
+              <div className="flex gap-4">
+                <div className="mt-1">
+                  <svg
+                    className="h-5 w-5 text-purple-300"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="mb-2 font-semibold text-white">How to Earn Reputation</h3>
+                  <ul className="space-y-1 text-sm text-neutral-800">
+                    <li>• Share your referral code with friends (+10 points per referral)</li>
+                    <li>• Connect your X/Twitter account (+5 points)</li>
+                    <li>• Share on X/Twitter (+5 points per share)</li>
+                    <li>• Reach 50 referrals for priority beta access</li>
+                  </ul>
+                </div>
               </div>
             </div>
           </div>
@@ -311,7 +280,7 @@ export default function DashboardPage() {
       {/* Footer */}
       <footer className="relative z-10 border-t border-white/10 bg-black/40 px-6 py-6 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
-          <div className="flex items-center gap-2 text-gray-300">
+          <div className="flex items-center gap-2 text-neutral-800">
             <span className="text-sm uppercase tracking-wide">Built on</span>
             <Image
               src="/images/icons/sui.svg"
@@ -327,7 +296,7 @@ export default function DashboardPage() {
               href="https://www.instagram.com/zenkogg?igsh=YzdqYTc0N2ZuMzNx&utm_source=qr"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[#7F56D9] transition-colors hover:text-[#9b8afb]"
+              className="text-purple-600 transition-colors hover:text-purple-400"
               aria-label="Instagram"
             >
               <InstagramIcon />
@@ -336,64 +305,17 @@ export default function DashboardPage() {
               href="https://x.com/zenkogginc?s=21&t=aZd4S6kCPZBx-rpP3YEdAg"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[#7F56D9] transition-colors hover:text-[#9b8afb]"
+              className="text-purple-600 transition-colors hover:text-purple-400"
               aria-label="X (Twitter)"
             >
               <XIcon />
             </a>
           </div>
 
-          <span className="text-xs text-gray-400">© 2026 Zenko, All rights reserved.</span>
+          <span className="text-xs text-neutral-700">© 2026 Zenko, All rights reserved.</span>
         </div>
       </footer>
     </main>
-  );
-}
-
-function ProviderIcon({ provider }: { provider: string }) {
-  if (provider === 'twitch') {
-    return (
-      <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z" />
-      </svg>
-    );
-  }
-
-  return (
-    <svg className="h-3 w-3" viewBox="0 0 24 24">
-      <path
-        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-        fill="#4285F4"
-      />
-      <path
-        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-        fill="#34A853"
-      />
-      <path
-        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-        fill="#FBBC05"
-      />
-      <path
-        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-        fill="#EA4335"
-      />
-    </svg>
-  );
-}
-
-function InfoIcon() {
-  return (
-    <svg
-      className="h-5 w-5 text-blue-400"
-      fill="currentColor"
-      viewBox="0 0 20 20"
-    >
-      <path
-        fillRule="evenodd"
-        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-        clipRule="evenodd"
-      />
-    </svg>
   );
 }
 

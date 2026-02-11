@@ -1,12 +1,20 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { TicketIcon } from '@heroicons/react/24/outline';
+
+interface ReferrerInfo {
+  displayName: string;
+  avatarUrl: string | null;
+  oauthProvider: string;
+}
 
 interface ApplyReferralCardProps {
   userId: string;
   usedReferralCode: string | null;
   currentReputationPoints: number;
   onReferralApplied: () => void;
+  referrerInfo?: ReferrerInfo | null;
 }
 
 export function ApplyReferralCard({
@@ -14,6 +22,7 @@ export function ApplyReferralCard({
   usedReferralCode,
   currentReputationPoints,
   onReferralApplied,
+  referrerInfo,
 }: ApplyReferralCardProps) {
   const [referralCode, setReferralCode] = useState('');
   const [isApplyingReferral, setIsApplyingReferral] = useState(false);
@@ -71,75 +80,81 @@ export function ApplyReferralCard({
   );
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setReferralCode(e.target.value.toUpperCase());
+    const input = e.target.value;
+
+    // Try to extract referral code from URL
+    try {
+      const url = new URL(input);
+      const refParam = url.searchParams.get('ref');
+      if (refParam) {
+        setReferralCode(refParam.toUpperCase());
+        return;
+      }
+    } catch {
+      // Not a valid URL, treat as direct code
+    }
+
+    setReferralCode(input.toUpperCase());
   }, []);
 
   return (
-    <div className="rounded-2xl border border-white/20 bg-white/10 p-6 backdrop-blur-xl">
+    <div className="rounded-2xl bg-white/5 p-6 backdrop-blur-md border-2 border-purple-300/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)]">
       <div className="mb-4 flex items-center gap-2">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-5 w-5 text-green-400"
-          viewBox="0 0 20 20"
-          fill="currentColor"
-          aria-hidden="true"
-        >
-          <path
-            fillRule="evenodd"
-            d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
-            clipRule="evenodd"
-          />
-        </svg>
+        <TicketIcon className="h-5 w-5 text-purple-300" />
         <h2 className="text-lg font-semibold text-white">
-          {usedReferralCode ? 'Referral Code Applied' : 'Have a referral code?'}
+          {usedReferralCode ? 'Applied Referral Code' : 'Have a referral code?'}
         </h2>
       </div>
-      <p className="mb-4 text-sm text-gray-300">
-        {usedReferralCode
-          ? "You've already used a referral code"
-          : 'Use the referral code to earn 10 points.'}
-      </p>
 
-      {usedReferralCode ? (
-        <div className="rounded-lg border border-green-500/20 bg-green-500/20 px-4 py-3">
-          <div className="mb-1 text-xs text-green-300">Applied Code</div>
-          <div className="text-xl font-bold tracking-wider text-green-400">
-            {usedReferralCode}
-          </div>
-        </div>
-      ) : (
-        <form onSubmit={handleApplyReferral}>
+      <form onSubmit={handleApplyReferral}>
+        <div className="flex gap-2">
           <input
             type="text"
-            value={referralCode}
+            value={usedReferralCode || referralCode}
             onChange={handleInputChange}
-            placeholder="Add code or link"
-            disabled={isApplyingReferral}
-            maxLength={6}
-            className="mb-3 w-full rounded-lg border border-white/20 bg-black/40 px-4 py-3 text-white placeholder-gray-500 focus:border-[#7F56D9] focus:outline-none focus:ring-1 focus:ring-[#7F56D9] disabled:opacity-50"
+            placeholder="Code or link"
+            disabled={isApplyingReferral || !!usedReferralCode}
+            readOnly={!!usedReferralCode}
+            maxLength={usedReferralCode ? 6 : undefined}
+            className="flex-1 rounded-lg border border-white/20 bg-black/40 px-4 py-3 text-white placeholder-gray-500 focus:border-purple-300 focus:outline-none focus:ring-1 focus:ring-purple-300 disabled:opacity-50 read-only:opacity-70"
             aria-label="Referral code"
             aria-invalid={!!referralError}
             aria-describedby={referralError ? 'referral-error' : undefined}
           />
-          <button
-            type="submit"
-            disabled={!referralCode || isApplyingReferral}
-            className="w-full rounded-lg bg-white/10 px-4 py-3 text-base font-medium text-white transition-all hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isApplyingReferral ? 'Applying...' : 'Apply Code'}
-          </button>
-          {referralError && (
-            <p id="referral-error" className="mt-2 text-sm text-red-400" role="alert">
-              {referralError}
-            </p>
+          {usedReferralCode ? (
+            <div className="flex items-center gap-2 rounded-lg bg-white/5 px-4 py-3 min-w-32">
+              {referrerInfo?.avatarUrl && (
+                <img
+                  src={referrerInfo.avatarUrl}
+                  alt={referrerInfo.displayName}
+                  className="h-6 w-6 rounded-full object-cover border-2 border-purple-300/40"
+                />
+              )}
+              <span className="text-xs text-neutral-700">
+                by <span className="text-xs text-purple-400">{referrerInfo?.displayName || 'User'}</span>
+              </span>
+            </div>
+          ) : (
+            <button
+              type="submit"
+              disabled={!referralCode || isApplyingReferral}
+              className="rounded-lg bg-purple-500 px-6 py-3 text-base font-medium text-white transition-all hover:bg-purple-600 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isApplyingReferral ? 'Applying...' : 'Apply'}
+            </button>
           )}
-          {referralSuccess && (
-            <p className="mt-2 text-sm text-green-400" role="status">
-              {referralSuccess}
-            </p>
-          )}
-        </form>
-      )}
+        </div>
+        {referralError && (
+          <p id="referral-error" className="mt-2 text-sm text-red-400" role="alert">
+            {referralError}
+          </p>
+        )}
+        {referralSuccess && (
+          <p className="mt-2 text-sm text-green-400" role="status">
+            {referralSuccess}
+          </p>
+        )}
+      </form>
     </div>
   );
 }

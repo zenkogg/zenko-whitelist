@@ -8,8 +8,48 @@
   --color-background: #0a0a0a;
   --color-foreground: #ededed;
   --font-inter: var(--font-inter);
+  --font-sora: var(--font-sora);
 
-  /* Zenko Brand Colors */
+  /* Zenko Brand Colors - Amber/Orange Scale */
+  --color-amber-50: #FFFDFA;
+  --color-amber-100: #FFECCE;
+  --color-amber-200: #FFDCA3;
+  --color-amber-300: #FECC78;
+  --color-amber-400: #FEBE4D;
+  --color-amber-500: #FDB022;
+  --color-amber-600: #EC9C05;
+  --color-amber-700: #BD7F06;
+  --color-amber-800: #8F6207;
+  --color-amber-900: #624406;
+  --color-amber-950: #362604;
+
+  /* Zenko Brand Colors - Purple Scale */
+  --color-purple-50: #EADDFE;
+  --color-purple-100: #D7C1FC;
+  --color-purple-200: #C4A7F8;
+  --color-purple-300: #B18EF3;
+  --color-purple-400: #9E77ED;
+  --color-purple-500: #8757E7;
+  --color-purple-600: #7138E0;
+  --color-purple-700: #5E23CE;
+  --color-purple-800: #511FAC;
+  --color-purple-900: #431B8A;
+  --color-purple-950: #341669;
+
+  /* Zenko Brand Colors - Neutral/Gray Scale */
+  --color-neutral-50: #0A090B;
+  --color-neutral-100: #211E25;
+  --color-neutral-200: #38323F;
+  --color-neutral-300: #4E4659;
+  --color-neutral-400: #645A73;
+  --color-neutral-500: #7A6E8E;
+  --color-neutral-600: #9187A3;
+  --color-neutral-700: #A8A1B8;
+  --color-neutral-800: #C0BBCC;
+  --color-neutral-900: #D8D5E0;
+  --color-neutral-950: #F1F0F4;
+
+  /* Legacy Zenko Brand Colors (for backwards compatibility) */
   --color-zenko-accent: #FDB022;
   --color-zenko-purple: #7F56D9;
   --color-badge-selected: #301C5C;
@@ -20,6 +60,11 @@ body {
   color: var(--color-foreground);
   background: var(--color-background);
   font-family: var(--font-inter), Arial, Helvetica, sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-sora), var(--font-inter), Arial, Helvetica, sans-serif;
+  font-weight: 600;
 }
 
 /* Infinite scroll animation for game carousel */

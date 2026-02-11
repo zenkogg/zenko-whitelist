@@ -1,12 +1,15 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { SparklesIcon } from '@heroicons/react/24/outline';
 
 interface ReferralCodeCardProps {
   referralCode: string;
+  referralCount: number;
 }
 
-export function ReferralCodeCard({ referralCode }: ReferralCodeCardProps) {
+export function ReferralCodeCard({ referralCode, referralCount }: ReferralCodeCardProps) {
+  const earlyAccessStatus = referralCount >= 50 ? 'approved' : 'pending';
   const [copied, setCopied] = useState(false);
 
   const handleCopyReferralLink = useCallback(() => {
@@ -29,21 +32,12 @@ export function ReferralCodeCard({ referralCode }: ReferralCodeCardProps) {
   }, [referralCode]);
 
   return (
-    <div className="rounded-2xl border border-white/20 bg-white/10 p-6 backdrop-blur-xl">
+    <div className="rounded-2xl bg-white/5 p-6 backdrop-blur-md border-2 border-purple-300/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)]">
       <div className="mb-4 flex items-center gap-2">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-5 w-5 text-[#7F56D9]"
-          viewBox="0 0 20 20"
-          fill="currentColor"
-          aria-hidden="true"
-        >
-          <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
-          <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
-        </svg>
+        <SparklesIcon className="h-5 w-5 text-purple-300" />
         <h2 className="text-lg font-semibold text-white">Your referral code</h2>
       </div>
-      <p className="mb-4 text-sm text-gray-300">
+      <p className="mb-4 text-sm text-neutral-800">
         Share your unique referral link. Earn 10 referral points for every verified signup.
       </p>
 
@@ -54,7 +48,7 @@ export function ReferralCodeCard({ referralCode }: ReferralCodeCardProps) {
         </span>
         <button
           onClick={handleCopyReferralLink}
-          className="text-gray-400 transition-colors hover:text-white"
+          className="text-neutral-700 transition-colors hover:text-white"
           aria-label={copied ? 'Copied to clipboard' : 'Copy referral link'}
         >
           {copied ? <CheckIcon /> : <CopyIcon />}
@@ -64,10 +58,10 @@ export function ReferralCodeCard({ referralCode }: ReferralCodeCardProps) {
       {/* Share Button */}
       <button
         onClick={handleShareOnTwitter}
-        className="flex w-full items-center justify-center gap-3 rounded-lg bg-[#7F56D9] px-4 py-3 text-base font-medium text-white transition-all hover:bg-[#9b8afb]"
+        className="flex w-full items-center justify-center gap-2 rounded-lg bg-zenko-purple px-4 py-3 text-base font-medium text-white transition-all hover:bg-[#9b8afb]"
       >
+        <span>Share on</span>
         <TwitterIcon />
-        <span>Share on X</span>
       </button>
     </div>
   );

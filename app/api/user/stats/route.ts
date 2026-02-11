@@ -89,6 +89,28 @@ export async function POST(request: NextRequest) {
       orderBy: { createdAt: 'desc' },
     });
 
+    // Get referrer info if user used a referral code
+    let referrerInfo = null;
+    if (currentUser.usedReferralCode) {
+      const referrer = await prisma.waitlistUser.findUnique({
+        where: { referralCode: currentUser.usedReferralCode },
+        select: {
+          displayName: true,
+          oauthAvatarUrl: true,
+          customAvatarUrl: true,
+          oauthProvider: true,
+        },
+      });
+
+      if (referrer) {
+        referrerInfo = {
+          displayName: referrer.displayName,
+          avatarUrl: referrer.customAvatarUrl || referrer.oauthAvatarUrl,
+          oauthProvider: referrer.oauthProvider,
+        };
+      }
+    }
+
     return NextResponse.json({
       success: true,
       data: {
@@ -118,6 +140,7 @@ export async function POST(request: NextRequest) {
           avatarUrl: ref.customAvatarUrl || ref.oauthAvatarUrl,
           joinedAt: ref.createdAt,
         })),
+        referrerInfo,
       },
     });
   } catch (error) {
