@@ -2,7 +2,8 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import Image from 'next/image';
-import { TicketIcon } from '@heroicons/react/24/outline';
+import { BoltIcon } from '@heroicons/react/24/outline';
+import FuzzyText from '@/components/FuzzyText';
 
 interface ReferrerInfo {
   displayName: string;
@@ -53,6 +54,18 @@ export function ApplyReferralCard({
         return;
       }
 
+      // Extract code from URL if pasted
+      let codeToSubmit = referralCode.trim();
+      try {
+        const url = new URL(codeToSubmit);
+        const refParam = url.searchParams.get('ref');
+        if (refParam) {
+          codeToSubmit = refParam;
+        }
+      } catch {
+        // Not a valid URL, use as-is
+      }
+
       setIsApplyingReferral(true);
 
       try {
@@ -60,7 +73,7 @@ export function ApplyReferralCard({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            referralCode: referralCode.trim().toUpperCase(),
+            referralCode: codeToSubmit.toUpperCase(),
             userId,
           }),
         });
@@ -93,21 +106,7 @@ export function ApplyReferralCard({
   );
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const input = e.target.value;
-
-    // Try to extract referral code from URL
-    try {
-      const url = new URL(input);
-      const refParam = url.searchParams.get('ref');
-      if (refParam) {
-        setReferralCode(refParam.toUpperCase());
-        return;
-      }
-    } catch {
-      // Not a valid URL, treat as direct code
-    }
-
-    setReferralCode(input.toUpperCase());
+    setReferralCode(e.target.value);
   }, []);
 
   return (
@@ -116,68 +115,113 @@ export function ApplyReferralCard({
         ? 'border-amber-500/60 shadow-[0_0_40px_rgba(251,176,34,0.3),0_8px_32px_0_rgba(0,0,0,0.37)] animate-pulse'
         : 'border-purple-300/20'
     }`}>
-      <div className="mb-4 flex items-center gap-2">
-        <TicketIcon className="h-5 w-5 text-purple-300" />
-        <h2 className="text-lg font-semibold text-white">
-          {usedReferralCode ? 'Applied Referral Code' : 'Have a referral code?'}
-        </h2>
-      </div>
-
-      <form onSubmit={handleApplyReferral}>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={usedReferralCode || referralCode}
-            onChange={handleInputChange}
-            placeholder="Code or link"
-            disabled={isApplyingReferral || !!usedReferralCode}
-            readOnly={!!usedReferralCode}
-            maxLength={usedReferralCode ? 6 : undefined}
-            className="flex-1 rounded-lg border border-white/20 bg-black/40 px-4 py-3 text-white placeholder-gray-500 focus:border-purple-300 focus:outline-none focus:ring-1 focus:ring-purple-300 disabled:opacity-50 read-only:opacity-70"
-            aria-label="Referral code"
-            aria-invalid={!!referralError}
-            aria-describedby={referralError ? 'referral-error' : undefined}
-          />
-          {usedReferralCode ? (
-            <div className="flex items-center gap-2 rounded-lg bg-white/5 px-4 py-3 min-w-32">
-              {referrerInfo?.avatarUrl && (
-                <Image
-                  src={referrerInfo.avatarUrl}
-                  alt={referrerInfo.displayName}
-                  width={24}
-                  height={24}
-                  className="h-6 w-6 rounded-full object-cover border-2 border-purple-300/40"
-                />
-              )}
-              <span className="text-xs text-neutral-700">
-                by <span className="text-xs text-purple-400">{referrerInfo?.displayName || 'User'}</span>
-              </span>
+      {usedReferralCode ? (
+        /* Applied State - Simple layout */
+        <>
+          <div className="flex flex-col">
+            <div className='flex justify-between w-full'>
+              <div className="flex-1 flex items-center gap-2">
+                <BoltIcon className="h-5 w-5 text-purple-300" />
+                <h2 className="text-lg font-semibold text-white">Your applied code</h2>
+              </div>
+              <p className="flex-1 text-right text-lg font-semibold tracking-wide text-purple-400/60 [font-family:var(--font-sora)]">
+                {usedReferralCode}
+              </p>
             </div>
-          ) : (
-            <button
-              type="submit"
-              disabled={!referralCode || isApplyingReferral}
-              className={`rounded-lg px-6 py-3 text-base font-medium text-white transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
-                shouldHighlight
-                  ? 'bg-amber-500 hover:bg-amber-600 shadow-[0_0_20px_rgba(251,176,34,0.5)] animate-pulse'
-                  : 'bg-purple-500 hover:bg-purple-600'
-              }`}
-            >
-              {isApplyingReferral ? 'Applying...' : 'Apply'}
-            </button>
-          )}
-        </div>
-        {referralError && (
-          <p id="referral-error" className="mt-2 text-sm text-red-400" role="alert">
-            {referralError}
-          </p>
-        )}
-        {referralSuccess && (
-          <p className="mt-2 text-sm text-green-400" role="status">
-            {referralSuccess}
-          </p>
-        )}
-      </form>
+            <div className='flex w-full justify-end'>
+              <p className="opacity-50 flex items-center gap-2 text-xs text-purple-300/70">
+                by
+                <span className="flex items-center gap-1">
+                  {referrerInfo?.avatarUrl && (
+                    <Image
+                      src={referrerInfo.avatarUrl}
+                      alt={referrerInfo.displayName}
+                      width={16}
+                      height={16}
+                      className="h-4 w-4 rounded-full object-cover border-white/20 border"
+                    />
+                  )}
+                  <span>{referrerInfo?.displayName || 'User'}</span>
+                </span>
+              </p>
+            </div>
+          </div>
+        </>
+      ) : (
+        /* Not Applied State - Show input form */
+        <>
+          <div className="mb-4">
+            <div className="flex items-center gap-2 mb-1">
+              <Image
+                src="/images/icons/zenko-rp.svg"
+                alt="XP"
+                width={20}
+                height={20}
+                className="h-5 w-5"
+                style={{ filter: 'brightness(0) saturate(100%) invert(65%) sepia(85%) saturate(1574%) hue-rotate(359deg) brightness(101%) contrast(98%)' }}
+              />
+              <h2 className="text-lg font-semibold text-white">
+                Have a referral code?
+              </h2>
+              <div className="ml-auto flex items-center justify-end">
+                <FuzzyText
+                  fontSize={15}
+                  fontFamily="'Press Start 2P'"
+                  color="#FDB022"
+                  baseIntensity={0.05}
+                  fuzzRange={20}
+                  enableHover={false}
+                  glitchMode={true}
+                  glitchInterval={2800}
+                  glitchDuration={200}
+                  className='-mr-8'
+                >
+                  +10 XP
+                </FuzzyText>
+              </div>
+            </div>
+          </div>
+
+          <form onSubmit={handleApplyReferral} className="flex-1 flex flex-col">
+            <div className="relative">
+              <input
+                type="text"
+                value={referralCode}
+                onChange={handleInputChange}
+                placeholder="Use a referral code to earn 10 points"
+                disabled={isApplyingReferral}
+                className="w-full rounded-lg border border-white/20 bg-black/40 px-4 py-3 pr-24 text-white/60 placeholder-gray-600 focus:border-purple-300 focus:outline-none focus:ring-1 focus:ring-purple-300 disabled:opacity-50"
+                aria-label="Referral code"
+                aria-invalid={!!referralError}
+                aria-describedby={referralError ? 'referral-error' : undefined}
+              />
+
+              <button
+                type="submit"
+                disabled={!referralCode || isApplyingReferral}
+                className={`absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-4 py-1.5 text-sm font-medium text-white transition-all disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer ${
+                  shouldHighlight
+                    ? 'bg-amber-500 hover:bg-amber-600 shadow-[0_0_20px_rgba(251,176,34,0.5)] animate-pulse'
+                    : 'bg-purple-500 hover:bg-purple-600'
+                }`}
+              >
+                {isApplyingReferral ? 'Applying...' : 'Apply'}
+              </button>
+            </div>
+
+            {referralError && (
+              <p id="referral-error" className="text-sm text-red-400 mt-2" role="alert">
+                {referralError}
+              </p>
+            )}
+            {referralSuccess && (
+              <p className="text-sm text-green-400 mt-2" role="status">
+                {referralSuccess}
+              </p>
+            )}
+          </form>
+        </>
+      )}
     </div>
   );
 }

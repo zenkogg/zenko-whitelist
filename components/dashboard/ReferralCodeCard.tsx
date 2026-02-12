@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { SparklesIcon } from '@heroicons/react/24/outline';
-import GradientText from '@/components/GradientText';
+import Image from 'next/image';
+import ShinyText from '@/components/ShinyText';
+import FuzzyText from '@/components/FuzzyText';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface ReferralCodeCardProps {
@@ -43,8 +44,31 @@ export function ReferralCodeCard({ referralCode, referralCount }: ReferralCodeCa
   return (
     <div className="rounded-2xl bg-white/5 p-6 backdrop-blur-md border-2 border-purple-300/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] flex flex-col h-full w-full">
       <div className="mb-4 flex items-center gap-2">
-        <SparklesIcon className="h-5 w-5 text-purple-300" />
+        <Image
+          src="/images/icons/zenko-rp.svg"
+          alt="XP"
+          width={20}
+          height={20}
+          className="h-5 w-5"
+          style={{ filter: 'brightness(0) saturate(100%) invert(65%) sepia(85%) saturate(1574%) hue-rotate(359deg) brightness(101%) contrast(98%)' }}
+        />
         <h2 className="text-lg font-semibold text-white">Your referral code</h2>
+        <div className="ml-auto flex items-center justify-end">
+          <FuzzyText
+            fontSize={15}
+            fontFamily="'Press Start 2P'"
+            color="#FDB022"
+            baseIntensity={0.05}
+            fuzzRange={20}
+            enableHover={false}
+            glitchMode={true}
+            glitchInterval={2800}
+            glitchDuration={200}
+            className='-mr-8'
+          >
+            +10 XP
+          </FuzzyText>
+        </div>
       </div>
       <p className="mb-6 text-sm text-neutral-800">
         Share your unique referral code. Earn 10 referral points for every verified signup.
@@ -91,15 +115,14 @@ export function ReferralCodeCard({ referralCode, referralCount }: ReferralCodeCa
             <div className={`absolute left-0 top-0 w-full transition-transform duration-300 ease-out flex items-center h-12 ${
               shouldShowLink ? '-translate-y-full' : 'translate-y-0'
             }`}>
-              <GradientText
-                colors={['#FECC78', '#FDB022', '#EC9C05', '#FDB022']}
-                animationSpeed={6}
-                direction="diagonal"
-                yoyo={false}
-                className="text-3xl font-bold tracking-widest !ml-0 !mr-0 !justify-start !max-w-none !rounded-none !backdrop-blur-none !overflow-visible [font-family:var(--font-sora)]"
-              >
-                {referralCode}
-              </GradientText>
+              <ShinyText
+                text={referralCode}
+                speed={3}
+                color="#9E77ED"
+                shineColor="#E9D5FF"
+                direction="right"
+                className="text-3xl font-bold tracking-widest [font-family:var(--font-sora)]"
+              />
             </div>
 
             {/* Link View */}
