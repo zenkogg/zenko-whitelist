@@ -51,9 +51,16 @@ function getProviderConfig(provider: OAuthProvider): OAuthConfig {
 export function signInWithOAuth(provider: OAuthProvider): void {
   const config = getProviderConfig(provider);
 
-  // Store provider in sessionStorage for callback
+  // Store provider and referral code (if present) in sessionStorage for callback
   if (typeof window !== 'undefined') {
     sessionStorage.setItem('oauth_provider', provider);
+
+    // Preserve referral code from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const refCode = urlParams.get('ref');
+    if (refCode) {
+      sessionStorage.setItem('pending_referral_code', refCode.toUpperCase());
+    }
   }
 
   const params = new URLSearchParams({

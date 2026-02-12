@@ -33,16 +33,26 @@ export function OnboardingSidebar({ mobile = false }: OnboardingSidebarProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  // Check for user session in localStorage
+  // Check for user session in localStorage and URL params
   useEffect(() => {
+    // Check for referral code in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const refCode = urlParams.get('ref');
+    if (refCode) {
+      setReferralCode(refCode.toUpperCase());
+      // Store in sessionStorage to preserve across OAuth flow
+      sessionStorage.setItem('pending_referral_code', refCode.toUpperCase());
+    }
+
     const storedUser = localStorage.getItem('waitlist_user');
     if (storedUser) {
       const userData = JSON.parse(storedUser);
       setUser(userData);
 
-      // If user has completed games, redirect to dashboard
+      // If user has completed games, redirect to dashboard with ref if present
       if (userData.games && userData.games.length > 0) {
-        router.push('/dashboard');
+        const redirectUrl = refCode ? `/dashboard?ref=${refCode}` : '/dashboard';
+        router.push(redirectUrl);
       } else if (userData.usedReferralCode) {
         // If user already used a referral code, go to games
         setStep('games');

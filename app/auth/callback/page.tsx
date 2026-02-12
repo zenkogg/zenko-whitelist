@@ -36,11 +36,21 @@ export default function AuthCallbackPage() {
         // Store user in localStorage for client-side session
         localStorage.setItem('waitlist_user', JSON.stringify(user));
 
+        // Check for pending referral code
+        const pendingRefCode = sessionStorage.getItem('pending_referral_code');
+
         // Redirect based on whether they've completed game selection
         if (user.games && user.games.length > 0) {
-          router.push('/dashboard');
+          // If there's a pending referral code and user hasn't used one, go to dashboard with ref
+          if (pendingRefCode && !user.usedReferralCode) {
+            router.push(`/dashboard?ref=${pendingRefCode}`);
+          } else {
+            router.push('/dashboard');
+          }
         } else {
-          router.push('/?step=games');
+          // Preserve ref code in URL for onboarding flow
+          const refParam = pendingRefCode ? `?ref=${pendingRefCode}` : '';
+          router.push(`/${refParam}`);
         }
       } catch (err) {
         console.error('Callback error:', err);

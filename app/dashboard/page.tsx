@@ -39,8 +39,20 @@ export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [pendingReferralCode, setPendingReferralCode] = useState<string | null>(null);
 
   useEffect(() => {
+    // Check for referral code in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const refCode = urlParams.get('ref');
+    if (refCode) {
+      setPendingReferralCode(refCode.toUpperCase());
+      // Clear the ref param from URL after reading
+      window.history.replaceState({}, '', '/dashboard');
+      // Clear from sessionStorage
+      sessionStorage.removeItem('pending_referral_code');
+    }
+
     // Check localStorage for user
     const storedUser = localStorage.getItem('waitlist_user');
     if (!storedUser) {
@@ -165,7 +177,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Referral Code Card - Top right, spans 4 columns */}
-            <div className="lg:col-span-4">
+            <div className="lg:col-span-4 flex">
               <ReferralCodeCard
                 referralCode={userStats.referralCode}
                 referralCount={userStats.referralCount}
@@ -173,13 +185,14 @@ export default function DashboardPage() {
             </div>
 
             {/* Apply Referral Card - Below referral code, spans 4 columns */}
-            <div className="lg:col-span-4">
+            <div className="lg:col-span-4 flex">
               <ApplyReferralCard
                 userId={user.id}
                 usedReferralCode={userStats.usedReferralCode || null}
                 currentReputationPoints={userStats.reputationPoints}
                 onReferralApplied={handleReferralApplied}
                 referrerInfo={userStats.referrerInfo}
+                initialReferralCode={!userStats.usedReferralCode ? pendingReferralCode : null}
               />
             </div>
 

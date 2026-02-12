@@ -2,6 +2,8 @@
 
 import { useState, useCallback } from 'react';
 import { SparklesIcon } from '@heroicons/react/24/outline';
+import GradientText from '@/components/GradientText';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface ReferralCodeCardProps {
   referralCode: string;
@@ -11,15 +13,22 @@ interface ReferralCodeCardProps {
 export function ReferralCodeCard({ referralCode, referralCount }: ReferralCodeCardProps) {
   const earlyAccessStatus = referralCount >= 50 ? 'approved' : 'pending';
   const [copied, setCopied] = useState(false);
+  const [activeTab, setActiveTab] = useState<'code' | 'link'>('code');
+  const [isHoveringLink, setIsHoveringLink] = useState(false);
 
-  const handleCopyReferralLink = useCallback(() => {
-    if (typeof window === 'undefined') return;
-
-    const referralLink = `${window.location.origin}/?ref=${referralCode}`;
-    navigator.clipboard.writeText(referralLink);
+  const handleCopy = useCallback(() => {
+    if (activeTab === 'code') {
+      navigator.clipboard.writeText(referralCode.trim());
+    } else {
+      if (typeof window === 'undefined') return;
+      const referralLink = `${window.location.origin}/?ref=${referralCode.trim()}`;
+      navigator.clipboard.writeText(referralLink);
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  }, [referralCode]);
+  }, [activeTab, referralCode]);
+
+  const shouldShowLink = activeTab === 'link' || isHoveringLink;
 
   const handleShareOnTwitter = useCallback(() => {
     if (typeof window === 'undefined') return;
@@ -32,33 +41,95 @@ export function ReferralCodeCard({ referralCode, referralCount }: ReferralCodeCa
   }, [referralCode]);
 
   return (
-    <div className="rounded-2xl bg-white/5 p-6 backdrop-blur-md border-2 border-purple-300/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)]">
+    <div className="rounded-2xl bg-white/5 p-6 backdrop-blur-md border-2 border-purple-300/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] flex flex-col h-full w-full">
       <div className="mb-4 flex items-center gap-2">
         <SparklesIcon className="h-5 w-5 text-purple-300" />
         <h2 className="text-lg font-semibold text-white">Your referral code</h2>
       </div>
-      <p className="mb-4 text-sm text-neutral-800">
-        Share your unique referral link. Earn 10 referral points for every verified signup.
+      <p className="mb-6 text-sm text-neutral-800">
+        Share your unique referral code. Earn 10 referral points for every verified signup.
       </p>
 
-      {/* Referral Link */}
-      <div className="mb-4 flex items-center gap-2 rounded-lg border border-white/20 bg-black/40 px-4 py-3">
-        <span className="flex-1 text-sm text-white">
-          {typeof window !== 'undefined' && `${window.location.host}/r/${referralCode}`}
-        </span>
-        <button
-          onClick={handleCopyReferralLink}
-          className="text-neutral-700 transition-colors hover:text-white"
-          aria-label={copied ? 'Copied to clipboard' : 'Copy referral link'}
-        >
-          {copied ? <CheckIcon /> : <CopyIcon />}
-        </button>
+      {/* Prominent Code/Link Display with Tabs */}
+      <div className="mb-6 rounded-xl bg-black/40 p-6">
+        {/* Header with Tabs */}
+        <div className="flex items-center gap-3 mb-4">
+          {/* Code Tab */}
+          <button
+            onClick={() => setActiveTab('code')}
+            className={`text-xs font-medium uppercase tracking-wide transition-all cursor-pointer ${
+              activeTab === 'code'
+                ? 'text-white [text-shadow:0_0_4px_rgba(179,142,243,0.3)]'
+                : 'text-purple-300/30 hover:text-purple-300/60'
+            }`}
+          >
+            Your Code
+          </button>
+
+          {/* Separator */}
+          <div className="h-4 w-px bg-white/20" />
+
+          {/* Link Tab */}
+          <button
+            onClick={() => setActiveTab('link')}
+            onMouseEnter={() => setIsHoveringLink(true)}
+            onMouseLeave={() => setIsHoveringLink(false)}
+            className={`text-xs font-medium uppercase tracking-wide transition-all cursor-pointer ${
+              activeTab === 'link'
+                ? 'text-white [text-shadow:0_0_4px_rgba(179,142,243,0.3)]'
+                : 'text-purple-300/30 hover:text-purple-300/60'
+            }`}
+          >
+            Your Link
+          </button>
+        </div>
+
+        {/* Display Area with Copy Icon */}
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex-1 relative h-12 overflow-hidden">
+            {/* Code View */}
+            <div className={`absolute left-0 top-0 w-full transition-transform duration-300 ease-out flex items-center h-12 ${
+              shouldShowLink ? '-translate-y-full' : 'translate-y-0'
+            }`}>
+              <GradientText
+                colors={['#FECC78', '#FDB022', '#EC9C05', '#FDB022']}
+                animationSpeed={6}
+                direction="diagonal"
+                yoyo={false}
+                className="text-3xl font-bold tracking-widest !ml-0 !mr-0 !justify-start !max-w-none !rounded-none !backdrop-blur-none !overflow-visible [font-family:var(--font-sora)]"
+              >
+                {referralCode}
+              </GradientText>
+            </div>
+
+            {/* Link View */}
+            <div className={`absolute left-0 top-0 w-full transition-transform duration-300 ease-out flex items-center h-12 ${
+              shouldShowLink ? 'translate-y-0' : 'translate-y-full'
+            }`}>
+              <span className="text-lg font-semibold text-amber-500">
+                {typeof window !== 'undefined' && `${window.location.host}/?ref=${referralCode}`}
+              </span>
+            </div>
+          </div>
+
+          {/* Copy Button with Label */}
+          <button
+            onClick={handleCopy}
+            className="flex items-center gap-2 text-purple-300/80 transition-colors hover:text-purple-300 flex-shrink-0 cursor-pointer"
+            aria-label={copied ? "Copied!" : `Copy ${activeTab}`}
+          >
+            {copied ? <CheckIcon /> : <CopyIcon />}
+            <span className="text-sm font-medium">
+              {copied ? 'Copied!' : activeTab === 'code' ? 'Copy code' : 'Copy link'}
+            </span>
+          </button>
+        </div>
       </div>
 
       {/* Share Button */}
       <button
         onClick={handleShareOnTwitter}
-        className="flex w-full items-center justify-center gap-2 rounded-lg bg-zenko-purple px-4 py-3 text-base font-medium text-white transition-all hover:bg-[#9b8afb]"
+        className="flex w-full items-center justify-center gap-2 rounded-lg bg-zenko-purple px-4 py-3 text-base font-medium text-white transition-all hover:bg-purple-700 mt-auto cursor-pointer"
       >
         <span>Share on</span>
         <TwitterIcon />
@@ -70,7 +141,7 @@ export function ReferralCodeCard({ referralCode, referralCount }: ReferralCodeCa
 function CopyIcon() {
   return (
     <svg
-      className="h-5 w-5"
+      className="h-6 w-6"
       fill="none"
       stroke="currentColor"
       viewBox="0 0 24 24"
@@ -89,7 +160,7 @@ function CopyIcon() {
 function CheckIcon() {
   return (
     <svg
-      className="h-5 w-5 text-green-400"
+      className="h-6 w-6 text-green-400"
       fill="none"
       stroke="currentColor"
       viewBox="0 0 24 24"
@@ -100,6 +171,25 @@ function CheckIcon() {
         strokeLinejoin="round"
         strokeWidth={2}
         d="M5 13l4 4L19 7"
+      />
+    </svg>
+  );
+}
+
+function LinkIcon() {
+  return (
+    <svg
+      className="h-5 w-5"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
       />
     </svg>
   );

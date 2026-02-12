@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import Image from 'next/image';
 import { TicketIcon } from '@heroicons/react/24/outline';
 
@@ -16,6 +16,7 @@ interface ApplyReferralCardProps {
   currentReputationPoints: number;
   onReferralApplied: () => void;
   referrerInfo?: ReferrerInfo | null;
+  initialReferralCode?: string | null;
 }
 
 export function ApplyReferralCard({
@@ -24,11 +25,22 @@ export function ApplyReferralCard({
   currentReputationPoints,
   onReferralApplied,
   referrerInfo,
+  initialReferralCode,
 }: ApplyReferralCardProps) {
-  const [referralCode, setReferralCode] = useState('');
+  // Only use initialReferralCode if user hasn't already applied one
+  const [referralCode, setReferralCode] = useState(!usedReferralCode && initialReferralCode ? initialReferralCode : '');
   const [isApplyingReferral, setIsApplyingReferral] = useState(false);
   const [referralError, setReferralError] = useState('');
   const [referralSuccess, setReferralSuccess] = useState('');
+  const [shouldHighlight, setShouldHighlight] = useState(!!initialReferralCode && !usedReferralCode);
+
+  // Clear highlight after animation
+  useEffect(() => {
+    if (shouldHighlight) {
+      const timer = setTimeout(() => setShouldHighlight(false), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [shouldHighlight]);
 
   const handleApplyReferral = useCallback(
     async (e: React.FormEvent) => {
@@ -99,7 +111,11 @@ export function ApplyReferralCard({
   }, []);
 
   return (
-    <div className="rounded-2xl bg-white/5 p-6 backdrop-blur-md border-2 border-purple-300/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)]">
+    <div className={`rounded-2xl bg-white/5 p-6 backdrop-blur-md border-2 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] flex flex-col h-full w-full transition-all duration-500 ${
+      shouldHighlight
+        ? 'border-amber-500/60 shadow-[0_0_40px_rgba(251,176,34,0.3),0_8px_32px_0_rgba(0,0,0,0.37)] animate-pulse'
+        : 'border-purple-300/20'
+    }`}>
       <div className="mb-4 flex items-center gap-2">
         <TicketIcon className="h-5 w-5 text-purple-300" />
         <h2 className="text-lg font-semibold text-white">
@@ -141,7 +157,11 @@ export function ApplyReferralCard({
             <button
               type="submit"
               disabled={!referralCode || isApplyingReferral}
-              className="rounded-lg bg-purple-500 px-6 py-3 text-base font-medium text-white transition-all hover:bg-purple-600 disabled:cursor-not-allowed disabled:opacity-50"
+              className={`rounded-lg px-6 py-3 text-base font-medium text-white transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
+                shouldHighlight
+                  ? 'bg-amber-500 hover:bg-amber-600 shadow-[0_0_20px_rgba(251,176,34,0.5)] animate-pulse'
+                  : 'bg-purple-500 hover:bg-purple-600'
+              }`}
             >
               {isApplyingReferral ? 'Applying...' : 'Apply'}
             </button>
