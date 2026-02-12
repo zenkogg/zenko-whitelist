@@ -3,9 +3,9 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import Image from 'next/image';
-import { ArrowRightStartOnRectangleIcon, HashtagIcon } from '@heroicons/react/24/outline';
 import { BackgroundLayer } from '@/components/landing/BackgroundLayer';
 import { ProfileCard, ReferralCodeCard, ApplyReferralCard } from '@/components/dashboard';
+import Shuffle from '@/components/Shuffle';
 
 interface ReferrerInfo {
   displayName: string;
@@ -93,7 +93,8 @@ export default function DashboardPage() {
     if (!user) return;
 
     // Update user in state and localStorage
-    const updatedUser = { ...user, customAvatarUrl: avatarUrl };
+    // Empty string means avatar was removed, set to null
+    const updatedUser = { ...user, customAvatarUrl: avatarUrl || null };
     setUser(updatedUser);
     localStorage.setItem('waitlist_user', JSON.stringify(updatedUser));
   }, [user]);
@@ -129,34 +130,23 @@ export default function DashboardPage() {
       {/* Shared Background Layer with Preset Switcher */}
       <BackgroundLayer />
 
-      {/* Header */}
-      <header className="relative z-10">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6">
-          {/* Logo */}
-          <Image
-            src="/logo-primary.svg"
-            alt="Zenko Logo"
-            width={129}
-            height={28}
-            className="h-7 w-auto"
+      {/* Header Section */}
+      <div className="relative z-10 px-6 pt-20 pb-16">
+        <div className="mx-auto max-w-6xl text-center">
+          <Shuffle
+            text="Level up"
+            tag="h1"
+            className="text-5xl font-bold text-white mb-6"
+            style={{ fontFamily: 'var(--font-press-start)' }}
           />
-
-          {/* Logout Button */}
-          <button
-            onClick={handleLogout}
-            className="group flex items-center gap-2 rounded-lg border border-purple-300/30 px-4 py-2 transition-all hover:bg-white/5 hover:border-purple-300/50"
-            aria-label="Log out"
-          >
-            <ArrowRightStartOnRectangleIcon className="h-5 w-5 text-purple-300 transition-colors group-hover:text-purple-50" />
-            <span className="text-sm font-medium text-purple-300 transition-colors group-hover:text-purple-50">
-              Log Out
-            </span>
-          </button>
+          <p className="text-lg text-neutral-700">
+            Refer your friends for early access and rewards
+          </p>
         </div>
-      </header>
+      </div>
 
       {/* Content */}
-      <div className="relative z-10 px-6 py-12">
+      <div className="relative z-10 px-6 pb-12">
         <div className="mx-auto max-w-6xl">
           {/* Bento Grid Layout */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-6">
@@ -169,6 +159,7 @@ export default function DashboardPage() {
                 userId={user.id}
                 oauthProvider={user.oauthProvider}
                 onAvatarUpdate={handleAvatarUpdate}
+                onLogout={handleLogout}
               />
             </div>
 

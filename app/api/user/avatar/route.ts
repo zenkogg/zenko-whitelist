@@ -119,3 +119,63 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { userId } = await request.json();
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized', message: 'User ID is required' },
+        { status: 401 }
+      );
+    }
+
+    // Find user
+    const user = await prisma.waitlistUser.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Not Found', message: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    // Delete avatar from blob storage if exists
+    if (user.customAvatarUrl && user.customAvatarUrl.includes('blob.vercel-storage.com')) {
+      try {
+        console.log('Deleting avatar:', user.customAvatarUrl);
+        await del(user.customAvatarUrl);
+      } catch (error) {
+        console.error('Failed to delete avatar from blob storage:', error);
+        // Continue with database update even if blob delete fails
+      }
+    }
+
+    // Update user to remove custom avatar
+    const updatedUser = await prisma.waitlistUser.update({
+      where: { id: userId },
+      data: { customAvatarUrl: null },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Avatar removed successfully',
+      data: {
+        avatarUrl: null,
+      },
+    });
+  } catch (error: any) {
+    console.error('Avatar removal error:', error);
+    return NextResponse.json(
+      {
+        error: 'Internal Server Error',
+        message: 'Failed to remove avatar',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      },
+      { status: 500 }
+    );
+  }
+}

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Sora } from "next/font/google";
+import { Inter, Sora, Press_Start_2P } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
@@ -15,6 +15,13 @@ const sora = Sora({
   display: "swap",
   variable: "--font-sora",
   weight: "600",
+});
+
+const pressStart2P = Press_Start_2P({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-press-start",
+  weight: "400",
 });
 
 export const metadata: Metadata = {
@@ -77,7 +84,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${sora.variable}`}>
+    <html lang="en" className={`${inter.variable} ${sora.variable} ${pressStart2P.variable}`}>
       <body className="font-sans antialiased">
         {children}
         <Analytics />

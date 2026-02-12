@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import Image from 'next/image';
 import { TicketIcon } from '@heroicons/react/24/outline';
 
 interface ReferrerInfo {
@@ -124,9 +125,11 @@ export function ApplyReferralCard({
           {usedReferralCode ? (
             <div className="flex items-center gap-2 rounded-lg bg-white/5 px-4 py-3 min-w-32">
               {referrerInfo?.avatarUrl && (
-                <img
+                <Image
                   src={referrerInfo.avatarUrl}
                   alt={referrerInfo.displayName}
+                  width={24}
+                  height={24}
                   className="h-6 w-6 rounded-full object-cover border-2 border-purple-300/40"
                 />
               )}
