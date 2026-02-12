@@ -154,6 +154,7 @@ export default function DashboardPage() {
             <div className="lg:col-span-2 lg:row-span-2">
               <ProfileCard
                 displayName={user.displayName}
+                email={user.email}
                 customAvatarUrl={user.customAvatarUrl}
                 createdAt={user.createdAt || new Date().toISOString()}
                 userId={user.id}

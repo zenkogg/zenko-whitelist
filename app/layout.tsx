@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Sora, Press_Start_2P } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
 const inter = Inter({
@@ -86,8 +87,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${sora.variable} ${pressStart2P.variable}`}>
       <body className="font-sans antialiased">
-        {children}
-        <Analytics />
+        <TooltipProvider>
+          {children}
+          <Analytics />
+        </TooltipProvider>
       </body>
     </html>
   );
