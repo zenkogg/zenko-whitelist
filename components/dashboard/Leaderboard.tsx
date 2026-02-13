@@ -6,6 +6,11 @@ import CountUp from '@/components/CountUp';
 import { AnimatedItem } from '@/components/AnimatedList';
 import { MagnifyingGlassIcon, ArrowPathIcon } from '@heroicons/react/20/solid';
 
+// Leaderboard Configuration
+const INITIAL_LOAD_COUNT = 7; // Number of users to load initially
+const LOAD_MORE_INCREMENT = 10; // Number of users to add per "load more" click
+const VISIBLE_ROWS = 5; // Approximate number of rows visible in viewport (controlled by max-h-[420px])
+
 interface LeaderboardEntry {
   rank: number;
   displayName: string;
@@ -25,10 +30,10 @@ export function Leaderboard({ userId, totalUsers = 0 }: LeaderboardProps) {
   const [currentUserEntry, setCurrentUserEntry] = useState<LeaderboardEntry | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [currentLimit, setCurrentLimit] = useState(7);
+  const [currentLimit, setCurrentLimit] = useState(INITIAL_LOAD_COUNT);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const fetchLeaderboard = useCallback(async (limit: number = 7) => {
+  const fetchLeaderboard = useCallback(async (limit: number = INITIAL_LOAD_COUNT) => {
     try {
       const response = await fetch('/api/leaderboard', {
         method: 'POST',
@@ -62,7 +67,7 @@ export function Leaderboard({ userId, totalUsers = 0 }: LeaderboardProps) {
     // Determine how many users to load
     const targetLimit = currentUserEntry
       ? currentUserEntry.rank // Load up to current user if they're outside the list
-      : Math.min(currentLimit + 10, totalUsers); // Otherwise load next 10 or remaining
+      : Math.min(currentLimit + LOAD_MORE_INCREMENT, totalUsers); // Otherwise load next batch or remaining
 
     try {
       const response = await fetch('/api/leaderboard', {
