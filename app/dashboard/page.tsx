@@ -233,10 +233,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Leaderboard */}
-            <Leaderboard
-              userId={user.id}
-              currentUserRank={userStats.estimatedRank}
-            />
+            <Leaderboard userId={user.id} />
 
             {/* Info Card - spans full width */}
             <div className="lg:col-span-6 rounded-2xl bg-white/5 p-6 backdrop-blur-md border-2 border-purple-300/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)]">
