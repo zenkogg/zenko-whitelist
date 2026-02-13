@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import CountUp from '@/components/CountUp';
 import { AnimatedItem } from '@/components/AnimatedList';
-import { MagnifyingGlassIcon, ArrowPathIcon } from '@heroicons/react/20/solid';
+import { MagnifyingGlassIcon, PlusIcon } from '@heroicons/react/20/solid';
 
 // Leaderboard Configuration
 const INITIAL_LOAD_COUNT = 7; // Number of users to load initially
@@ -257,14 +257,20 @@ export function Leaderboard({ userId, totalUsers = 0 }: LeaderboardProps) {
 
       {/* Load More Button - show if there are more users to load */}
       {leaderboard.length < totalUsers && (
-        <div className="mt-6 flex justify-center">
-          <button
-            onClick={loadMoreUsers}
-            disabled={isLoadingMore}
-            className="cursor-pointer group flex items-center justify-center w-10 h-10 rounded-full bg-white/5 hover:bg-purple-500/10 border border-purple-300/20 hover:border-purple-300/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ArrowPathIcon className={`h-4 w-4 text-purple-300/70 group-hover:text-purple-300 transition-colors ${isLoadingMore ? 'animate-spin' : ''}`} />
-          </button>
+        <div className="mt-4 flex items-center">
+          <div aria-hidden="true" className="w-full border-t border-white/5" />
+          <div className="relative flex justify-center">
+            <button
+              type="button"
+              onClick={loadMoreUsers}
+              disabled={isLoadingMore}
+              className="cursor-pointer inline-flex items-center gap-x-1.5 rounded-full bg-white/0 px-3 py-1.5 text-sm font-medium whitespace-nowrap text-neutral-700/80 border border-white/5 hover:bg-white/5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <PlusIcon aria-hidden="true" className="-mr-0.5 -ml-1 size-5 text-neutral-700" />
+              Load more
+            </button>
+          </div>
+          <div aria-hidden="true" className="w-full border-t border-white/5" />
         </div>
       )}
 

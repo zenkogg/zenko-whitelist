@@ -7,7 +7,7 @@ export function FAQ() {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="lg:col-span-6 rounded-2xl bg-white/5 backdrop-blur-md border-2 border-purple-300/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] overflow-hidden">
+    <div className="my-8 lg:col-span-6 rounded-2xl bg-white/5 backdrop-blur-md border-2 border-purple-300/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] overflow-hidden">
       {/* Accordion Header */}
       <button
         onClick={() => setIsOpen(!isOpen)}

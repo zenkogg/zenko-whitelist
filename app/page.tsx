@@ -4,6 +4,7 @@ import { BackgroundLayer } from '@/components/landing/BackgroundLayer';
 import { HeroColumn } from '@/components/landing/HeroColumn';
 import { OnboardingSidebar } from '@/components/landing/OnboardingSidebar';
 import { MobileLayout } from '@/components/landing/MobileLayout';
+import { Footer } from '@/components/Footer';
 
 export default function Home() {
   // OnboardingSidebar handles its own session management
@@ -32,6 +33,9 @@ export default function Home() {
 
       {/* Mobile Layout */}
       <MobileLayout />
+
+      {/* Footer */}
+      <Footer />
     </main>
   );
 }
