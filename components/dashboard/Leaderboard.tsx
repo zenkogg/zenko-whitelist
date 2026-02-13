@@ -54,10 +54,38 @@ export function Leaderboard({ userId }: LeaderboardProps) {
     fetchLeaderboard(currentLimit);
   }, [fetchLeaderboard, currentLimit]);
 
-  const loadMoreUsers = () => {
+  const loadMoreUsers = async () => {
+    if (!currentUserEntry) return;
+
     setIsLoadingMore(true);
-    const newLimit = currentLimit + 20;
-    setCurrentLimit(newLimit);
+    const previousLength = leaderboard.length;
+
+    // Load all users up to current user's rank
+    try {
+      const response = await fetch('/api/leaderboard', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, limit: currentUserEntry.rank }),
+      });
+
+      if (!response.ok) throw new Error('Failed to fetch leaderboard');
+
+      const result = await response.json();
+      if (result.success && result.data) {
+        setLeaderboard(result.data.leaderboard);
+        setCurrentUserEntry(result.data.currentUserEntry || null);
+        setCurrentLimit(currentUserEntry.rank);
+
+        // Scroll to first newly loaded item after render
+        setTimeout(() => {
+          scrollToPosition(previousLength);
+        }, 100);
+      }
+    } catch (error) {
+      console.error('Failed to load more users:', error);
+    } finally {
+      setIsLoadingMore(false);
+    }
   };
 
   const scrollToUserPosition = async () => {
@@ -219,16 +247,18 @@ export function Leaderboard({ userId }: LeaderboardProps) {
         ))}
       </div>
 
-      {/* Load More Button */}
-      <div className="mt-6 flex justify-center">
-        <button
-          onClick={loadMoreUsers}
-          disabled={isLoadingMore}
-          className="group flex items-center justify-center w-10 h-10 rounded-full bg-white/5 hover:bg-purple-500/10 border border-purple-300/20 hover:border-purple-300/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <ArrowPathIcon className={`h-4 w-4 text-purple-300/70 group-hover:text-purple-300 transition-colors ${isLoadingMore ? 'animate-spin' : ''}`} />
-        </button>
-      </div>
+      {/* Load More Button - only show if there are more users to load */}
+      {currentUserEntry && (
+        <div className="mt-6 flex justify-center">
+          <button
+            onClick={loadMoreUsers}
+            disabled={isLoadingMore}
+            className="group flex items-center justify-center w-10 h-10 rounded-full bg-white/5 hover:bg-purple-500/10 border border-purple-300/20 hover:border-purple-300/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <ArrowPathIcon className={`h-4 w-4 text-purple-300/70 group-hover:text-purple-300 transition-colors ${isLoadingMore ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
+      )}
 
       {/* Current User Row - if not in top 20 */}
       {currentUserEntry && (
