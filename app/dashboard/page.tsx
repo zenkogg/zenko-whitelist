@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from 'react';
 import Image from 'next/image';
 import { ArrowRightOnRectangleIcon } from '@heroicons/react/20/solid';
 import { BackgroundLayer } from '@/components/landing/BackgroundLayer';
-import { ProfileCard, ReferralCodeCard, ApplyReferralCard } from '@/components/dashboard';
+import { ProfileCard, ReferralCodeCard, ApplyReferralCard, AvatarGroup, ReferralProgress, Leaderboard } from '@/components/dashboard';
 import Shuffle from '@/components/Shuffle';
 
 interface ReferrerInfo {
@@ -31,6 +31,8 @@ interface UserStats {
   referrerInfo?: ReferrerInfo | null;
   registrationOrder?: number;
   referrals?: Referral[];
+  estimatedRank?: number;
+  totalPending?: number;
 }
 
 interface User {
@@ -104,6 +106,8 @@ export default function DashboardPage() {
           referrerInfo: result.data.referrerInfo || null,
           registrationOrder: result.data.user.registrationOrder,
           referrals: result.data.referrals || [],
+          estimatedRank: result.data.stats.estimatedRank,
+          totalPending: result.data.stats.totalPending,
         });
       }
     } catch (error) {
@@ -146,9 +150,6 @@ export default function DashboardPage() {
     return null;
   }
 
-  const oauthProvider = user.oauthProvider || 'google';
-  const progress = Math.min((userStats.referralCount / 50) * 100, 100);
-
   return (
     <main className="relative min-h-screen w-full overflow-x-hidden bg-black">
       {/* Shared Background Layer with Preset Switcher */}
@@ -173,9 +174,9 @@ export default function DashboardPage() {
       <div className="relative z-10 px-6 pb-12">
         <div className="mx-auto max-w-6xl">
           {/* Bento Grid Layout */}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-6">
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-6">
             {/* Profile Card - Left column, spans 2 columns and 2 rows */}
-            <div className="lg:col-span-2 lg:row-span-2 flex flex-col gap-6">
+            <div className="lg:col-span-2 lg:row-span-2 flex flex-col gap-8">
               <ProfileCard
                 displayName={user.displayName}
                 email={user.email}
@@ -218,98 +219,24 @@ export default function DashboardPage() {
               />
             </div>
 
-            {/* Referral Progress + Stats Combined - Full width row */}
-            <div className="lg:col-span-6 rounded-2xl bg-white/5 p-6 backdrop-blur-md border-2 border-purple-300/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)]">
-              <h2 className="text-xl font-semibold text-white mb-2">Referral progress</h2>
-              <div className="flex items-center justify-between gap-4 mb-4">
-                <p className="text-sm text-neutral-800">
-                  Refer 50 friends to get priority early access and bonus reputation points.
-                </p>
+            {/* Referral Progress */}
+            <ReferralProgress
+              referralCount={userStats.referralCount}
+              reputationPoints={userStats.reputationPoints}
+            />
 
-                {/* Avatar Group */}
-                {userStats.referrals && userStats.referrals.length > 0 && (
-                  <div className="flex items-center gap-3">
-                    <div className="flex -space-x-2">
-                      {userStats.referrals.slice(0, 4).map((referral, index) => (
-                        <div
-                          key={referral.id}
-                          className="relative h-8 w-8 rounded-full bg-white/10 ring-2 ring-purple-300/50"
-                          style={{ zIndex: userStats.referrals!.length - index }}
-                        >
-                          {referral.avatarUrl ? (
-                            <Image
-                              src={referral.avatarUrl}
-                              alt={referral.displayName}
-                              fill
-                              className="rounded-full object-cover"
-                            />
-                          ) : (
-                            <div className="h-full w-full rounded-full bg-purple-500/20" />
-                          )}
-                        </div>
-                      ))}
-                      {userStats.referrals.length > 4 && (
-                        <div
-                          className="relative flex h-8 w-8 items-center justify-center rounded-full bg-white/10 ring-2 ring-purple-300/50 text-xs text-purple-300"
-                          style={{ zIndex: 0 }}
-                        >
-                          +{userStats.referrals.length - 4}
-                        </div>
-                      )}
-                    </div>
-                    <span className="text-sm font-medium text-purple-300/60 whitespace-nowrap">
-                      {userStats.referralCount.toLocaleString()} shared
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex items-center justify-between text-sm mb-2">
-                <span className="text-neutral-700">
-                  <span className="text-amber-500 font-semibold">{userStats.referralCount}/50</span> referrals
-                </span>
-                <span className="text-neutral-700/60 font-medium">
-                  {50 - userStats.referralCount} more to go
-                </span>
-              </div>
-              <div className="h-3 w-full overflow-hidden rounded-full bg-white/20 mb-6">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-amber-500 to-amber-500/80 transition-all duration-500"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-
-              {/* Stats Badges */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex items-center justify-between rounded-lg bg-white/5 px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <div className={`h-2 w-2 rounded-full ${
-                      userStats.referralCount >= 50 ? 'bg-purple-300' : 'bg-amber-500'
-                    }`} />
-                    <span className="text-sm text-neutral-700">Early Access</span>
-                  </div>
-                  <div className={`text-lg font-bold ${
-                    userStats.referralCount >= 50 ? 'text-purple-300' : 'text-amber-500'
-                  }`}>
-                    {userStats.referralCount >= 50 ? 'Access Granted' : 'On Waitlist'}
-                  </div>
-                </div>
-                <div className="flex items-center justify-between rounded-lg bg-white/5 px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <Image
-                      src="/images/icons/zenko-rp.svg"
-                      alt="Reputation"
-                      width={20}
-                      height={20}
-                      className="h-5 w-5"
-                      style={{ filter: 'brightness(0) saturate(100%) invert(65%) sepia(85%) saturate(1574%) hue-rotate(359deg) brightness(101%) contrast(98%)' }}
-                    />
-                    <span className="text-sm text-neutral-700">Reputation Points</span>
-                  </div>
-                  <div className="text-2xl font-bold text-amber-500">{userStats.reputationPoints} XP</div>
-                </div>
-              </div>
+            {/* Avatar Group Badge */}
+            <div className="lg:col-span-6 flex justify-center">
+              <AvatarGroup
+                totalWaitlistUsers={userStats.totalPending || 0}
+              />
             </div>
+
+            {/* Leaderboard */}
+            <Leaderboard
+              userId={user.id}
+              currentUserRank={userStats.estimatedRank}
+            />
 
             {/* Info Card - spans full width */}
             <div className="lg:col-span-6 rounded-2xl bg-white/5 p-6 backdrop-blur-md border-2 border-purple-300/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)]">
