@@ -25,10 +25,10 @@ export function Leaderboard({ userId, totalUsers = 0 }: LeaderboardProps) {
   const [currentUserEntry, setCurrentUserEntry] = useState<LeaderboardEntry | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [currentLimit, setCurrentLimit] = useState(20);
+  const [currentLimit, setCurrentLimit] = useState(7);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const fetchLeaderboard = useCallback(async (limit: number = 20) => {
+  const fetchLeaderboard = useCallback(async (limit: number = 7) => {
     try {
       const response = await fetch('/api/leaderboard', {
         method: 'POST',
@@ -62,7 +62,7 @@ export function Leaderboard({ userId, totalUsers = 0 }: LeaderboardProps) {
     // Determine how many users to load
     const targetLimit = currentUserEntry
       ? currentUserEntry.rank // Load up to current user if they're outside the list
-      : Math.min(currentLimit + 50, totalUsers); // Otherwise load next 50 or remaining
+      : Math.min(currentLimit + 10, totalUsers); // Otherwise load next 10 or remaining
 
     try {
       const response = await fetch('/api/leaderboard', {
