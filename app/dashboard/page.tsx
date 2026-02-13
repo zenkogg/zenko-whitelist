@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from 'react';
 import Image from 'next/image';
 import { ArrowRightOnRectangleIcon } from '@heroicons/react/20/solid';
 import { BackgroundLayer } from '@/components/landing/BackgroundLayer';
-import { ProfileCard, ReferralCodeCard, ApplyReferralCard, AvatarGroup, ReferralProgress, Leaderboard } from '@/components/dashboard';
+import { ProfileCard, ReferralCodeCard, ApplyReferralCard, AvatarGroup, ReferralProgress, Leaderboard, FAQ } from '@/components/dashboard';
 import Shuffle from '@/components/Shuffle';
 
 interface ReferrerInfo {
@@ -235,33 +235,8 @@ export default function DashboardPage() {
             {/* Leaderboard */}
             <Leaderboard userId={user.id} totalUsers={userStats.totalPending} />
 
-            {/* Info Card - spans full width */}
-            <div className="lg:col-span-6 rounded-2xl bg-white/5 p-6 backdrop-blur-md border-2 border-purple-300/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)]">
-              <div className="flex gap-4">
-                <div className="mt-1">
-                  <svg
-                    className="h-5 w-5 text-purple-300"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="mb-2 font-semibold text-white">How to Earn Reputation</h3>
-                  <ul className="space-y-1 text-sm text-neutral-800">
-                    <li>• Share your referral code with friends (+10 points per referral)</li>
-                    <li>• Connect your X/Twitter account (+5 points)</li>
-                    <li>• Share on X/Twitter (+5 points per share)</li>
-                    <li>• Reach 50 referrals for priority beta access</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
+            {/* FAQ */}
+            <FAQ />
           </div>
         </div>
       </div>
