@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import Image from 'next/image';
+import { ArrowRightOnRectangleIcon } from '@heroicons/react/20/solid';
 import { BackgroundLayer } from '@/components/landing/BackgroundLayer';
 import { ProfileCard, ReferralCodeCard, ApplyReferralCard } from '@/components/dashboard';
 import Shuffle from '@/components/Shuffle';
@@ -13,6 +14,13 @@ interface ReferrerInfo {
   oauthProvider: string;
 }
 
+interface Referral {
+  id: string;
+  displayName: string;
+  avatarUrl: string | null;
+  joinedAt: string;
+}
+
 interface UserStats {
   referralCode: string;
   referralCount: number;
@@ -21,6 +29,8 @@ interface UserStats {
   twitterHandle?: string;
   usedReferralCode?: string | null;
   referrerInfo?: ReferrerInfo | null;
+  registrationOrder?: number;
+  referrals?: Referral[];
 }
 
 interface User {
@@ -92,6 +102,8 @@ export default function DashboardPage() {
           twitterHandle: result.data.user.twitterHandle,
           usedReferralCode: result.data.user.usedReferralCode,
           referrerInfo: result.data.referrerInfo || null,
+          registrationOrder: result.data.user.registrationOrder,
+          referrals: result.data.referrals || [],
         });
       }
     } catch (error) {
@@ -163,7 +175,7 @@ export default function DashboardPage() {
           {/* Bento Grid Layout */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-6">
             {/* Profile Card - Left column, spans 2 columns and 2 rows */}
-            <div className="lg:col-span-2 lg:row-span-2">
+            <div className="lg:col-span-2 lg:row-span-2 flex flex-col gap-6">
               <ProfileCard
                 displayName={user.displayName}
                 email={user.email}
@@ -171,9 +183,19 @@ export default function DashboardPage() {
                 createdAt={user.createdAt || new Date().toISOString()}
                 userId={user.id}
                 oauthProvider={user.oauthProvider}
+                registrationOrder={userStats?.registrationOrder}
                 onAvatarUpdate={handleAvatarUpdate}
                 onLogout={handleLogout}
               />
+
+              {/* Disconnect Button */}
+              <button
+                onClick={handleLogout}
+                className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-red-400/70 transition-all hover:text-red-400 cursor-pointer"
+              >
+                <ArrowRightOnRectangleIcon className="h-4 w-4" />
+                <span>Disconnect</span>
+              </button>
             </div>
 
             {/* Referral Code Card - Top right, spans 4 columns */}
@@ -198,17 +220,55 @@ export default function DashboardPage() {
 
             {/* Referral Progress + Stats Combined - Full width row */}
             <div className="lg:col-span-6 rounded-2xl bg-white/5 p-6 backdrop-blur-md border-2 border-purple-300/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)]">
-              <h2 className="text-xl font-semibold text-white mb-2">Referrals</h2>
-              <p className="text-sm text-neutral-800 mb-1">
-                Perform 50 referrals, earn up to 500 points.
-              </p>
-              <p className="text-sm text-neutral-800 mb-4">
-                Earn reputation points to boost your profile when Zenko goes live!
-              </p>
+              <h2 className="text-xl font-semibold text-white mb-2">Referral progress</h2>
+              <div className="flex items-center justify-between gap-4 mb-4">
+                <p className="text-sm text-neutral-800">
+                  Refer 50 friends to get priority early access and bonus reputation points.
+                </p>
+
+                {/* Avatar Group */}
+                {userStats.referrals && userStats.referrals.length > 0 && (
+                  <div className="flex items-center gap-3">
+                    <div className="flex -space-x-2">
+                      {userStats.referrals.slice(0, 4).map((referral, index) => (
+                        <div
+                          key={referral.id}
+                          className="relative h-8 w-8 rounded-full bg-white/10 ring-2 ring-purple-300/50"
+                          style={{ zIndex: userStats.referrals!.length - index }}
+                        >
+                          {referral.avatarUrl ? (
+                            <Image
+                              src={referral.avatarUrl}
+                              alt={referral.displayName}
+                              fill
+                              className="rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="h-full w-full rounded-full bg-purple-500/20" />
+                          )}
+                        </div>
+                      ))}
+                      {userStats.referrals.length > 4 && (
+                        <div
+                          className="relative flex h-8 w-8 items-center justify-center rounded-full bg-white/10 ring-2 ring-purple-300/50 text-xs text-purple-300"
+                          style={{ zIndex: 0 }}
+                        >
+                          +{userStats.referrals.length - 4}
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-sm font-medium text-purple-300/60 whitespace-nowrap">
+                      {userStats.referralCount.toLocaleString()} shared
+                    </span>
+                  </div>
+                )}
+              </div>
 
               <div className="flex items-center justify-between text-sm mb-2">
-                <span className="text-neutral-700">{userStats.referralCount}/50 referrals</span>
-                <span className="text-amber-500 font-medium">
+                <span className="text-neutral-700">
+                  <span className="text-amber-500 font-semibold">{userStats.referralCount}/50</span> referrals
+                </span>
+                <span className="text-neutral-700/60 font-medium">
                   {50 - userStats.referralCount} more to go
                 </span>
               </div>

@@ -129,7 +129,7 @@ export function ReferralCodeCard({ referralCode, referralCount }: ReferralCodeCa
             <div className={`absolute left-0 top-0 w-full transition-transform duration-300 ease-out flex items-center h-12 ${
               shouldShowLink ? 'translate-y-0' : 'translate-y-full'
             }`}>
-              <span className="text-lg font-semibold text-amber-500">
+              <span className="text-lg font-semibold text-purple-400">
                 {typeof window !== 'undefined' && `${window.location.host}/?ref=${referralCode}`}
               </span>
             </div>
@@ -152,7 +152,7 @@ export function ReferralCodeCard({ referralCode, referralCount }: ReferralCodeCa
       {/* Share Button */}
       <button
         onClick={handleShareOnTwitter}
-        className="flex w-full items-center justify-center gap-2 rounded-lg bg-zenko-purple px-4 py-3 text-base font-medium text-white transition-all hover:bg-purple-700 mt-auto cursor-pointer"
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-zenko-purple px-4 py-3 text-sm font-medium text-white transition-all hover:bg-purple-700 mt-auto cursor-pointer"
       >
         <span>Share on</span>
         <TwitterIcon />

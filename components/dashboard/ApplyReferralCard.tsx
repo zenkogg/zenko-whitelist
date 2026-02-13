@@ -116,34 +116,48 @@ export function ApplyReferralCard({
         : 'border-purple-300/20'
     }`}>
       {usedReferralCode ? (
-        /* Applied State - Simple layout */
+        /* Applied State - Matches ProfileCard style */
         <>
-          <div className="flex flex-col">
-            <div className='flex justify-between w-full'>
-              <div className="flex-1 flex items-center gap-2">
-                <BoltIcon className="h-5 w-5 text-purple-300" />
-                <h2 className="text-lg font-semibold text-white">Your applied code</h2>
-              </div>
-              <p className="flex-1 text-right text-lg font-semibold tracking-wide text-purple-400/60 [font-family:var(--font-sora)]">
-                {usedReferralCode}
-              </p>
-            </div>
-            <div className='flex w-full justify-end'>
-              <p className="opacity-50 flex items-center gap-2 text-xs text-purple-300/70">
-                by
-                <span className="flex items-center gap-1">
-                  {referrerInfo?.avatarUrl && (
-                    <Image
-                      src={referrerInfo.avatarUrl}
-                      alt={referrerInfo.displayName}
-                      width={16}
-                      height={16}
-                      className="h-4 w-4 rounded-full object-cover border-white/20 border"
-                    />
-                  )}
-                  <span>{referrerInfo?.displayName || 'User'}</span>
+          <div className="mb-4 flex items-center gap-2">
+            <Image
+              src="/images/icons/zenko-rp.svg"
+              alt="XP"
+              width={20}
+              height={20}
+              className="h-5 w-5"
+              style={{ filter: 'brightness(0) saturate(100%) invert(65%) sepia(85%) saturate(1574%) hue-rotate(359deg) brightness(101%) contrast(98%)' }}
+            />
+            <h2 className="text-lg font-semibold text-white">Applied code</h2>
+          </div>
+
+          <div className="w-full rounded-xl border-2 border-dashed border-purple-300/20 px-4 py-3">
+            <div className="flex items-center justify-between gap-3">
+              {/* Left: Applied Code */}
+              <div className="flex items-center gap-2">
+                <span className="text-xl font-bold tracking-widest text-purple-400/50" style={{ fontFamily: 'var(--font-sora)' }}>
+                  {usedReferralCode}
                 </span>
-              </p>
+              </div>
+
+              {/* Right: Referrer Info */}
+              <div className="flex items-center gap-1.5">
+                {referrerInfo?.avatarUrl && (
+                  <Image
+                    src={referrerInfo.avatarUrl}
+                    alt={referrerInfo.displayName}
+                    width={16}
+                    height={16}
+                    className="h-4 w-4 rounded-full object-cover border border-white/10 opacity-50"
+                  />
+                )}
+                <p className="text-sm text-neutral-700/70">
+                  Referred by{' '}
+                  <span className="text-purple-300/40">
+                    {referrerInfo?.oauthProvider === 'twitch' ? '@' : ''}
+                    {referrerInfo?.displayName || 'a friend'}
+                  </span>
+                </p>
+              </div>
             </div>
           </div>
         </>
@@ -182,15 +196,19 @@ export function ApplyReferralCard({
             </div>
           </div>
 
+          <p className="mb-6 text-sm text-neutral-800">
+            Use a referral code and earn 10 points
+          </p>
+
           <form onSubmit={handleApplyReferral} className="flex-1 flex flex-col">
             <div className="relative">
               <input
                 type="text"
                 value={referralCode}
                 onChange={handleInputChange}
-                placeholder="Use a referral code to earn 10 points"
+                placeholder="Enter code or link"
                 disabled={isApplyingReferral}
-                className="w-full rounded-lg border border-white/20 bg-black/40 px-4 py-3 pr-24 text-white/60 placeholder-gray-600 focus:border-purple-300 focus:outline-none focus:ring-1 focus:ring-purple-300 disabled:opacity-50"
+                className="w-full rounded-xl bg-black/40 px-4 py-3 pr-28 text-white/60 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-300 disabled:opacity-50"
                 aria-label="Referral code"
                 aria-invalid={!!referralError}
                 aria-describedby={referralError ? 'referral-error' : undefined}
@@ -199,7 +217,7 @@ export function ApplyReferralCard({
               <button
                 type="submit"
                 disabled={!referralCode || isApplyingReferral}
-                className={`absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-4 py-1.5 text-sm font-medium text-white transition-all disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer ${
+                className={`absolute right-1.5 top-1/2 -translate-y-1/2 rounded-lg px-6 py-1.5 text-sm font-medium text-white transition-all disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer ${
                   shouldHighlight
                     ? 'bg-amber-500 hover:bg-amber-600 shadow-[0_0_20px_rgba(251,176,34,0.5)] animate-pulse'
                     : 'bg-purple-500 hover:bg-purple-600'

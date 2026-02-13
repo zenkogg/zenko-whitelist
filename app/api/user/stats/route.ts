@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
 
     // Calculate rank using weighted score formula from WAITLIST.md
     // Score = 40% registration order + 60% reputation points
-    const rankResult = await prisma.$queryRaw<Array<{ rank: bigint }>>`
+    const rankResult = await prisma.$queryRaw<Array<{ rank: bigint; registration_order: bigint }>>`
       WITH user_order AS (
         SELECT
           id,
@@ -56,6 +56,7 @@ export async function POST(request: NextRequest) {
       ranked_users AS (
         SELECT
           id,
+          registration_order,
           ROW_NUMBER() OVER (
             ORDER BY
               (1.0 - (registration_order / total_users::float)) * 0.4 +
@@ -64,12 +65,13 @@ export async function POST(request: NextRequest) {
           ) as rank
         FROM user_order
       )
-      SELECT rank::int as rank
+      SELECT rank::int as rank, registration_order::int as registration_order
       FROM ranked_users
       WHERE id::text = ${currentUser.id};
     `;
 
     const estimatedRank = rankResult.length > 0 ? Number(rankResult[0].rank) : null;
+    const registrationOrder = rankResult.length > 0 ? Number(rankResult[0].registration_order) : null;
 
     // Get total pending users count
     const totalPending = await prisma.waitlistUser.count({
@@ -124,6 +126,7 @@ export async function POST(request: NextRequest) {
           twitterHandle: currentUser.twitterHandle,
           status: currentUser.status,
           createdAt: currentUser.createdAt,
+          registrationOrder,
         },
         stats: {
           referralCount: currentUser.referralCount,
