@@ -160,7 +160,7 @@ export default function DashboardPage() {
           <Shuffle
             text="Level up"
             tag="h1"
-            className="text-5xl font-bold text-white mb-6"
+            className="text-5xl font-bold text-amber-500 mb-6"
             style={{ fontFamily: 'var(--font-press-start)', wordSpacing: '-0.5em' }}
           />
           <p className="text-base text-neutral-700">
