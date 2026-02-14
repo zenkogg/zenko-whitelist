@@ -138,16 +138,15 @@ export default function DashboardPage() {
     router.push('/');
   };
 
-  if (isLoading || !user) {
+  if (isLoading || !user || !userStats) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-black">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-600 border-t-transparent" />
-      </div>
+      <main className="relative min-h-screen w-full overflow-x-hidden bg-black">
+        <BackgroundLayer />
+        <div className="relative z-10 flex min-h-screen items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-600 border-t-transparent" />
+        </div>
+      </main>
     );
-  }
-
-  if (!userStats) {
-    return null;
   }
 
   return (
@@ -156,13 +155,13 @@ export default function DashboardPage() {
       <BackgroundLayer />
 
       {/* Header Section */}
-      <div className="relative z-10 px-6 pt-20 pb-16">
+      <div className="relative z-10 px-6 pt-12 pb-8">
         <div className="mx-auto max-w-6xl text-center">
           <Shuffle
             text="Level up"
             tag="h1"
             className="text-5xl font-bold text-white mb-6"
-            style={{ fontFamily: 'var(--font-press-start)' }}
+            style={{ fontFamily: 'var(--font-press-start)', wordSpacing: '-0.5em' }}
           />
           <p className="text-base text-neutral-700">
             Refer your friends for early access and rewards

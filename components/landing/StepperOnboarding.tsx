@@ -36,7 +36,8 @@ interface WaitlistStats {
 export function StepperOnboarding() {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const [currentStepIndex, setCurrentStepIndex] = useState(1); // Stepper uses 1-based indexing (2 steps total)
   const [user, setUser] = useState<any>(null);
   const [selectedGames, setSelectedGames] = useState<string[]>([]);
@@ -92,11 +93,11 @@ export function StepperOnboarding() {
     } else {
       setIsAuthenticated(false);
     }
-    setIsLoading(false);
+    setIsCheckingSession(false);
   }, [router]);
 
   const handleOAuthSignIn = (provider: 'google' | 'twitch') => {
-    setIsLoading(true);
+    setIsRedirecting(true);
     signInWithOAuth(provider);
   };
 
@@ -224,8 +225,17 @@ export function StepperOnboarding() {
     }
   };
 
-  // Show loading state while OAuth is in progress
-  if (isLoading) {
+  // Show minimal spinner while checking localStorage session
+  if (isCheckingSession) {
+    return (
+      <div className="flex items-center justify-center w-full max-w-md mx-auto py-12">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-600 border-t-transparent" />
+      </div>
+    );
+  }
+
+  // Show connecting state while OAuth redirect is in progress
+  if (isRedirecting) {
     return (
       <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-md mx-auto py-12">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-600 border-t-transparent" />
@@ -233,7 +243,7 @@ export function StepperOnboarding() {
           <h2 className="mb-2 text-2xl font-semibold text-zenko-light">
             Connecting...
           </h2>
-          <p className="text-gray-400">
+          <p className="text-neutral-700">
             Please wait while we redirect you
           </p>
         </div>
@@ -471,7 +481,7 @@ export function StepperOnboarding() {
               )}
               <button
                 type={user?.usedReferralCode ? 'button' : 'submit'}
-
+                onClick={user?.usedReferralCode ? handleSkipReferral : undefined}
                 disabled={isSubmitting || (!user?.usedReferralCode && !referralCode.trim())}
                 className={`${user?.usedReferralCode ? 'w-full' : 'flex-1'} rounded-lg px-4 py-3 text-sm font-medium text-white transition-all disabled:cursor-not-allowed disabled:opacity-50 bg-purple-500 hover:bg-purple-600 border-2 border-purple-500 cursor-pointer`}
               >

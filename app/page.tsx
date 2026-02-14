@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { BackgroundLayer } from '@/components/landing/BackgroundLayer';
 import { GameLogoLoop } from '@/components/landing/GameLogoLoop';
 import { CenteredOnboardingCard } from '@/components/landing/CenteredOnboardingCard';
@@ -8,6 +10,35 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 
 export default function Home() {
+  const router = useRouter();
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('waitlist_user');
+    if (storedUser) {
+      const userData = JSON.parse(storedUser);
+      if (userData.games && userData.games.length > 0) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const refCode = urlParams.get('ref');
+        const redirectUrl = refCode ? `/dashboard?ref=${refCode}` : '/dashboard';
+        router.push(redirectUrl);
+        return;
+      }
+    }
+    setIsCheckingSession(false);
+  }, [router]);
+
+  if (isCheckingSession) {
+    return (
+      <main className="relative min-h-screen w-full overflow-x-hidden bg-black">
+        <BackgroundLayer />
+        <div className="relative z-10 flex min-h-screen items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-600 border-t-transparent" />
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="relative min-h-screen w-full overflow-x-hidden bg-black">
       <BackgroundLayer />
