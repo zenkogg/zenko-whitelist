@@ -12,7 +12,7 @@ export function ReferralProgress({ referralCount, reputationPoints }: ReferralPr
 
   return (
     <div className="lg:col-span-6 rounded-2xl bg-white/5 p-6 backdrop-blur-md border-2 border-purple-300/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)]">
-      <h2 className="text-xl font-semibold text-white mb-2">Referral progress</h2>
+      <h2 className="text-lg font-semibold text-white mb-2">Referral progress</h2>
       <p className="text-sm text-neutral-800 mb-4">
         Refer 50 friends to get priority early access and bonus reputation points.
       </p>

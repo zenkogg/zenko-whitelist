@@ -228,12 +228,12 @@ export function ApplyReferralCard({
             </div>
 
             {referralError && (
-              <p id="referral-error" className="text-sm text-red-400 mt-2" role="alert">
+              <p id="referral-error" className="text-xs text-error-300 mt-2" role="alert">
                 {referralError}
               </p>
             )}
             {referralSuccess && (
-              <p className="text-sm text-green-400 mt-2" role="status">
+              <p className="text-xs text-success-300 mt-2" role="status">
                 {referralSuccess}
               </p>
             )}

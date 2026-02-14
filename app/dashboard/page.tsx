@@ -164,7 +164,7 @@ export default function DashboardPage() {
             className="text-5xl font-bold text-white mb-6"
             style={{ fontFamily: 'var(--font-press-start)' }}
           />
-          <p className="text-lg text-neutral-700">
+          <p className="text-base text-neutral-700">
             Refer your friends for early access and rewards
           </p>
         </div>

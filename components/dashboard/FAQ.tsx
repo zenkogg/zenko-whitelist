@@ -13,7 +13,7 @@ export function FAQ() {
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex items-center justify-between p-6"
       >
-        <h3 className="font-semibold text-white text-left">How to Earn Reputation</h3>
+        <h3 className="text-lg font-semibold text-white text-left">How to Earn Reputation</h3>
         <ChevronDownIcon
           className={`h-5 w-5 text-purple-300 transition-transform duration-200 ${
             isOpen ? 'rotate-180' : ''
