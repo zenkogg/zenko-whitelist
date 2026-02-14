@@ -205,6 +205,13 @@ export function ProfileCard({
                 </Tooltip>
               </div>
               </PixelCard>
+
+              {/* Error Message */}
+              {avatarUploadError && (
+                <p id="avatar-error" className="mt-2 text-xs text-error-300 text-center" role="alert">
+                  {avatarUploadError}
+                </p>
+              )}
             </div>
 
             {/* User Info Banner */}
@@ -271,14 +278,6 @@ export function ProfileCard({
               </div>
             </div>
 
-            {/* Error Message */}
-            {avatarUploadError && (
-              <div className="w-full rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2">
-                <p id="avatar-error" className="text-xs text-red-400 text-center" role="alert">
-                  {avatarUploadError}
-                </p>
-              </div>
-            )}
           </div>
         </div>
     </div>

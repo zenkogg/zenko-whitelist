@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { put, del } from '@vercel/blob';
+import { RekognitionClient, DetectModerationLabelsCommand } from '@aws-sdk/client-rekognition';
+
+const rekognition = new RekognitionClient({
+  region: process.env.AWS_REGION || 'us-east-2',
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+  },
+});
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,6 +47,32 @@ export async function POST(request: NextRequest) {
         { error: 'Bad Request', message: 'File size must be less than 5MB' },
         { status: 400 }
       );
+    }
+
+    // Check image for inappropriate content
+    const imageBuffer = Buffer.from(await file.arrayBuffer());
+    try {
+      const moderation = await rekognition.send(
+        new DetectModerationLabelsCommand({
+          Image: { Bytes: imageBuffer },
+          MinConfidence: 75,
+        })
+      );
+
+      const blocked = moderation.ModerationLabels?.filter(
+        (label) => (label.Confidence ?? 0) >= 75
+      );
+
+      if (blocked && blocked.length > 0) {
+        console.warn('Image moderation blocked upload:', blocked.map((l) => l.Name));
+        return NextResponse.json(
+          { error: 'Bad Request', message: 'Image flagged as inappropriate. Please upload a different photo.' },
+          { status: 400 }
+        );
+      }
+    } catch (moderationError) {
+      console.error('Rekognition moderation check failed:', moderationError);
+      // Fail open — allow upload if moderation service is unavailable
     }
 
     // Find user
