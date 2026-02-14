@@ -63,13 +63,13 @@ export default function AuthCallbackPage() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center bg-black">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-500">Error</h1>
+          <h1 className="text-2xl font-bold text-error-300">Error</h1>
           <p className="mt-2 text-gray-400">{error}</p>
           <button
             onClick={() => router.push('/')}
-            className="mt-4 rounded-lg bg-purple-600 px-4 py-2 text-white"
+            className="mt-4 rounded-lg bg-purple-500 hover:bg-purple-600 px-4 py-3 text-sm font-medium text-white transition-all cursor-pointer"
           >
             Go Home
           </button>
@@ -79,10 +79,10 @@ export default function AuthCallbackPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <div className="text-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#7F56D9] border-t-transparent" />
-        <p className="mt-4 text-gray-400">Completing sign in...</p>
+    <div className="flex min-h-screen items-center justify-center bg-black">
+      <div className="flex flex-col items-center gap-4">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-600 border-t-transparent" />
+        <p className="text-gray-400">Completing sign in...</p>
       </div>
     </div>
   );

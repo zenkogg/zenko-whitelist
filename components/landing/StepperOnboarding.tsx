@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { signInWithOAuth } from '@/lib/oauth-client';
 import { GameBadge } from './GameBadge';
 import { Button } from '@/components/ui/button';
 import Stepper, { Step } from '@/components/Stepper';
+import { ArrowRightStartOnRectangleIcon } from '@heroicons/react/24/outline';
 
 const GAMES = [
   { label: 'League of Legends', value: 'lol' },
@@ -17,6 +18,9 @@ const GAMES = [
   { label: 'Overwatch 2', value: 'overwatch2' },
   { label: 'Apex Legends', value: 'apex' },
   { label: 'Fortnite', value: 'fortnite' },
+  { label: 'EAFC', value: 'fc26' },
+  { label: 'Call of Duty', value: 'cod' },
+  { label: 'Grand Theft Auto', value: 'gta' },
 ];
 
 interface WaitlistStats {
@@ -39,8 +43,10 @@ export function StepperOnboarding() {
   const [referralCode, setReferralCode] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [referralSuccess, setReferralSuccess] = useState('');
   const [stats, setStats] = useState<WaitlistStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
+  const stepClickRef = useRef<((step: number) => void) | null>(null);
 
   // Fetch waitlist stats
   useEffect(() => {
@@ -97,9 +103,15 @@ export function StepperOnboarding() {
   const handleApplyReferral = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setReferralSuccess('');
 
     if (!referralCode.trim()) {
       setError('Please enter a referral code');
+      return;
+    }
+
+    if (referralCode.length !== 6) {
+      setError('Referral code must be 6 characters');
       return;
     }
 
@@ -116,11 +128,21 @@ export function StepperOnboarding() {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to apply referral code');
+        let errorMessage = 'Failed to apply referral code';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch {
+          // If JSON parsing fails, use default message
+        }
+        throw new Error(errorMessage);
       }
 
       const { data } = await response.json();
+
+      // Calculate points earned
+      const currentPoints = user?.reputationPoints || 0;
+      const pointsEarned = data.user.reputationPoints - currentPoints;
 
       // Update user in localStorage with referral info
       if (user) {
@@ -133,8 +155,15 @@ export function StepperOnboarding() {
         setUser(updatedUser);
       }
 
-      // Move to games step (step 2)
-      setCurrentStepIndex(2);
+      // Show success message
+      setReferralSuccess(`Code applied! You earned ${pointsEarned} reputation points`);
+
+      // Wait 1.5 seconds then advance to step 2
+      setTimeout(() => {
+        if (stepClickRef.current) {
+          stepClickRef.current(2);
+        }
+      }, 1500);
     } catch (error: any) {
       console.error('Apply referral error:', error);
       setError(error.message || 'Failed to apply referral code. Please try again.');
@@ -144,7 +173,9 @@ export function StepperOnboarding() {
   };
 
   const handleSkipReferral = () => {
-    setCurrentStepIndex(2);
+    if (stepClickRef.current) {
+      stepClickRef.current(2);
+    }
   };
 
   const toggleGame = (gameValue: string) => {
@@ -197,27 +228,14 @@ export function StepperOnboarding() {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-md mx-auto py-12">
-        <div className="flex h-16 w-16 items-center justify-center">
-          <Image
-            src="/images/zenko-head.svg"
-            alt="Zenko Logo"
-            width={64}
-            height={64}
-            className="h-16 w-16 animate-pulse"
-          />
-        </div>
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-600 border-t-transparent" />
         <div className="text-center">
-          <h2 className="mb-2 text-2xl font-semibold text-[#cbbaee]">
+          <h2 className="mb-2 text-2xl font-semibold text-zenko-light">
             Connecting...
           </h2>
-          <p className="text-sm text-gray-400">
+          <p className="text-gray-400">
             Please wait while we redirect you
           </p>
-        </div>
-        <div className="flex space-x-2">
-          <div className="h-2 w-2 rounded-full bg-[#fdb022] animate-bounce" style={{ animationDelay: '0ms' }}></div>
-          <div className="h-2 w-2 rounded-full bg-[#fdb022] animate-bounce" style={{ animationDelay: '150ms' }}></div>
-          <div className="h-2 w-2 rounded-full bg-[#fdb022] animate-bounce" style={{ animationDelay: '300ms' }}></div>
         </div>
       </div>
     );
@@ -230,20 +248,20 @@ export function StepperOnboarding() {
         {/* Waitlist Status Badge - Centered */}
         {!statsLoading && stats && (
           <div className="flex items-center justify-center w-full">
-            <div className={`flex items-center gap-2 rounded-full border px-3 py-1.5 ${
+            <div className={`flex items-center gap-2 rounded-full border-2 px-3 py-1.5 ${
               stats.waitlistStatus === 'open'
-                ? 'border-green-500/30 bg-green-500/10'
-                : 'border-red-500/30 bg-red-500/10'
+                ? 'border-success-300/30 bg-success-300/10'
+                : 'border-error-300/30 bg-error-300/10'
             }`}>
               <div className={`h-1.5 w-1.5 rounded-full ${
                 stats.waitlistStatus === 'open'
-                  ? 'bg-green-500 animate-pulse'
-                  : 'bg-red-500'
+                  ? 'bg-success-300 animate-pulse'
+                  : 'bg-error-300'
               }`}></div>
               <span className={`text-xs font-medium ${
                 stats.waitlistStatus === 'open'
-                  ? 'text-green-400'
-                  : 'text-red-400'
+                  ? 'text-success-300'
+                  : 'text-error-300'
               }`}>
                 Waitlist {stats.waitlistStatus === 'open' ? 'Open' : 'Closed'}
               </span>
@@ -253,10 +271,10 @@ export function StepperOnboarding() {
 
         {/* Heading */}
         <div className="text-center space-y-3">
-          <h2 className="text-2xl font-semibold text-[#cbbaee]">
-            Join the Waitlist
+          <h2 className="text-2xl font-semibold text-amber-500">
+            Get early access to Zenko
           </h2>
-          <p className="text-sm text-gray-400">
+          <p className="text-gray-400">
             Top 1K get early access • Connect your account to secure your spot
           </p>
         </div>
@@ -266,18 +284,30 @@ export function StepperOnboarding() {
           {/* Google Sign In */}
           <button
             onClick={() => handleOAuthSignIn('google')}
-            className="flex w-full items-center justify-center gap-3 rounded-lg border border-white/20 bg-white px-4 py-3 text-base font-medium text-gray-900 transition-all hover:bg-gray-50"
+            className="flex w-full items-center justify-center gap-3 rounded-lg border-2 border-white bg-white px-4 py-3 text-sm font-medium text-gray-900 transition-all hover:bg-white/90 cursor-pointer"
           >
-            <GoogleIcon />
+            <Image
+              src="/images/icons/google.svg"
+              alt="Google"
+              width={16}
+              height={16}
+              className="h-4 w-4 flex-shrink-0"
+            />
             <span>Sign in with Google</span>
           </button>
 
           {/* Twitch Sign In */}
           <button
             onClick={() => handleOAuthSignIn('twitch')}
-            className="flex w-full items-center justify-center gap-3 rounded-lg border border-[#9146FF]/30 bg-[#9146FF] px-4 py-3 text-base font-medium text-white transition-all hover:bg-[#7d3bd9]"
+            className="flex w-full items-center justify-center gap-3 rounded-lg border-2 border-zenko-twitch/30 bg-zenko-twitch/80 px-4 py-3 text-sm font-medium text-white transition-all hover:bg-zenko-twitch cursor-pointer"
           >
-            <TwitchIcon />
+            <Image
+              src="/images/icons/twitch.svg"
+              alt="Twitch"
+              width={16}
+              height={16}
+              className="h-4 w-4 flex-shrink-0"
+            />
             <span>Sign in with Twitch</span>
           </button>
         </div>
@@ -316,7 +346,7 @@ export function StepperOnboarding() {
 
             {/* Count */}
             <span className="text-xs font-medium text-gray-400">
-              <span className="text-[#cbbaee] font-semibold">
+              <span className="text-zenko-light font-semibold">
                 {stats.totalCount.toLocaleString()}+
               </span> joined
             </span>
@@ -336,117 +366,117 @@ export function StepperOnboarding() {
 
   // Show stepper with 2 steps (referral code → games)
   return (
-    <Stepper
-      initialStep={currentStepIndex}
-      onStepChange={(step) => setCurrentStepIndex(step)}
-      stepCircleContainerClassName="!bg-transparent !border-none !shadow-none"
-      stepContainerClassName="!bg-transparent"
-      contentClassName="!py-4"
-      footerClassName="hidden"
-      className="!p-0 !aspect-auto !min-h-0"
-      renderStepIndicator={({ step, currentStep, onStepClick }) => (
-        <div className="flex flex-col items-center cursor-pointer" onClick={() => onStepClick(step)}>
-          <div
-            className={`flex h-8 w-8 items-center justify-center rounded-full border transition-all ${
-              currentStep === step
-                ? 'border-[#fdb022] bg-[#fdb022]/10 shadow-sm'
-                : currentStep > step
-                ? 'border-[#cbbaee]/40 bg-[#cbbaee]/20'
-                : 'border-gray-700 bg-gray-800/50'
-            }`}
-          >
-            {currentStep > step ? (
-              <svg className="h-4 w-4 text-[#cbbaee]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-            ) : (
-              <span className={`text-xs font-medium ${currentStep === step ? 'text-[#fdb022]' : 'text-gray-500'}`}>
-                {step}
-              </span>
-            )}
-          </div>
-        </div>
-      )}
+    <div className="w-full -mt-4">
+      <Stepper
+        initialStep={currentStepIndex}
+        onStepChange={(step) => setCurrentStepIndex(step)}
+        stepCircleContainerClassName="!bg-transparent !border-none !shadow-none"
+        stepContainerClassName="!bg-transparent"
+        contentClassName="!py-4"
+        footerClassName="hidden"
+        className="!p-0 !aspect-auto !min-h-0"
+        renderStepIndicator={({ step, currentStep, onStepClick }) => {
+          // Store the step click function in ref for programmatic navigation
+          if (!stepClickRef.current) {
+            stepClickRef.current = onStepClick;
+          }
+
+          return (
+            <div className="flex flex-col items-center cursor-pointer" onClick={() => onStepClick(step)}>
+              <div
+                className={`flex h-8 w-8 items-center justify-center rounded-full transition-all ${
+                  currentStep === step
+                    ? 'bg-purple-500/20 ring-1 ring-purple-400/40'
+                    : currentStep > step
+                    ? 'bg-purple-400/10 ring-1 ring-purple-300/20'
+                    : 'bg-black/20 ring-1 ring-white/10'
+                }`}
+              >
+                {currentStep > step ? (
+                  <svg className="h-4 w-4 text-purple-300/60" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                ) : (
+                  <span className={`text-xs font-medium ${currentStep === step ? 'text-purple-300' : 'text-neutral-700'}`}>
+                    {step}
+                  </span>
+                )}
+              </div>
+            </div>
+          );
+        }}
     >
       {/* Step 1: Referral Code */}
       <Step>
         <div className="flex flex-col space-y-6 w-full max-w-md mx-auto">
           {/* Heading */}
           <div className="text-center">
-            <h2 className="mb-2 text-2xl font-semibold leading-tight tracking-tight text-[#cbbaee]">
+            <h2 className="mb-2 text-2xl font-semibold leading-tight tracking-tight text-amber-500">
               Were You Invited?
             </h2>
-            <p className="text-sm text-gray-400">
-              Enter an invite code to boost your position on the leaderboard
+            <p className="text-gray-400">
+              Enter an invite code to earn reputation points and climb the leaderboard for early access
             </p>
           </div>
 
-          {/* Connected Account Banner */}
-          {user && (
-            <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-4 py-3">
-              <div>
-                <p className="text-sm font-medium text-white">
-                  Connected via {user.oauthProvider === 'google' ? 'Google' : 'Twitch'}
-                </p>
-                {user.oauthProvider === 'google' && user.email ? (
-                  <p className="text-xs text-gray-400">{user.email}</p>
-                ) : user.oauthProvider === 'twitch' && user.displayName && user.displayName !== 'User' ? (
-                  <p className="text-xs text-gray-400">@{user.displayName}</p>
-                ) : null}
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  localStorage.removeItem('waitlist_user');
-                  window.location.href = '/';
-                }}
-                className="text-xs text-gray-400 transition-colors hover:text-white"
-              >
-                Sign out
-              </button>
-            </div>
-          )}
-
-          {/* Referral Code Form */}
-          <form onSubmit={handleApplyReferral} className="w-full space-y-6">
+          {/* Referral Code Form - Dashboard Style */}
+          <form onSubmit={handleApplyReferral} className="w-full space-y-4">
             <div className="flex flex-col gap-3">
               <label className="text-sm font-medium text-white">
                 Invite Code
               </label>
               <input
                 type="text"
-                value={referralCode}
-                onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
-                placeholder="Enter invite code"
+                value={user?.usedReferralCode || referralCode}
+                onChange={(e) => {
+                  const value = e.target.value.toUpperCase();
+                  // Only allow alphanumeric characters
+                  if (/^[A-Z0-9]*$/.test(value)) {
+                    setReferralCode(value);
+                  }
+                }}
+                placeholder="Enter 6-character code"
                 maxLength={6}
-                className="w-full rounded-lg border border-white/20 bg-white/5 px-4 py-3 text-white placeholder-gray-400 backdrop-blur-xl transition-colors focus:border-[#fdb022] focus:outline-none"
+                disabled={isSubmitting || !!user?.usedReferralCode}
+                readOnly={!!user?.usedReferralCode}
+                className="w-full rounded-xl border-2 border-purple-300/20 bg-black/40 px-4 py-3 text-white/60 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-300 disabled:opacity-50"
               />
             </div>
 
             {/* Error Message */}
             {error && (
-              <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+              <p className="text-error-300" role="alert">
                 {error}
-              </div>
+              </p>
             )}
 
-            {/* Buttons */}
+            {/* Success Message */}
+            {referralSuccess && (
+              <p className="text-success-300" role="status">
+                {referralSuccess}
+              </p>
+            )}
+
+            {/* Action Buttons */}
             <div className="flex gap-3">
+              {!user?.usedReferralCode && (
+                <button
+                  type="button"
+                  onClick={handleSkipReferral}
+                  disabled={isSubmitting}
+                  className="flex-1 rounded-lg bg-black/20 px-4 py-3 text-sm font-medium text-neutral-700 transition-colors hover:bg-black/30 hover:text-white disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                >
+                  Skip
+                </button>
+              )}
               <button
-                type="button"
-                onClick={handleSkipReferral}
-                className="flex-1 rounded-lg border border-white/20 bg-white/5 px-4 py-3 text-sm font-medium text-white backdrop-blur-xl transition-colors hover:bg-white/10"
+                type={user?.usedReferralCode ? 'button' : 'submit'}
+
+                disabled={isSubmitting || (!user?.usedReferralCode && !referralCode.trim())}
+                className={`${user?.usedReferralCode ? 'w-full' : 'flex-1'} rounded-lg px-4 py-3 text-sm font-medium text-white transition-all disabled:cursor-not-allowed disabled:opacity-50 bg-purple-500 hover:bg-purple-600 border-2 border-purple-500 cursor-pointer`}
               >
-                Skip
+                {isSubmitting ? 'Applying...' : user?.usedReferralCode ? 'Continue' : 'Apply'}
               </button>
-              <Button
-                type="submit"
-                color="brand"
-                disabled={isSubmitting || !referralCode.trim()}
-                className="flex-1"
-              >
-                {isSubmitting ? 'Applying...' : 'Apply Code'}
-              </Button>
             </div>
           </form>
         </div>
@@ -457,114 +487,99 @@ export function StepperOnboarding() {
         <div className="flex flex-col space-y-6 w-full max-w-md mx-auto">
           {/* Heading */}
           <div className="text-center">
-            <h2 className="mb-2 text-2xl font-semibold leading-tight tracking-tight text-[#cbbaee]">
-              Which Games Do You Play?
+            <h2 className="mb-2 text-2xl font-semibold leading-tight tracking-tight text-amber-500">
+              Which games do you play?
             </h2>
-            <p className="text-sm text-gray-400">
-              Select your games to complete your waitlist registration
+            <p className="text-gray-400">
+              Select at least one game
             </p>
           </div>
-
-          {/* Connected Account Banner */}
-          {user && (
-            <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-4 py-3">
-              <div>
-                <p className="text-sm font-medium text-white">
-                  Connected via {user.oauthProvider === 'google' ? 'Google' : 'Twitch'}
-                </p>
-                {user.oauthProvider === 'google' && user.email ? (
-                  <p className="text-xs text-gray-400">{user.email}</p>
-                ) : user.oauthProvider === 'twitch' && user.displayName && user.displayName !== 'User' ? (
-                  <p className="text-xs text-gray-400">@{user.displayName}</p>
-                ) : null}
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  localStorage.removeItem('waitlist_user');
-                  window.location.href = '/';
-                }}
-                className="text-xs text-gray-400 transition-colors hover:text-white"
-              >
-                Sign out
-              </button>
-            </div>
-          )}
 
           {/* Form */}
           <form onSubmit={handleSubmitGames} className="w-full space-y-6">
             {/* Game Selection */}
-            <div className="flex flex-col gap-3">
-              <label className="text-sm font-medium text-white">
-                Your Games<span className="text-[#c70036]">*</span>
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {GAMES.map((game) => (
-                  <GameBadge
-                    key={game.value}
-                    game={game.label}
-                    selected={selectedGames.includes(game.value)}
-                    onClick={() => toggleGame(game.value)}
-                  />
-                ))}
-              </div>
+            <div className="flex flex-wrap justify-center gap-2">
+              {GAMES.map((game) => (
+                <GameBadge
+                  key={game.value}
+                  game={game.label}
+                  selected={selectedGames.includes(game.value)}
+                  onClick={() => toggleGame(game.value)}
+                />
+              ))}
             </div>
 
             {/* Error Message */}
             {error && (
-              <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+              <div className="rounded-lg border border-error-300/20 bg-error-300/10 px-4 py-3 text-error-300">
                 {error}
               </div>
             )}
 
             {/* Submit Button */}
-            <Button
+            <button
               type="submit"
-              color="brand"
               disabled={isSubmitting || selectedGames.length === 0}
-              className="w-full"
+              className="w-full rounded-lg border-2 border-purple-500 px-4 py-3 text-sm font-medium text-white transition-all disabled:cursor-not-allowed disabled:opacity-50 bg-purple-500 hover:bg-purple-600 cursor-pointer"
             >
-              {isSubmitting ? 'Joining Waitlist...' : 'Join Waitlist'}
-            </Button>
+              {isSubmitting ? 'Setting up...' : 'Go to dashboard'}
+            </button>
 
             {/* Footer Message */}
             <p className="text-center text-xs text-gray-500">
-              🏆 Invite others to climb the leaderboard and secure your spot in the top 1K
+              Complete setup to unlock your referral link • Invite friends to earn points and climb the leaderboard for early access to Zenko closed beta
             </p>
           </form>
         </div>
       </Step>
-    </Stepper>
-  );
-}
+      </Stepper>
 
-function GoogleIcon() {
-  return (
-    <svg className="h-5 w-5" viewBox="0 0 24 24">
-      <path
-        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-        fill="#4285F4"
-      />
-      <path
-        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-        fill="#34A853"
-      />
-      <path
-        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-        fill="#FBBC05"
-      />
-      <path
-        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-        fill="#EA4335"
-      />
-    </svg>
-  );
-}
+      {/* Footer: Connected Account Info */}
+      {user && (
+        <div className="relative mt-12">
+          {/* Gradient Divider */}
+          <div
+            className="absolute top-0 left-0 w-full h-px"
+            style={{
+              background: 'linear-gradient(90deg, transparent, rgba(203, 186, 238, 0.3), transparent)'
+            }}
+          ></div>
 
-function TwitchIcon() {
-  return (
-    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-      <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z" />
-    </svg>
+          {/* Connected Account Row */}
+          <div className="flex items-center justify-between w-full max-w-md mx-auto pt-8">
+            {/* Left: Provider Icon + Username */}
+            <div className="flex items-center gap-2">
+              <Image
+                src={user.oauthProvider === 'google' ? '/images/icons/google.svg' : '/images/icons/twitch.svg'}
+                alt={user.oauthProvider}
+                width={16}
+                height={16}
+                className="h-4 w-4"
+              />
+              <span className="text-sm text-neutral-700/70 font-medium">
+                {user.oauthProvider === 'google' && user.email
+                  ? user.email
+                  : user.oauthProvider === 'twitch' && user.displayName && user.displayName !== 'User'
+                  ? user.displayName
+                  : 'Connected'}
+              </span>
+            </div>
+
+            {/* Right: Disconnect */}
+            <button
+              type="button"
+              onClick={() => {
+                localStorage.removeItem('waitlist_user');
+                window.location.href = '/';
+              }}
+              className="flex items-center gap-1.5 text-sm text-error-300/70 transition-colors hover:text-error-300 cursor-pointer"
+            >
+              <ArrowRightStartOnRectangleIcon className="h-3.5 w-3.5" />
+              <span>Disconnect</span>
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

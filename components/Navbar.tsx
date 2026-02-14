@@ -16,13 +16,13 @@ export function Navbar() {
               height={32}
               className="h-8 w-8"
             />
-            <span className="text-xl font-semibold text-[#cbbaee]">Zenko</span>
+            <span className="text-xl font-semibold text-zenko-light">Zenko</span>
           </div>
 
           {/* Early Access Badge */}
-          <div className="flex items-center gap-2 rounded-full border border-[#fdb022]/30 bg-[#fdb022]/10 px-4 py-1.5">
-            <div className="h-1.5 w-1.5 rounded-full bg-[#fdb022] animate-pulse"></div>
-            <span className="text-xs font-medium text-[#fdb022]">Early Access • Invite Only</span>
+          <div className="flex items-center gap-2 rounded-full border-2 border-amber-500/30 bg-amber-500/10 px-3.5 py-1.5">
+            <div className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse"></div>
+            <span className="text-xs font-medium text-amber-500">Early Access • Invite Only</span>
           </div>
         </div>
       </div>

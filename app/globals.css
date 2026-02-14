@@ -10,6 +10,11 @@
   --font-inter: var(--font-inter);
   --font-sora: var(--font-sora);
 
+  /* Font Sizes - Default 16px base, sm = 14px, xs = 12px */
+  --font-size-base: 1rem; /* 16px */
+  --font-size-sm: 0.875rem; /* 14px */
+  --font-size-xs: 0.75rem; /* 12px */
+
   /* Zenko Brand Colors - Amber/Orange Scale */
   --color-amber-50: #FFFDFA;
   --color-amber-100: #FFECCE;
@@ -52,14 +57,45 @@
   /* Legacy Zenko Brand Colors (for backwards compatibility) */
   --color-zenko-accent: #FDB022;
   --color-zenko-purple: #7F56D9;
+  --color-zenko-light: #CBBAEE;
+  --color-zenko-twitch: #9146FF;
   --color-badge-selected: #301C5C;
   --color-badge-unselected: #1E2939;
+
+  /* Success & Error Colors */
+  --color-success: #5EE9B5;
+  --color-error: #FFA1AD;
+
+  /* Success scale for Tailwind utilities */
+  --color-success-50: #E8FCF5;
+  --color-success-100: #C7F8E6;
+  --color-success-200: #91F3D1;
+  --color-success-300: #5EE9B5;
+  --color-success-400: #3FD99D;
+  --color-success-500: #2AC885;
+  --color-success-600: #22A770;
+  --color-success-700: #1B865B;
+  --color-success-800: #156546;
+  --color-success-900: #0F4431;
+
+  /* Error scale for Tailwind utilities */
+  --color-error-50: #FFF3F5;
+  --color-error-100: #FFE1E6;
+  --color-error-200: #FFC9D1;
+  --color-error-300: #FFA1AD;
+  --color-error-400: #FF7B8F;
+  --color-error-500: #FF5571;
+  --color-error-600: #E63D5F;
+  --color-error-700: #BF2F4D;
+  --color-error-800: #99233B;
+  --color-error-900: #731829;
 }
 
 body {
   color: var(--color-foreground);
   background: var(--color-background);
   font-family: var(--font-inter), Arial, Helvetica, sans-serif;
+  font-size: 1rem; /* 16px default */
 }
 
 h1, h2, h3, h4, h5, h6 {

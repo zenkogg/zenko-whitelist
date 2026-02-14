@@ -274,60 +274,6 @@ export function Leaderboard({ userId, totalUsers = 0 }: LeaderboardProps) {
         </div>
       )}
 
-      {/* Current User Row - if not in top 20 */}
-      {currentUserEntry && (
-        <>
-          {/* Gap Indicator */}
-          <div className="flex items-center justify-center gap-1.5 py-4">
-            <div className="h-1.5 w-1.5 rounded-full bg-purple-300/40" />
-            <div className="h-1.5 w-1.5 rounded-full bg-purple-300/40" />
-            <div className="h-1.5 w-1.5 rounded-full bg-purple-300/40" />
-          </div>
-
-          <div className="bg-purple-500/20 border-2 border-purple-300/30 flex items-center justify-between rounded-2xl px-4 py-3">
-            <div className="flex items-center gap-3">
-              {/* Rank Badge */}
-              <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm bg-white/10 text-neutral-700">
-                {currentUserEntry.rank}
-              </div>
-
-              {/* Avatar */}
-              <div className="relative h-10 w-10 rounded-full bg-white/10 ring-2 ring-purple-300/30 overflow-hidden">
-                <Image
-                  src={currentUserEntry.avatarUrl || '/images/placeholder.svg'}
-                  alt={currentUserEntry.displayName}
-                  fill
-                  className="rounded-full object-cover"
-                  unoptimized
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.src = '/images/placeholder.svg';
-                  }}
-                />
-              </div>
-
-              {/* Name */}
-              <div className="flex flex-col">
-                <span className="text-sm font-semibold text-white">
-                  {currentUserEntry.displayName}
-                  <span className="ml-2 text-xs text-amber-500">(You)</span>
-                </span>
-                <span className="text-xs text-neutral-700">
-                  #{currentUserEntry.registrationOrder.toLocaleString()} joined
-                </span>
-              </div>
-            </div>
-
-            {/* Referral Count with CountUp */}
-            <div className="flex items-center gap-2">
-              <span className="text-lg font-semibold text-amber-500" style={{ fontFamily: 'var(--font-sora)' }}>
-                <CountUp value={currentUserEntry.referralCount} duration={1500} />
-              </span>
-              <span className="text-xs text-neutral-700">referrals</span>
-            </div>
-          </div>
-        </>
-      )}
     </div>
   );
 }

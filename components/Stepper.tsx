@@ -83,7 +83,7 @@ export default function Stepper({
         className={`mx-auto w-full max-w-md rounded-4xl shadow-xl ${stepCircleContainerClassName}`}
         style={{ border: '1px solid #222' }}
       >
-        <div className={`${stepContainerClassName} flex w-full items-center p-8`}>
+        <div className={`${stepContainerClassName} flex w-full max-w-md mx-auto items-center p-8`}>
           {stepsArray.map((_, index) => {
             const stepNumber = index + 1;
             const isNotLastStep = index < totalSteps - 1;
@@ -241,7 +241,7 @@ interface StepProps {
 }
 
 export function Step({ children }: StepProps) {
-  return <div className="px-8">{children}</div>;
+  return <div className="px-2">{children}</div>;
 }
 
 interface StepIndicatorProps {
@@ -295,7 +295,7 @@ interface StepConnectorProps {
 function StepConnector({ isComplete }: StepConnectorProps) {
   const lineVariants: Variants = {
     incomplete: { width: 0, backgroundColor: 'transparent' },
-    complete: { width: '100%', backgroundColor: '#cbbaee' }
+    complete: { width: '100%', backgroundColor: 'rgba(158, 119, 237, 0.4)' }
   };
 
   return (
