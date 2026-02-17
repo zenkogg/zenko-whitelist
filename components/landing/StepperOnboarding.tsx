@@ -282,10 +282,10 @@ export function StepperOnboarding() {
         {/* Heading */}
         <div className="text-center space-y-3">
           <h2 className="text-2xl font-semibold text-amber-500">
-            Get early access to Zenko
+            Join the Founding 1,000
           </h2>
           <p className="text-gray-400">
-            Top 1K get early access • Connect your account to secure your spot
+            Secure early access and lock in your OG reputation badge
           </p>
         </div>
 
@@ -333,20 +333,19 @@ export function StepperOnboarding() {
                   className="relative h-8 w-8 rounded-full ring-2 ring-purple-300/50 bg-purple-400 overflow-hidden"
                   style={{ zIndex: 10 - index }}
                 >
-                  {user.avatarUrl ? (
-                    <Image
-                      src={user.avatarUrl}
-                      alt={user.displayName}
-                      fill
-                      sizes="32px"
-                      className="rounded-full object-cover"
-                      unoptimized
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-xs font-bold text-white">
-                      {user.displayName.charAt(0).toUpperCase()}
-                    </div>
-                  )}
+                  <Image
+                    src={user.avatarUrl || '/images/placeholder.svg'}
+                    alt={user.displayName}
+                    fill
+                    sizes="32px"
+                    className="rounded-full object-cover"
+                    unoptimized
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = '/images/placeholder.svg';
+                    }}
+                  />
                 </div>
               ))}
             </div>
@@ -425,7 +424,7 @@ export function StepperOnboarding() {
               Were You Invited?
             </h2>
             <p className="text-gray-400">
-              Enter an invite code to earn reputation points and climb the leaderboard for early access
+              Enter an invite code to earn reputation points and secure your founding spot
             </p>
           </div>
 
@@ -537,7 +536,7 @@ export function StepperOnboarding() {
 
             {/* Footer Message */}
             <p className="text-center text-xs text-gray-500">
-              Complete setup to unlock your referral link • Invite friends to earn points and climb the leaderboard for early access to Zenko closed beta
+              Complete setup to unlock your referral link • Invite friends to join the founding 1,000
             </p>
           </form>
         </div>

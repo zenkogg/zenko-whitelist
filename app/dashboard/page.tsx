@@ -164,7 +164,7 @@ export default function DashboardPage() {
             style={{ fontFamily: 'var(--font-press-start)', wordSpacing: '-0.5em' }}
           />
           <p className="text-base text-neutral-700">
-            Refer your friends for early access and rewards
+            Refer your friends to join the founding 1,000
           </p>
         </div>
       </div>

@@ -59,6 +59,7 @@ export function AvatarGroup({ totalWaitlistUsers }: AvatarGroupProps) {
                   fill
                   className="rounded-full object-cover"
                   unoptimized
+                  referrerPolicy="no-referrer"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.src = '/images/placeholder.svg';

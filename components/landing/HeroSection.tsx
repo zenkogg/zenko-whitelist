@@ -4,13 +4,12 @@ import { useState } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/20/solid';
 
 const TITLES = [
-  <>All Your Games, Powered By <span className="text-amber-500">You</span></>,
-  <>All your games, powered by <span className="text-amber-500">you</span></>,
+  <>Build your gaming identity. <span className="text-amber-500">Everywhere you play.</span></>,
 ];
 
 const TAGLINES = [
-  'Track. Compete. Earn.',
-  'Your best games win.',
+  'Don’t just play. Be recognized.',
+  'Skill Decides. Recognition Follows.',
   'Your best games count.',
 ];
 
