@@ -145,6 +145,14 @@ const FuzzyText: React.FC<FuzzyTextProps> = ({
       canvas.height = tightHeight + verticalMargin * 2;
       ctx.translate(horizontalMargin, verticalMargin);
 
+      // Trim excess canvas space so it only takes up the visible area in layout
+      const visibleBuffer = Math.ceil(fuzzRange * 0.5) + 5;
+      const excessH = horizontalMargin - visibleBuffer;
+      if (excessH > 0) {
+        canvas.style.marginLeft = `-${excessH}px`;
+        canvas.style.marginRight = `-${excessH}px`;
+      }
+
       const interactiveLeft = horizontalMargin + xOffset;
       const interactiveTop = verticalMargin;
       const interactiveRight = interactiveLeft + textBoundingWidth;

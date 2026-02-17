@@ -43,7 +43,7 @@ export function AvatarGroup({ totalWaitlistUsers }: AvatarGroupProps) {
   const displayUsers = recentUsers.slice(0, maxAvatars);
 
   return (
-    <div className="flex items-center justify-center gap-3 py-4">
+    <div className="flex items-center justify-center gap-3 py-8 md:py-6">
       {displayUsers.length > 0 && (
         <>
           <div className="flex -space-x-2">

@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from 'react';
 import Image from 'next/image';
 import { BoltIcon } from '@heroicons/react/24/outline';
 import FuzzyText from '@/components/FuzzyText';
+import { CollapsibleCard } from './CollapsibleCard';
 
 interface ReferrerInfo {
   displayName: string;
@@ -18,6 +19,8 @@ interface ApplyReferralCardProps {
   onReferralApplied: () => void;
   referrerInfo?: ReferrerInfo | null;
   initialReferralCode?: string | null;
+  defaultCollapsed?: boolean;
+  collapsible?: boolean;
 }
 
 export function ApplyReferralCard({
@@ -27,6 +30,8 @@ export function ApplyReferralCard({
   onReferralApplied,
   referrerInfo,
   initialReferralCode,
+  defaultCollapsed = false,
+  collapsible = false,
 }: ApplyReferralCardProps) {
   // Only use initialReferralCode if user hasn't already applied one
   const [referralCode, setReferralCode] = useState(!usedReferralCode && initialReferralCode ? initialReferralCode : '');
@@ -110,26 +115,30 @@ export function ApplyReferralCard({
   }, []);
 
   return (
-    <div className={`rounded-2xl bg-white/5 p-6 backdrop-blur-md border-2 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] flex flex-col h-full w-full transition-all duration-500 ${
+    <div className={`rounded-2xl bg-white/5 p-4 md:p-6 backdrop-blur-md border-2 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] flex flex-col h-full w-full transition-all duration-500 ${
       shouldHighlight
         ? 'border-amber-500/60 shadow-[0_0_40px_rgba(251,176,34,0.3),0_8px_32px_0_rgba(0,0,0,0.37)] animate-pulse'
         : 'border-purple-300/20'
     }`}>
       {usedReferralCode ? (
-        /* Applied State - Matches ProfileCard style */
-        <>
-          <div className="mb-4 flex items-center gap-2">
-            <Image
-              src="/images/icons/zenko-rp.svg"
-              alt="XP"
-              width={20}
-              height={20}
-              className="h-5 w-5"
-              style={{ filter: 'brightness(0) saturate(100%) invert(65%) sepia(85%) saturate(1574%) hue-rotate(359deg) brightness(101%) contrast(98%)' }}
-            />
-            <h2 className="text-lg font-semibold text-white">Applied code</h2>
-          </div>
-
+        /* Applied State */
+        <CollapsibleCard
+          defaultCollapsed={defaultCollapsed}
+          collapsible={collapsible}
+          title={
+            <div className="flex items-center gap-2">
+              <Image
+                src="/images/icons/zenko-rp.svg"
+                alt="XP"
+                width={20}
+                height={20}
+                className="h-5 w-5 flex-shrink-0"
+                style={{ filter: 'brightness(0) saturate(100%) invert(65%) sepia(85%) saturate(1574%) hue-rotate(359deg) brightness(101%) contrast(98%)' }}
+              />
+              <h2 className="text-base md:text-lg font-semibold text-white whitespace-nowrap">Applied code</h2>
+            </div>
+          }
+        >
           <div className="w-full rounded-xl border-2 border-dashed border-purple-300/20 px-4 py-3">
             <div className="flex items-center justify-between gap-3">
               {/* Left: Applied Code */}
@@ -160,26 +169,28 @@ export function ApplyReferralCard({
               </div>
             </div>
           </div>
-        </>
+        </CollapsibleCard>
       ) : (
         /* Not Applied State - Show input form */
-        <>
-          <div className="mb-4">
-            <div className="flex items-center gap-2 mb-1">
+        <CollapsibleCard
+          defaultCollapsed={defaultCollapsed}
+          collapsible={collapsible}
+          title={
+            <div className="flex items-center gap-2">
               <Image
                 src="/images/icons/zenko-rp.svg"
                 alt="XP"
                 width={20}
                 height={20}
-                className="h-5 w-5"
+                className="h-5 w-5 flex-shrink-0"
                 style={{ filter: 'brightness(0) saturate(100%) invert(65%) sepia(85%) saturate(1574%) hue-rotate(359deg) brightness(101%) contrast(98%)' }}
               />
-              <h2 className="text-lg font-semibold text-white">
+              <h2 className="text-base md:text-lg font-semibold text-white whitespace-nowrap">
                 Have a referral code?
               </h2>
               <div className="ml-auto flex items-center justify-end">
                 <FuzzyText
-                  fontSize={15}
+                  fontSize="clamp(11px, 1.5vw, 15px)"
                   fontFamily="'Press Start 2P'"
                   color="#FDB022"
                   baseIntensity={0.05}
@@ -188,15 +199,16 @@ export function ApplyReferralCard({
                   glitchMode={true}
                   glitchInterval={2800}
                   glitchDuration={200}
-                  className='-mr-8'
+                  letterSpacing={-1}
+                  className=''
                 >
                   +10 XP
                 </FuzzyText>
               </div>
             </div>
-          </div>
-
-          <p className="mb-6 text-sm text-neutral-800">
+          }
+        >
+          <p className="mb-4 md:mb-6 text-sm text-neutral-800">
             Use a referral code and earn 10 points
           </p>
 
@@ -238,7 +250,7 @@ export function ApplyReferralCard({
               </p>
             )}
           </form>
-        </>
+        </CollapsibleCard>
       )}
     </div>
   );

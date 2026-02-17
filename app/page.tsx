@@ -47,7 +47,7 @@ export default function Home() {
       <Navbar />
 
       {/* Main Content */}
-      <div className="relative z-10 px-6 pt-32 pb-12 lg:pt-40 lg:pb-16">
+      <div className="relative z-10 px-4 md:px-6 pt-24 pb-8 md:pt-32 md:pb-12 lg:pt-40 lg:pb-16">
         <div className="mx-auto max-w-6xl">
           {/* Hero Section with Title, Description, Waitlist Badge & Avatar Group */}
           <HeroSection />
@@ -56,7 +56,7 @@ export default function Home() {
           <CenteredOnboardingCard />
 
           {/* Game Logo Loop - Below Card */}
-          <div className="mt-16">
+          <div className="mt-8 md:mt-16">
             <GameLogoLoop />
           </div>
         </div>

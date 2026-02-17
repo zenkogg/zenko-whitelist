@@ -421,7 +421,7 @@ export function StepperOnboarding() {
           {/* Heading */}
           <div className="text-center">
             <h2 className="mb-2 text-2xl font-semibold leading-tight tracking-tight text-amber-500">
-              Were You Invited?
+              Were you invited?
             </h2>
             <p className="text-gray-400">
               Enter an invite code to earn reputation points and secure your founding spot
@@ -432,7 +432,7 @@ export function StepperOnboarding() {
           <form onSubmit={handleApplyReferral} className="w-full space-y-4">
             <div className="flex flex-col gap-3">
               <label className="text-sm font-medium text-white">
-                Invite Code
+                Invite code
               </label>
               <input
                 type="text"
@@ -536,7 +536,7 @@ export function StepperOnboarding() {
 
             {/* Footer Message */}
             <p className="text-center text-xs text-gray-500">
-              Complete setup to unlock your referral link • Invite friends to join the founding 1,000
+              Complete setup to unlock your referral link • Invite friends to join the founding 1,000 and get early access to Zenko
             </p>
           </form>
         </div>

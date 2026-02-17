@@ -102,7 +102,7 @@ export function ProfileCard({
   });
 
   return (
-    <div className="h-full w-full rounded-2xl bg-white/5 p-6 backdrop-blur-md border-2 border-purple-300/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] flex flex-col">
+    <div className="h-full w-full rounded-2xl bg-white/5 p-4 md:p-6 backdrop-blur-md border-2 border-purple-300/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] flex flex-col">
         <div className="flex flex-col flex-1">
           {/* Zenko Logo */}
           <div className="mb-4 flex justify-center">
@@ -245,17 +245,22 @@ export function ProfileCard({
 
                   {/* Rotating Text Container - Only for Google with email */}
                   {oauthProvider === 'google' && email ? (
-                    <div className="relative h-5 overflow-hidden">
-                      {/* Default State: Joined Date */}
-                      <div className="absolute inset-0 transition-transform duration-300 ease-out group-hover:-translate-y-full">
+                    <>
+                      {/* Desktop: hover to reveal email */}
+                      <div className="relative h-5 overflow-hidden hidden md:block">
+                        <div className="absolute inset-0 transition-transform duration-300 ease-out group-hover:-translate-y-full">
+                          <p className="text-sm text-neutral-700">Joined {formattedDate}</p>
+                        </div>
+                        <div className="absolute inset-0 transition-transform duration-300 ease-out translate-y-full group-hover:translate-y-0">
+                          <p className="text-sm text-neutral-700 truncate">{email}</p>
+                        </div>
+                      </div>
+                      {/* Mobile: show both */}
+                      <div className="md:hidden">
                         <p className="text-sm text-neutral-700">Joined {formattedDate}</p>
+                        <p className="text-xs text-neutral-700/70 truncate">{email}</p>
                       </div>
-
-                      {/* Hover State: Email */}
-                      <div className="absolute inset-0 transition-transform duration-300 ease-out translate-y-full group-hover:translate-y-0">
-                        <p className="text-sm text-neutral-700 truncate">{email}</p>
-                      </div>
-                    </div>
+                    </>
                   ) : (
                     /* Static Joined Date for Twitch */
                     <p className="text-sm text-neutral-700">Joined {formattedDate}</p>

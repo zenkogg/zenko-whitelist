@@ -95,7 +95,13 @@ body {
   color: var(--color-foreground);
   background: var(--color-background);
   font-family: var(--font-inter), Arial, Helvetica, sans-serif;
-  font-size: 1rem; /* 16px default */
+  font-size: 0.875rem; /* 14px mobile */
+}
+
+@media (min-width: 768px) {
+  body {
+    font-size: 1rem; /* 16px desktop */
+  }
 }
 
 h1, h2, h3, h4, h5, h6 {

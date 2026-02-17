@@ -2,53 +2,49 @@ import Image from 'next/image';
 
 export function Footer() {
   return (
-    <footer className="relative z-10 px-6 py-6">
-      <div className="mx-auto flex max-w-7xl items-center justify-between border-t border-white/5 pt-6">
-        {/* Built on Sui Badge */}
-        <div className="flex items-center gap-2 text-neutral-800">
-          <span className="text-sm uppercase tracking-wide">Built on</span>
-          <Image
-            src="/images/icons/sui.svg"
-            alt="Sui"
-            width={46}
-            height={16}
-            className="h-4 w-auto"
-          />
+    <footer className="relative z-10 px-4 md:px-6 py-6">
+      <div className="mx-auto max-w-7xl border-t border-white/5 pt-6">
+        {/* Desktop: single row */}
+        <div className="hidden md:flex items-center justify-between">
+          <div className="flex items-center gap-2 text-neutral-800">
+            <span className="text-sm uppercase tracking-wide">Built on</span>
+            <Image
+              src="/images/icons/sui.svg"
+              alt="Sui"
+              width={46}
+              height={16}
+              className="h-4 w-auto"
+            />
+          </div>
+          <div className="flex items-center gap-6">
+            <a href="https://www.instagram.com/zenkogg?igsh=YzdqYTc0N2ZuMzNx&utm_source=qr" target="_blank" rel="noopener noreferrer" className="text-purple-300/50 transition-colors hover:text-purple-300" aria-label="Instagram"><InstagramIcon /></a>
+            <a href="https://x.com/zenkogginc?s=21&t=aZd4S6kCPZBx-rpP3YEdAg" target="_blank" rel="noopener noreferrer" className="text-purple-300/50 transition-colors hover:text-purple-300" aria-label="X (Twitter)"><XIcon /></a>
+            <a href="https://discord.gg/RWPUuMXAGA" target="_blank" rel="noopener noreferrer" className="text-purple-300/50 transition-colors hover:text-purple-300" aria-label="Discord"><DiscordIcon /></a>
+          </div>
+          <span className="text-xs text-neutral-500">&copy; 2026 Zenko, All rights reserved.</span>
         </div>
 
-        {/* Social Links */}
-        <div className="flex items-center gap-6">
-          <a
-            href="https://www.instagram.com/zenkogg?igsh=YzdqYTc0N2ZuMzNx&utm_source=qr"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-purple-300/50 transition-colors hover:text-purple-300"
-            aria-label="Instagram"
-          >
-            <InstagramIcon />
-          </a>
-          <a
-            href="https://x.com/zenkogginc?s=21&t=aZd4S6kCPZBx-rpP3YEdAg"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-purple-300/50 transition-colors hover:text-purple-300"
-            aria-label="X (Twitter)"
-          >
-            <XIcon />
-          </a>
-          <a
-            href="https://discord.gg/RWPUuMXAGA"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-purple-300/50 transition-colors hover:text-purple-300"
-            aria-label="Discord"
-          >
-            <DiscordIcon />
-          </a>
+        {/* Mobile: sui + socials row, then copyright centered */}
+        <div className="flex flex-col items-center gap-4 md:hidden">
+          <div className="flex w-full items-center justify-between">
+            <div className="flex items-center gap-2 text-neutral-800">
+              <span className="text-sm uppercase tracking-wide">Built on</span>
+              <Image
+                src="/images/icons/sui.svg"
+                alt="Sui"
+                width={46}
+                height={16}
+                className="h-4 w-auto"
+              />
+            </div>
+            <div className="flex items-center gap-5">
+              <a href="https://www.instagram.com/zenkogg?igsh=YzdqYTc0N2ZuMzNx&utm_source=qr" target="_blank" rel="noopener noreferrer" className="text-purple-300/50 transition-colors hover:text-purple-300" aria-label="Instagram"><InstagramIcon /></a>
+              <a href="https://x.com/zenkogginc?s=21&t=aZd4S6kCPZBx-rpP3YEdAg" target="_blank" rel="noopener noreferrer" className="text-purple-300/50 transition-colors hover:text-purple-300" aria-label="X (Twitter)"><XIcon /></a>
+              <a href="https://discord.gg/RWPUuMXAGA" target="_blank" rel="noopener noreferrer" className="text-purple-300/50 transition-colors hover:text-purple-300" aria-label="Discord"><DiscordIcon /></a>
+            </div>
+          </div>
+          <span className="text-xs text-neutral-500">&copy; 2026 Zenko, All rights reserved.</span>
         </div>
-
-        {/* Copyright */}
-        <span className="text-xs text-neutral-500">© 2026 Zenko, All rights reserved.</span>
       </div>
     </footer>
   );

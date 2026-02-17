@@ -7,6 +7,7 @@ import { BackgroundLayer } from '@/components/landing/BackgroundLayer';
 import { ProfileCard, ReferralCodeCard, ApplyReferralCard, AvatarGroup, ReferralProgress, Leaderboard, FAQ } from '@/components/dashboard';
 import { Footer } from '@/components/Footer';
 import Shuffle from '@/components/Shuffle';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 interface ReferrerInfo {
   displayName: string;
@@ -52,6 +53,7 @@ export default function DashboardPage() {
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [pendingReferralCode, setPendingReferralCode] = useState<string | null>(null);
+  const isMobile = useMediaQuery('(max-width: 1023px)');
 
   useEffect(() => {
     // Check for referral code in URL
@@ -155,27 +157,27 @@ export default function DashboardPage() {
       <BackgroundLayer />
 
       {/* Header Section */}
-      <div className="relative z-10 px-6 pt-12 pb-8">
+      <div className="relative z-10 px-4 md:px-6 pt-8 md:pt-12 pb-6 md:pb-8">
         <div className="mx-auto max-w-6xl text-center">
           <Shuffle
             text="Level up"
             tag="h1"
-            className="text-5xl font-bold text-amber-500 mb-6"
+            className="text-3xl md:text-5xl font-bold text-amber-500 mb-6 tracking-tightest md:tracking-normal"
             style={{ fontFamily: 'var(--font-press-start)', wordSpacing: '-0.5em' }}
           />
-          <p className="text-base text-neutral-700">
+          <p className="text-base text-neutral-700 mb-4 md:mb-6">
             Refer your friends to join the founding 1,000
           </p>
         </div>
       </div>
 
       {/* Content */}
-      <div className="relative z-10 px-6 pb-12">
+      <div className="relative z-10 px-4 md:px-6 pb-12">
         <div className="mx-auto max-w-6xl">
           {/* Bento Grid Layout */}
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-6">
+          <div className="grid grid-cols-1 gap-4 md:gap-6 lg:gap-8 lg:grid-cols-6">
             {/* Profile Card - Left column, spans 2 columns and 2 rows */}
-            <div className="lg:col-span-2 lg:row-span-2 flex flex-col gap-8">
+            <div className="lg:col-span-2 lg:row-span-2 flex flex-col gap-4 md:gap-6 lg:gap-8">
               <ProfileCard
                 displayName={user.displayName}
                 email={user.email}
@@ -203,6 +205,7 @@ export default function DashboardPage() {
               <ReferralCodeCard
                 referralCode={userStats.referralCode}
                 referralCount={userStats.referralCount}
+                collapsible={isMobile}
               />
             </div>
 
@@ -215,14 +218,19 @@ export default function DashboardPage() {
                 onReferralApplied={handleReferralApplied}
                 referrerInfo={userStats.referrerInfo}
                 initialReferralCode={!userStats.usedReferralCode ? pendingReferralCode : null}
+                defaultCollapsed={isMobile}
+                collapsible={isMobile}
               />
             </div>
 
             {/* Referral Progress */}
-            <ReferralProgress
-              referralCount={userStats.referralCount}
-              reputationPoints={userStats.reputationPoints}
-            />
+            <div className="lg:col-span-6">
+              <ReferralProgress
+                referralCount={userStats.referralCount}
+                reputationPoints={userStats.reputationPoints}
+                collapsible={isMobile}
+              />
+            </div>
 
             {/* Avatar Group Badge */}
             <div className="lg:col-span-6 flex justify-center">

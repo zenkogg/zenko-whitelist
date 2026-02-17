@@ -1,6 +1,7 @@
 'use client';
 
 import LogoLoop, { LogoItem } from '@/components/LogoLoop';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 const GAME_LOGOS: LogoItem[] = [
   { src: '/images/gamesv2/scroll-logo_leagueoflegends.png', alt: 'League of Legends' },
@@ -20,14 +21,16 @@ const GAME_LOGOS: LogoItem[] = [
 ];
 
 export function GameLogoLoop() {
+  const isMobile = useMediaQuery('(max-width: 767px)');
+
   return (
-    <div className="py-8 w-full">
+    <div className="py-4 md:py-8 w-full">
       <LogoLoop
         logos={GAME_LOGOS}
         speed={60}
         direction="left"
-        logoHeight={48}
-        gap={32}
+        logoHeight={isMobile ? 32 : 48}
+        gap={isMobile ? 24 : 32}
         pauseOnHover={true}
         fadeOut={true}
         fadeOutColor="#000000"
