@@ -4,13 +4,8 @@ import { prisma } from '@/lib/prisma';
 import { readFile } from 'fs/promises';
 import path from 'path';
 
-// Use Node.js runtime for Prisma compatibility
 export const runtime = 'nodejs';
-
-// Force dynamic rendering (uses query params)
 export const dynamic = 'force-dynamic';
-
-// Cache OG images for 1 hour (3600 seconds)
 export const revalidate = 3600;
 
 export async function GET(request: NextRequest) {
@@ -22,28 +17,20 @@ export async function GET(request: NextRequest) {
     let avatarUrl = null;
     const referralPoints = process.env.REFERRAL_POINTS_PER_SIGNUP || '10';
 
-    // If referral code provided, fetch user data
     if (referralCode) {
       const user = await prisma.waitlistUser.findUnique({
         where: { referralCode: referralCode.toUpperCase() },
-        select: {
-          displayName: true,
-          customAvatarUrl: true,
-        },
+        select: { displayName: true, customAvatarUrl: true },
       });
-
       if (user) {
         userName = user.displayName || 'Join Zenko';
         avatarUrl = user.customAvatarUrl;
       }
     }
 
-    // Convert avatar URL to absolute URL or data URL for local files
     let absoluteAvatarUrl = avatarUrl;
     if (avatarUrl && !avatarUrl.startsWith('http')) {
-      // Check if we're in local development (no VERCEL_URL)
       if (!process.env.VERCEL_URL) {
-        // In local dev, read the file and convert to data URL
         try {
           const filePath = path.join(process.cwd(), 'public', avatarUrl);
           const fileBuffer = await readFile(filePath);
@@ -54,196 +41,74 @@ export async function GET(request: NextRequest) {
           absoluteAvatarUrl = `data:${mimeType};base64,${base64}`;
         } catch (err) {
           console.error('Error reading avatar file:', err);
-          absoluteAvatarUrl = null; // Fall back to default avatar
+          absoluteAvatarUrl = null;
         }
       } else {
-        // In production, use the absolute URL
         const baseUrl = `https://${process.env.VERCEL_URL}`;
         absoluteAvatarUrl = `${baseUrl}${avatarUrl}`;
       }
     }
 
+    // Load Zenko logo
+    let zenkoLogoDataUrl: string | null = null;
+    try {
+      const logoPath = path.join(process.cwd(), 'public', 'images', 'zenko-logo.png');
+      const logoBuffer = await readFile(logoPath);
+      zenkoLogoDataUrl = `data:image/png;base64,${logoBuffer.toString('base64')}`;
+    } catch {
+      // Logo not critical
+    }
+
+    // Satori supports Tailwind via the `tw` prop — much cleaner than inline styles
+    // For custom colors not in default Tailwind, we still use `style`
     return new ImageResponse(
       (
-        <div
-          style={{
-            height: '100%',
-            width: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: '#000',
-            backgroundImage: 'linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%)',
-            position: 'relative',
-          }}
-        >
-          {/* Purple gradient overlay */}
-          <div
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: 'radial-gradient(circle at 50% 50%, rgba(127, 86, 217, 0.3) 0%, transparent 70%)',
-            }}
-          />
-
-          {/* Content */}
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 10,
-            }}
-          >
+        <div tw="flex w-full h-full items-center" style={{ backgroundColor: '#0a0015', backgroundImage: 'radial-gradient(ellipse 80% 60% at 30% 50%, rgba(127, 86, 217, 0.25) 0%, transparent 70%), radial-gradient(ellipse 60% 50% at 80% 20%, rgba(88, 40, 180, 0.2) 0%, transparent 60%), radial-gradient(ellipse 50% 40% at 70% 80%, rgba(147, 107, 230, 0.12) 0%, transparent 60%)' }}>
+          {/* Left: Big Avatar + Name */}
+          <div tw="flex flex-col items-center justify-center" style={{ width: 480, height: '100%' }}>
             {/* Avatar */}
-            {absoluteAvatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={absoluteAvatarUrl}
-                alt="Avatar"
-                width={150}
-                height={150}
-                style={{
-                  borderRadius: '50%',
-                  border: '4px solid rgba(127, 86, 217, 0.6)',
-                  marginBottom: 30,
-                }}
-              />
-            ) : (
-              <div
-                style={{
-                  width: 150,
-                  height: 150,
-                  borderRadius: '50%',
-                  backgroundColor: '#7F56D9',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: 30,
-                  border: '4px solid rgba(127, 86, 217, 0.6)',
-                }}
-              >
-                <svg
-                  width="80"
-                  height="80"
-                  viewBox="0 0 200 200"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <circle cx="100" cy="80" r="35" fill="#fff" />
-                  <path
-                    d="M40 160 C40 140, 60 120, 100 120 C140 120, 160 140, 160 160 L160 180 C160 190, 150 200, 140 200 L60 200 C50 200, 40 190, 40 180 Z"
-                    fill="#fff"
-                  />
-                </svg>
+            <div tw="flex items-center justify-center rounded-3xl mb-6" style={{ width: 260, height: 260, border: '3px solid rgba(179, 142, 243, 0.25)', backgroundColor: 'rgba(67, 27, 138, 0.3)' }}>
+              {absoluteAvatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={absoluteAvatarUrl} alt="" width={260} height={260} tw="rounded-3xl" />
+              ) : (
+                <div tw="flex text-8xl" style={{ color: 'rgba(255,255,255,0.25)' }}>?</div>
+              )}
+            </div>
+
+            {/* Name */}
+            <div tw="flex text-3xl font-bold mb-2" style={{ color: '#fdb022' }}>{userName}</div>
+            <div tw="flex text-lg" style={{ color: 'rgba(203, 186, 238, 0.5)' }}>invites you to join</div>
+          </div>
+
+          {/* Right: Branding + Code */}
+          <div tw="flex flex-col justify-center flex-1 pr-12">
+            {/* Logo row */}
+            <div tw="flex items-center mb-6">
+              {zenkoLogoDataUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={zenkoLogoDataUrl} alt="" width={40} height={48} tw="mr-4" />
+              ) : null}
+              <div tw="flex text-5xl font-bold" style={{ color: '#fdb022', letterSpacing: '-0.02em' }}>Zenko</div>
+            </div>
+
+            {/* Headline */}
+            <div tw="flex text-4xl font-bold text-white mb-3" style={{ lineHeight: 1.2 }}>
+              Join the Founding 1,000
+            </div>
+            <div tw="flex text-xl mb-10" style={{ color: 'rgba(203, 186, 238, 0.6)', lineHeight: 1.5 }}>
+              Secure early access and lock in your OG reputation badge.
+            </div>
+
+            {/* Referral Code */}
+            <div tw="flex flex-col rounded-2xl py-5 px-8" style={{ backgroundColor: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(179, 142, 243, 0.15)' }}>
+              <div tw="flex text-xs mb-2" style={{ color: 'rgba(203, 186, 238, 0.45)', letterSpacing: '0.08em' }}>
+                REFERRAL CODE
               </div>
-            )}
-
-            {/* User Name */}
-            <div
-              style={{
-                fontSize: 48,
-                fontWeight: 700,
-                color: '#fff',
-                marginBottom: 20,
-                textAlign: 'center',
-              }}
-            >
-              {userName}
-            </div>
-
-            {/* Invitation Text */}
-            <div
-              style={{
-                fontSize: 28,
-                color: '#cbbaee',
-                marginBottom: 20,
-                textAlign: 'center',
-              }}
-            >
-              invites you to join the waitlist
-            </div>
-
-            {/* Zenko Logo */}
-            <div
-              style={{
-                fontSize: 72,
-                fontWeight: 700,
-                color: '#fdb022',
-                marginBottom: 20,
-                letterSpacing: '-0.02em',
-              }}
-            >
-              Zenko
-            </div>
-
-            {/* Tagline */}
-            <div
-              style={{
-                fontSize: 26,
-                fontWeight: 600,
-                color: '#fff',
-                marginBottom: 10,
-                textAlign: 'center',
-              }}
-            >
-              Get access to Zenko Closed Beta
-            </div>
-
-            {/* XP Points */}
-            <div
-              style={{
-                fontSize: 22,
-                color: '#fdb022',
-                marginBottom: 30,
-                textAlign: 'center',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              + {referralPoints} XP points
-            </div>
-
-            {/* Referral Code Badge */}
-            {referralCode && (
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: 'rgba(127, 86, 217, 0.2)',
-                  border: '2px solid rgba(127, 86, 217, 0.5)',
-                  borderRadius: 12,
-                  padding: '16px 32px',
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: 20,
-                    color: '#cbbaee',
-                    marginRight: 12,
-                  }}
-                >
-                  Use referral code:
-                </div>
-                <div
-                  style={{
-                    fontSize: 32,
-                    fontWeight: 700,
-                    color: '#fdb022',
-                    letterSpacing: '0.1em',
-                  }}
-                >
-                  {referralCode.toUpperCase()}
-                </div>
+              <div tw="flex text-4xl font-bold" style={{ color: '#fdb022', letterSpacing: '0.14em' }}>
+                {referralCode ? referralCode.toUpperCase() : 'ZENKO'}
               </div>
-            )}
+            </div>
           </div>
         </div>
       ),
@@ -258,28 +123,10 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('OG image generation error:', error);
 
-    // Return a fallback image
     return new ImageResponse(
       (
-        <div
-          style={{
-            height: '100%',
-            width: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: '#000',
-          }}
-        >
-          <div
-            style={{
-              fontSize: 72,
-              fontWeight: 700,
-              color: '#fdb022',
-            }}
-          >
-            Zenko
-          </div>
+        <div tw="flex items-center justify-center w-full h-full bg-black">
+          <div tw="flex text-7xl font-bold" style={{ color: '#fdb022' }}>Zenko</div>
         </div>
       ),
       {
