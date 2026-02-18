@@ -30,6 +30,7 @@ export function Leaderboard({ userId, totalUsers = 0 }: LeaderboardProps) {
   const [currentUserEntry, setCurrentUserEntry] = useState<LeaderboardEntry | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isRevealingUser, setIsRevealingUser] = useState(false);
   const [currentLimit, setCurrentLimit] = useState(INITIAL_LOAD_COUNT);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -101,6 +102,7 @@ export function Leaderboard({ userId, totalUsers = 0 }: LeaderboardProps) {
 
     // If user is not in the current leaderboard, fetch more data
     if (userRowIndex === -1 && currentUserEntry) {
+      setIsRevealingUser(true);
       try {
         // Fetch users up to current user's rank
         const response = await fetch('/api/leaderboard', {
@@ -122,6 +124,8 @@ export function Leaderboard({ userId, totalUsers = 0 }: LeaderboardProps) {
         }
       } catch (error) {
         console.error('Failed to load extended leaderboard:', error);
+      } finally {
+        setIsRevealingUser(false);
       }
     } else {
       // User is already in the list, just scroll
@@ -236,10 +240,15 @@ export function Leaderboard({ userId, totalUsers = 0 }: LeaderboardProps) {
         <div className="flex justify-end mb-6">
           <button
             onClick={scrollToUserPosition}
-            className="flex items-center gap-1.5 text-xs text-purple-300/70 hover:text-purple-300 transition-colors cursor-pointer"
+            disabled={isRevealingUser}
+            className="flex items-center gap-1.5 text-xs text-purple-300/70 hover:text-purple-300 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <MagnifyingGlassIcon className="h-3.5 w-3.5" />
-            <span>reveal me</span>
+            {isRevealingUser ? (
+              <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-purple-300/30 border-t-purple-300" />
+            ) : (
+              <MagnifyingGlassIcon className="h-3.5 w-3.5" />
+            )}
+            <span>{isRevealingUser ? 'loading...' : 'reveal me'}</span>
           </button>
         </div>
       )}

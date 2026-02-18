@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import Image from 'next/image';
-import { BoltIcon } from '@heroicons/react/24/outline';
 import FuzzyText from '@/components/FuzzyText';
 import { CollapsibleCard } from './CollapsibleCard';
 
@@ -59,12 +58,15 @@ export function ApplyReferralCard({
         return;
       }
 
-      // Extract code from URL if pasted
+      // Extract code from URL if pasted (supports /r/CODE and /?ref=CODE)
       let codeToSubmit = referralCode.trim();
       try {
         const url = new URL(codeToSubmit);
         const refParam = url.searchParams.get('ref');
-        if (refParam) {
+        const pathMatch = url.pathname.match(/^\/r\/([A-Za-z0-9]+)$/);
+        if (pathMatch) {
+          codeToSubmit = pathMatch[1];
+        } else if (refParam) {
           codeToSubmit = refParam;
         }
       } catch {
@@ -160,7 +162,8 @@ export function ApplyReferralCard({
                   />
                 )}
                 <p className="text-sm text-neutral-700/70">
-                  Referred by{' '}
+                  <span className="hidden md:inline">Referred by</span>
+                  <span className="md:hidden">By</span>{' '}
                   <span className="text-purple-300/40">
                     {referrerInfo?.oauthProvider === 'twitch' ? '@' : ''}
                     {referrerInfo?.displayName || 'a friend'}
@@ -186,7 +189,8 @@ export function ApplyReferralCard({
                 style={{ filter: 'brightness(0) saturate(100%) invert(65%) sepia(85%) saturate(1574%) hue-rotate(359deg) brightness(101%) contrast(98%)' }}
               />
               <h2 className="text-base md:text-lg font-semibold text-white whitespace-nowrap">
-                Have a referral code?
+                <span className="md:hidden">Have a code?</span>
+                <span className="hidden md:inline">Have a referral code?</span>
               </h2>
               <div className="ml-auto flex items-center justify-end">
                 <FuzzyText
@@ -213,14 +217,14 @@ export function ApplyReferralCard({
           </p>
 
           <form onSubmit={handleApplyReferral} className="flex-1 flex flex-col">
-            <div className="relative">
+            <div className="flex gap-2">
               <input
                 type="text"
                 value={referralCode}
                 onChange={handleInputChange}
                 placeholder="Enter code or link"
                 disabled={isApplyingReferral}
-                className="w-full rounded-xl bg-black/40 px-4 py-3 pr-28 text-white/60 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-300 disabled:opacity-50"
+                className="flex-1 min-w-0 rounded-xl bg-black/40 px-4 py-3 text-white/60 placeholder-gray-600 outline-none border border-transparent focus:border-purple-300/40 transition-colors disabled:opacity-50"
                 aria-label="Referral code"
                 aria-invalid={!!referralError}
                 aria-describedby={referralError ? 'referral-error' : undefined}
@@ -229,10 +233,10 @@ export function ApplyReferralCard({
               <button
                 type="submit"
                 disabled={!referralCode || isApplyingReferral}
-                className={`absolute right-1.5 top-1/2 -translate-y-1/2 rounded-lg px-6 py-1.5 text-sm font-medium text-white transition-all disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer ${
+                className={`flex-shrink-0 rounded-xl px-6 py-3 text-sm font-medium text-white transition-all hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer ${
                   shouldHighlight
                     ? 'bg-amber-500 hover:bg-amber-600 shadow-[0_0_20px_rgba(251,176,34,0.5)] animate-pulse'
-                    : 'bg-purple-500 hover:bg-purple-600'
+                    : 'bg-zenko-purple'
                 }`}
               >
                 {isApplyingReferral ? 'Applying...' : 'Apply'}

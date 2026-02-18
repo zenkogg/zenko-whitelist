@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BackgroundLayer } from '@/components/landing/BackgroundLayer';
+import { AuthErrorScreen } from '@/components/AuthErrorScreen';
 
 export default function TwitterCallbackPage() {
   const router = useRouter();
@@ -64,23 +65,7 @@ export default function TwitterCallbackPage() {
   }, [router]);
 
   if (error) {
-    return (
-      <main className="relative min-h-screen w-full overflow-x-hidden bg-black">
-        <BackgroundLayer />
-        <div className="relative z-10 flex min-h-screen items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-error-300">Error</h1>
-            <p className="mt-2 text-neutral-700">{error}</p>
-            <button
-              onClick={() => router.push('/')}
-              className="mt-4 rounded-lg bg-purple-500 hover:bg-purple-600 px-4 py-3 text-sm font-medium text-white transition-all cursor-pointer"
-            >
-              Go Home
-            </button>
-          </div>
-        </div>
-      </main>
-    );
+    return <AuthErrorScreen error={error} />;
   }
 
   return (

@@ -22,18 +22,19 @@ export function CollapsibleCard({ title, children, defaultCollapsed = false, col
 
   return (
     <>
-      <div className={`flex items-center w-full transition-[margin] duration-300 ${showCollapsed ? 'mb-0' : 'mb-4'}`}>
+      <div
+        className={`flex items-center w-full transition-[margin] duration-300 ${showCollapsed ? 'mb-0' : 'mb-4'} ${collapsible ? 'cursor-pointer' : ''}`}
+        onClick={collapsible ? () => setIsCollapsed(!isCollapsed) : undefined}
+        role={collapsible ? 'button' : undefined}
+        aria-expanded={collapsible ? !isCollapsed : undefined}
+      >
         <div className="flex-1 min-w-0">{title}</div>
         {collapsible && (
-          <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="flex-shrink-0 p-1 text-purple-300/50 hover:text-purple-300 transition-transform duration-200 cursor-pointer"
-            aria-label={isCollapsed ? 'Expand' : 'Collapse'}
-          >
+          <div className="flex-shrink-0 p-1 text-purple-300/50">
             <ChevronDownIcon
               className={`h-5 w-5 transition-transform duration-200 ${isCollapsed ? '' : 'rotate-180'}`}
             />
-          </button>
+          </div>
         )}
       </div>
       <div
