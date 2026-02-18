@@ -5,8 +5,8 @@ export function Footer() {
   return (
     <footer className="relative z-10 px-4 md:px-6 py-6">
       <div className="mx-auto max-w-7xl border-t border-white/5 pt-6">
-        {/* Desktop: single row */}
-        <div className="hidden md:flex items-center justify-between">
+        {/* Desktop: 3 equal columns */}
+        <div className="hidden md:grid grid-cols-3 items-center">
           <div className="flex items-center gap-2 text-neutral-800">
             <span className="text-sm uppercase tracking-wide">Built on</span>
             <Image
@@ -17,12 +17,12 @@ export function Footer() {
               className="h-4 w-auto"
             />
           </div>
-          <div className="flex items-center gap-6">
+          <div className="flex items-center justify-center gap-6">
             <a href="https://www.instagram.com/zenkogg?igsh=YzdqYTc0N2ZuMzNx&utm_source=qr" target="_blank" rel="noopener noreferrer" className="text-purple-300/50 transition-colors hover:text-purple-300" aria-label="Instagram"><InstagramIcon /></a>
             <a href="https://x.com/zenkogginc?s=21&t=aZd4S6kCPZBx-rpP3YEdAg" target="_blank" rel="noopener noreferrer" className="text-purple-300/50 transition-colors hover:text-purple-300" aria-label="X (Twitter)"><XIcon /></a>
             <a href="https://discord.gg/RWPUuMXAGA" target="_blank" rel="noopener noreferrer" className="text-purple-300/50 transition-colors hover:text-purple-300" aria-label="Discord"><DiscordIcon /></a>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center justify-end gap-4">
             <Link href="/terms" className="text-xs text-neutral-600 transition-colors hover:text-neutral-400">Terms</Link>
             <Link href="/privacy" className="text-xs text-neutral-600 transition-colors hover:text-neutral-400">Privacy</Link>
             <span className="text-xs text-neutral-500">&copy; 2026 Zenko</span>
