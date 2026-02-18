@@ -5,7 +5,7 @@ import { serverFetch } from '@/lib/server-fetch';
 
 export async function POST(req: NextRequest) {
   try {
-    const { code, codeVerifier } = await req.json();
+    const { code, codeVerifier, origin } = await req.json();
 
     if (!code || !codeVerifier) {
       return NextResponse.json({ error: 'Missing code or code verifier' }, { status: 400 });
@@ -26,10 +26,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Twitter auth not configured' }, { status: 500 });
     }
 
-    // Determine redirect URI (must match what was used in the auth request)
-    const baseUrl = process.env.VERCEL_URL
+    // Redirect URI must match exactly what the client used in the auth request
+    const baseUrl = origin || (process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}`
-      : 'http://localhost:3000';
+      : 'http://localhost:3000');
     const redirectUri = `${baseUrl}/auth/twitter/callback`;
 
     // Exchange authorization code for access token

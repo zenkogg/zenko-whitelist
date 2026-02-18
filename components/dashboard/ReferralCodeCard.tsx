@@ -26,7 +26,7 @@ export function ReferralCodeCard({ referralCode, referralCount, defaultCollapsed
       navigator.clipboard.writeText(referralCode.trim());
     } else {
       if (typeof window === 'undefined') return;
-      const referralLink = `${window.location.origin}/?ref=${referralCode.trim()}`;
+      const referralLink = `${window.location.origin}/r/${referralCode.trim()}`;
       navigator.clipboard.writeText(referralLink);
     }
     setCopied(true);
@@ -141,7 +141,7 @@ export function ReferralCodeCard({ referralCode, referralCount, defaultCollapsed
                 shouldShowLink ? 'translate-y-0' : 'translate-y-full'
               }`}>
                 <span className="text-xs md:text-sm font-semibold text-purple-400 truncate">
-                  {typeof window !== 'undefined' && `${window.location.host}/?ref=${referralCode}`}
+                  {typeof window !== 'undefined' && `${window.location.host}/r/${referralCode}`}
                 </span>
               </div>
             </div>

@@ -13,13 +13,8 @@ interface ServerFetchResponse {
 }
 
 /**
- * Server-side fetch that uses curl as transport.
- * Needed because Node.js's fetch (undici) and https module don't work
- * through certain VPN proxies that do TLS interception.
- * curl respects system proxy settings natively.
- *
- * Only used for external API calls (Twitter OAuth). Not needed on Vercel
- * where native fetch works fine, but harmless there too.
+ * Server-side fetch that uses curl as transport locally (for VPN compatibility)
+ * and native fetch on Vercel where there's no VPN issue.
  */
 export function serverFetch(
   url: string,
@@ -30,7 +25,58 @@ export function serverFetch(
     timeout?: number;
   } = {}
 ): Promise<ServerFetchResponse> {
-  // Write headers to a temp file to avoid HTTP/2 parsing issues with -i
+  // On Vercel, use native fetch — no VPN proxy issues there
+  if (process.env.VERCEL) {
+    return nativeFetch(url, options);
+  }
+
+  // Locally, use curl to bypass VPN TLS interception
+  return curlFetch(url, options);
+}
+
+async function nativeFetch(
+  url: string,
+  options: {
+    method?: string;
+    headers?: Record<string, string>;
+    body?: string;
+    timeout?: number;
+  }
+): Promise<ServerFetchResponse> {
+  const response = await fetch(url, {
+    method: options.method,
+    headers: options.headers,
+    body: options.body,
+    signal: AbortSignal.timeout(options.timeout || 30000),
+  });
+
+  const arrayBuffer = await response.arrayBuffer();
+  const bodyBuffer = Buffer.from(arrayBuffer);
+
+  const headersMap = new Map<string, string>();
+  response.headers.forEach((value, key) => {
+    headersMap.set(key.toLowerCase(), value);
+  });
+
+  return {
+    ok: response.ok,
+    status: response.status,
+    text: async () => bodyBuffer.toString('utf-8'),
+    json: async () => JSON.parse(bodyBuffer.toString('utf-8')),
+    buffer: async () => bodyBuffer,
+    headers: headersMap,
+  };
+}
+
+function curlFetch(
+  url: string,
+  options: {
+    method?: string;
+    headers?: Record<string, string>;
+    body?: string;
+    timeout?: number;
+  }
+): Promise<ServerFetchResponse> {
   const headerFile = join(tmpdir(), `sf-headers-${Date.now()}-${Math.random().toString(36).slice(2)}`);
 
   const args: string[] = [
@@ -63,7 +109,6 @@ export function serverFetch(
       maxBuffer: 10 * 1024 * 1024,
     });
 
-    // Last line is the status code from -w
     const output = result.toString('binary');
     const lastNewline = output.lastIndexOf('\n');
     const statusStr = output.substring(lastNewline + 1).trim();
@@ -71,7 +116,6 @@ export function serverFetch(
     const bodyBuffer = Buffer.from(bodyStr, 'binary');
     const status = parseInt(statusStr) || 0;
 
-    // Parse response headers from temp file
     const headersMap = new Map<string, string>();
     try {
       const headerContent = readFileSync(headerFile, 'utf-8');

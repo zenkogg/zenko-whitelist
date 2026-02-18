@@ -27,7 +27,7 @@ export default function TwitterCallbackPage() {
         const response = await fetch('/api/auth/twitter', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code, codeVerifier }),
+          body: JSON.stringify({ code, codeVerifier, origin: window.location.origin }),
         });
 
         if (!response.ok) {
