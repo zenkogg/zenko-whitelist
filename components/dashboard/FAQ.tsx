@@ -1,6 +1,7 @@
 'use client';
 
 import { CollapsibleCard } from './CollapsibleCard';
+import { REFERRAL_MAX_COUNT } from '@/lib/referral-config';
 
 export function FAQ() {
   return (
@@ -12,11 +13,10 @@ export function FAQ() {
           <h3 className="text-base md:text-lg font-semibold text-white">How to earn reputation</h3>
         }
       >
-        <ul className="space-y-1 text-sm text-neutral-800">
-          <li>• Share your referral code with friends (+10 points per referral)</li>
-          <li>• Connect your X/Twitter account (+5 points)</li>
-          <li>• Share on X/Twitter (+5 points per share)</li>
-          <li>• Reach 50 referrals for priority beta access</li>
+        <ul className="space-y-2 text-sm text-neutral-800">
+          <li>• <strong className="text-neutral-600">Invite friends</strong> — share your referral code and earn +10 XP every time someone signs up with it</li>
+          <li>• <strong className="text-neutral-600">Use a friend&apos;s code</strong> — entering someone else&apos;s referral code earns you +10 XP too</li>
+          <li>• <strong className="text-neutral-600">Hit {REFERRAL_MAX_COUNT} referrals</strong> — reach the goal to unlock priority access to the beta</li>
         </ul>
       </CollapsibleCard>
     </div>

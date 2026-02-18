@@ -6,6 +6,7 @@ import ShinyText from '@/components/ShinyText';
 import FuzzyText from '@/components/FuzzyText';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { CollapsibleCard } from './CollapsibleCard';
+import { REFERRAL_MAX_COUNT } from '@/lib/referral-config';
 
 interface ReferralCodeCardProps {
   referralCode: string;
@@ -15,7 +16,7 @@ interface ReferralCodeCardProps {
 }
 
 export function ReferralCodeCard({ referralCode, referralCount, defaultCollapsed = false, collapsible = false }: ReferralCodeCardProps) {
-  const earlyAccessStatus = referralCount >= 50 ? 'approved' : 'pending';
+  const earlyAccessStatus = referralCount >= REFERRAL_MAX_COUNT ? 'approved' : 'pending';
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'code' | 'link'>('code');
   const [isHoveringLink, setIsHoveringLink] = useState(false);
@@ -37,8 +38,8 @@ export function ReferralCodeCard({ referralCode, referralCount, defaultCollapsed
   const handleShareOnTwitter = useCallback(() => {
     if (typeof window === 'undefined') return;
 
-    const referralLink = `${window.location.origin}/?ref=${referralCode}`;
-    const tweetText = `Join me on Zenko - where real performance determines the outcome! 🎮\n\nUse my referral code to skip the waitlist: ${referralCode}`;
+    const referralLink = `${window.location.origin}/r/${referralCode}`;
+    const tweetText = `I just joined the @zenkogginc waitlist — a competitive gaming platform where skill actually matters.\n\nUse my code ${referralCode} and we both earn bonus XP 👇`;
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(referralLink)}`;
 
     window.open(twitterUrl, '_blank', 'width=550,height=420');

@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import Link from 'next/link';
 
 export function Footer() {
   return (
@@ -21,10 +22,14 @@ export function Footer() {
             <a href="https://x.com/zenkogginc?s=21&t=aZd4S6kCPZBx-rpP3YEdAg" target="_blank" rel="noopener noreferrer" className="text-purple-300/50 transition-colors hover:text-purple-300" aria-label="X (Twitter)"><XIcon /></a>
             <a href="https://discord.gg/RWPUuMXAGA" target="_blank" rel="noopener noreferrer" className="text-purple-300/50 transition-colors hover:text-purple-300" aria-label="Discord"><DiscordIcon /></a>
           </div>
-          <span className="text-xs text-neutral-500">&copy; 2026 Zenko, All rights reserved.</span>
+          <div className="flex items-center gap-4">
+            <Link href="/terms" className="text-xs text-neutral-600 transition-colors hover:text-neutral-400">Terms</Link>
+            <Link href="/privacy" className="text-xs text-neutral-600 transition-colors hover:text-neutral-400">Privacy</Link>
+            <span className="text-xs text-neutral-500">&copy; 2026 Zenko</span>
+          </div>
         </div>
 
-        {/* Mobile: sui + socials row, then copyright centered */}
+        {/* Mobile: sui + socials row, then legal + copyright centered */}
         <div className="flex flex-col items-center gap-4 md:hidden">
           <div className="flex w-full items-center justify-between">
             <div className="flex items-center gap-2 text-neutral-800">
@@ -43,7 +48,13 @@ export function Footer() {
               <a href="https://discord.gg/RWPUuMXAGA" target="_blank" rel="noopener noreferrer" className="text-purple-300/50 transition-colors hover:text-purple-300" aria-label="Discord"><DiscordIcon /></a>
             </div>
           </div>
-          <span className="text-xs text-neutral-500">&copy; 2026 Zenko, All rights reserved.</span>
+          <div className="flex items-center gap-3">
+            <Link href="/terms" className="text-xs text-neutral-600 transition-colors hover:text-neutral-400">Terms</Link>
+            <span className="text-neutral-700">·</span>
+            <Link href="/privacy" className="text-xs text-neutral-600 transition-colors hover:text-neutral-400">Privacy</Link>
+            <span className="text-neutral-700">·</span>
+            <span className="text-xs text-neutral-500">&copy; 2026 Zenko</span>
+          </div>
         </div>
       </div>
     </footer>

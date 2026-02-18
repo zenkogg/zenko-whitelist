@@ -185,6 +185,7 @@ export default function DashboardPage() {
                 createdAt={user.createdAt || new Date().toISOString()}
                 userId={user.id}
                 oauthProvider={user.oauthProvider}
+                twitterHandle={userStats?.twitterHandle}
                 registrationOrder={userStats?.registrationOrder}
                 onAvatarUpdate={handleAvatarUpdate}
                 onLogout={handleLogout}

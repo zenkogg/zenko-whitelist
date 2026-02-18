@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-
-const REFERRAL_MAX_POINTS = parseInt(process.env.REFERRAL_MAX_POINTS || '500');
+import { REFERRAL_MAX_POINTS } from '@/lib/referral-config';
 
 export async function POST(request: NextRequest) {
   try {

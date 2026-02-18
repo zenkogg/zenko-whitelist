@@ -96,7 +96,7 @@ export function StepperOnboarding() {
     setIsCheckingSession(false);
   }, [router]);
 
-  const handleOAuthSignIn = (provider: 'google' | 'twitch') => {
+  const handleOAuthSignIn = (provider: 'google' | 'twitch' | 'twitter') => {
     setIsRedirecting(true);
     signInWithOAuth(provider);
   };
@@ -255,30 +255,6 @@ export function StepperOnboarding() {
   if (!isAuthenticated) {
     return (
       <div className="flex flex-col items-center space-y-6 w-full max-w-md mx-auto">
-        {/* Waitlist Status Badge - Centered */}
-        {!statsLoading && stats && (
-          <div className="flex items-center justify-center w-full">
-            <div className={`flex items-center gap-2 rounded-full border-2 px-3 py-1.5 ${
-              stats.waitlistStatus === 'open'
-                ? 'border-success-300/30 bg-success-300/10'
-                : 'border-error-300/30 bg-error-300/10'
-            }`}>
-              <div className={`h-1.5 w-1.5 rounded-full ${
-                stats.waitlistStatus === 'open'
-                  ? 'bg-success-300 animate-pulse'
-                  : 'bg-error-300'
-              }`}></div>
-              <span className={`text-xs font-medium ${
-                stats.waitlistStatus === 'open'
-                  ? 'text-success-300'
-                  : 'text-error-300'
-              }`}>
-                Waitlist {stats.waitlistStatus === 'open' ? 'Open' : 'Closed'}
-              </span>
-            </div>
-          </div>
-        )}
-
         {/* Heading */}
         <div className="text-center space-y-3">
           <h2 className="text-2xl font-semibold text-amber-500">
@@ -319,6 +295,27 @@ export function StepperOnboarding() {
               className="h-4 w-4 flex-shrink-0"
             />
             <span>Sign in with Twitch</span>
+          </button>
+
+        </div>
+
+        {/* OR Divider */}
+        <div className="flex w-full items-center gap-3">
+          <div className="flex-1 border-t border-white/10"></div>
+          <span className="text-xs font-medium text-gray-500">OR</span>
+          <div className="flex-1 border-t border-white/10"></div>
+        </div>
+
+        {/* X (Twitter) Sign In */}
+        <div className="w-full">
+          <button
+            onClick={() => handleOAuthSignIn('twitter')}
+            className="flex w-full items-center justify-center gap-3 rounded-lg border-2 border-black bg-black px-4 py-3 text-sm font-medium text-white transition-all hover:bg-[#151515] hover:border-[#151515] cursor-pointer"
+          >
+            <svg className="h-4 w-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+            </svg>
+            <span>Continue with X</span>
           </button>
         </div>
 
@@ -558,17 +555,23 @@ export function StepperOnboarding() {
           <div className="flex items-center justify-between w-full max-w-md mx-auto pt-8">
             {/* Left: Provider Icon + Username */}
             <div className="flex items-center gap-2">
-              <Image
-                src={user.oauthProvider === 'google' ? '/images/icons/google.svg' : '/images/icons/twitch.svg'}
-                alt={user.oauthProvider}
-                width={16}
-                height={16}
-                className="h-4 w-4"
-              />
+              {user.oauthProvider === 'twitter' ? (
+                <svg className="h-4 w-4 text-white" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                </svg>
+              ) : (
+                <Image
+                  src={user.oauthProvider === 'google' ? '/images/icons/google.svg' : '/images/icons/twitch.svg'}
+                  alt={user.oauthProvider}
+                  width={16}
+                  height={16}
+                  className="h-4 w-4"
+                />
+              )}
               <span className="text-sm text-neutral-700/70 font-medium">
                 {user.oauthProvider === 'google' && user.email
                   ? user.email
-                  : user.oauthProvider === 'twitch' && user.displayName && user.displayName !== 'User'
+                  : (user.oauthProvider === 'twitch' || user.oauthProvider === 'twitter') && user.displayName && user.displayName !== 'User'
                   ? user.displayName
                   : 'Connected'}
               </span>

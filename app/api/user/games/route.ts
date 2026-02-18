@@ -40,6 +40,9 @@ export async function POST(request: NextRequest) {
       'overwatch2',
       'apex',
       'fortnite',
+      'fc26',
+      'cod',
+      'gta',
     ];
 
     const invalidGames = games.filter((game: string) => !allowedGames.includes(game));
@@ -66,10 +69,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Update user's games
+    // Update user's games and mark registration complete
     const updatedUser = await prisma.waitlistUser.update({
       where: { id: user.id },
-      data: { games },
+      data: {
+        games,
+        registeredAt: user.registeredAt || new Date(),
+      },
     });
 
     return NextResponse.json({

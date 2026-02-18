@@ -32,7 +32,7 @@ export async function GET() {
       data: {
         totalCount,
         recentUsers: users,
-        waitlistStatus: 'open', // Could be dynamic based on business logic
+        waitlistStatus: process.env.WAITLIST_STATUS === 'closed' ? 'closed' : 'open',
       },
     });
   } catch (error) {

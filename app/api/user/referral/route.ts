@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-
-// Configuration from environment or defaults
-const REFERRAL_POINTS_PER_SIGNUP = parseInt(process.env.REFERRAL_POINTS_PER_SIGNUP || '10');
-const REFERRAL_POINTS_PER_USAGE = parseInt(process.env.REFERRAL_POINTS_PER_USAGE || '10');
-const REFERRAL_MAX_COUNT = parseInt(process.env.REFERRAL_MAX_COUNT || '50');
+import { REFERRAL_MAX_COUNT, REFERRAL_POINTS_PER_SIGNUP, REFERRAL_POINTS_PER_USAGE } from '@/lib/referral-config';
 
 export async function POST(request: NextRequest) {
   try {

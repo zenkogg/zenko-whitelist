@@ -13,6 +13,7 @@ interface ProfileCardProps {
   createdAt: string;
   userId: string;
   oauthProvider: string;
+  twitterHandle?: string | null;
   registrationOrder?: number;
   onAvatarUpdate: (avatarUrl: string) => void;
   onLogout: () => void;
@@ -25,6 +26,7 @@ export function ProfileCard({
   createdAt,
   userId,
   oauthProvider,
+  twitterHandle,
   registrationOrder,
   onAvatarUpdate,
   onLogout,
@@ -215,13 +217,25 @@ export function ProfileCard({
             </div>
 
             {/* User Info Banner */}
-            <div className={`w-full rounded-xl bg-white/5 px-4 py-3 ${oauthProvider === 'google' && email ? 'group' : ''}`}>
+            {/* Determine if we have secondary info to show on hover */}
+            {(() => {
+              const secondaryText = oauthProvider === 'twitter' && twitterHandle
+                ? `@${twitterHandle}`
+                : oauthProvider === 'google' && email
+                  ? email
+                  : null;
+              return (
+            <div className={`w-full rounded-xl bg-white/5 px-4 py-3 ${secondaryText ? 'group' : ''}`}>
               <div className="flex items-center justify-between gap-3">
                 {/* Left: User Info with Rotating Text */}
                 <div className="min-w-0 flex-1 overflow-hidden">
                   {/* Name with Platform Icon */}
                   <div className="flex items-center gap-1.5">
-                    {oauthProvider === 'twitch' ? (
+                    {oauthProvider === 'twitter' ? (
+                      <svg className="h-4 w-4 flex-shrink-0 text-white" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                      </svg>
+                    ) : oauthProvider === 'twitch' ? (
                       <Image
                         src="/images/icons/twitch.svg"
                         alt="Twitch"
@@ -243,26 +257,25 @@ export function ProfileCard({
                     </p>
                   </div>
 
-                  {/* Rotating Text Container - Only for Google with email */}
-                  {oauthProvider === 'google' && email ? (
+                  {/* Rotating Text Container - for providers with secondary info */}
+                  {secondaryText ? (
                     <>
-                      {/* Desktop: hover to reveal email */}
+                      {/* Desktop: hover to reveal */}
                       <div className="relative h-5 overflow-hidden hidden md:block">
                         <div className="absolute inset-0 transition-transform duration-300 ease-out group-hover:-translate-y-full">
                           <p className="text-sm text-neutral-700">Joined {formattedDate}</p>
                         </div>
                         <div className="absolute inset-0 transition-transform duration-300 ease-out translate-y-full group-hover:translate-y-0">
-                          <p className="text-sm text-neutral-700 truncate">{email}</p>
+                          <p className="text-sm text-neutral-700 truncate">{secondaryText}</p>
                         </div>
                       </div>
                       {/* Mobile: show both */}
                       <div className="md:hidden">
                         <p className="text-sm text-neutral-700">Joined {formattedDate}</p>
-                        <p className="text-xs text-neutral-700/70 truncate">{email}</p>
+                        <p className="text-xs text-neutral-700/70 truncate">{secondaryText}</p>
                       </div>
                     </>
                   ) : (
-                    /* Static Joined Date for Twitch */
                     <p className="text-sm text-neutral-700">Joined {formattedDate}</p>
                   )}
                 </div>
@@ -282,6 +295,8 @@ export function ProfileCard({
                 )}
               </div>
             </div>
+              );
+            })()}
 
           </div>
         </div>

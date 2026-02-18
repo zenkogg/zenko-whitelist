@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { parseJwtClaims } from '@/lib/oauth-client';
 import { put } from '@vercel/blob';
+import { serverFetch } from '@/lib/server-fetch';
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,6 +11,13 @@ export async function POST(req: NextRequest) {
     if (!idToken || !provider) {
       return NextResponse.json({ error: 'Missing token or provider' }, { status: 400 });
     }
+
+    // Capture client info
+    const ipAddress =
+      req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      req.headers.get('x-real-ip') ||
+      null;
+    const userAgent = req.headers.get('user-agent') || null;
 
     // Parse claims from JWT (in production, you'd verify the signature)
     const claims = parseJwtClaims(idToken);
@@ -43,13 +51,15 @@ export async function POST(req: NextRequest) {
           ? claims.profile_image_url || claims.picture || null
           : claims.picture || null;
 
-      // Always update on login to refresh username and avatar
+      // Always update on login to refresh username, avatar, and client info
       const updatedUser = await prisma.waitlistUser.update({
         where: { id: existingUser.id },
         data: {
           displayName,
           oauthAvatarUrl: avatarUrl,
           email: claims.email || existingUser.email,
+          ipAddress,
+          userAgent,
         },
       });
 
@@ -83,6 +93,8 @@ export async function POST(req: NextRequest) {
         referralCode,
         games: [],
         status: 'PENDING',
+        ipAddress,
+        userAgent,
       },
     });
 
@@ -147,9 +159,9 @@ async function downloadAndUploadOAuthAvatar(
     console.log(`Downloading OAuth avatar for user ${userId} from ${provider}:`, oauthAvatarUrl);
 
     // Download the image from OAuth provider
-    const response = await fetch(oauthAvatarUrl);
+    const response = await serverFetch(oauthAvatarUrl);
     if (!response.ok) {
-      console.error('Failed to download OAuth avatar:', response.statusText);
+      console.error('Failed to download OAuth avatar, status:', response.status);
       return null;
     }
 
@@ -159,8 +171,8 @@ async function downloadAndUploadOAuthAvatar(
       return null;
     }
 
-    // Get the image as a blob
-    const imageBlob = await response.blob();
+    // Get the image as a buffer
+    const imageBuffer = await response.buffer();
 
     // Determine file extension from content type
     const extensionMap: Record<string, string> = {
@@ -182,13 +194,13 @@ async function downloadAndUploadOAuthAvatar(
 
     console.log('Uploading OAuth avatar to Vercel Blob:', {
       path: blobPath,
-      size: imageBlob.size,
+      size: imageBuffer.length,
       type: contentType,
       environment: envPrefix,
     });
 
     // Upload to Vercel Blob
-    const blob = await put(blobPath, imageBlob, {
+    const blob = await put(blobPath, imageBuffer, {
       access: 'public',
       contentType: contentType,
     });

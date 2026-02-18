@@ -48,7 +48,29 @@ function getProviderConfig(provider: OAuthProvider): OAuthConfig {
   }
 }
 
-export function signInWithOAuth(provider: OAuthProvider): void {
+/**
+ * Generate PKCE code verifier and challenge for Twitter OAuth 2.0
+ */
+async function generatePKCE(): Promise<{ codeVerifier: string; codeChallenge: string }> {
+  const array = new Uint8Array(32);
+  crypto.getRandomValues(array);
+  const codeVerifier = btoa(String.fromCharCode(...array))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+
+  const encoder = new TextEncoder();
+  const data = encoder.encode(codeVerifier);
+  const digest = await crypto.subtle.digest('SHA-256', data);
+  const codeChallenge = btoa(String.fromCharCode(...new Uint8Array(digest)))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+
+  return { codeVerifier, codeChallenge };
+}
+
+export async function signInWithOAuth(provider: OAuthProvider): Promise<void> {
   const config = getProviderConfig(provider);
 
   // Store provider and referral code (if present) in sessionStorage for callback
@@ -68,9 +90,19 @@ export function signInWithOAuth(provider: OAuthProvider): void {
     redirect_uri: config.redirectUri,
     response_type: config.responseType,
     scope: config.scope,
-    // Add a nonce for security (optional for waitlist, required for zkLogin)
-    nonce: crypto.randomUUID(),
   });
+
+  if (provider === 'twitter') {
+    // Twitter requires PKCE with S256
+    const { codeVerifier, codeChallenge } = await generatePKCE();
+    sessionStorage.setItem('twitter_code_verifier', codeVerifier);
+    params.append('code_challenge', codeChallenge);
+    params.append('code_challenge_method', 'S256');
+    params.append('state', crypto.randomUUID());
+  } else {
+    // Add a nonce for implicit flow providers
+    params.append('nonce', crypto.randomUUID());
+  }
 
   // For Twitch, explicitly request email, picture, and username in ID token
   if (provider === 'twitch') {

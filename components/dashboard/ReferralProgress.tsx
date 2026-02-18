@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { CollapsibleCard } from './CollapsibleCard';
+import { REFERRAL_MAX_COUNT } from '@/lib/referral-config';
 
 interface ReferralProgressProps {
   referralCount: number;
@@ -11,7 +12,7 @@ interface ReferralProgressProps {
 }
 
 export function ReferralProgress({ referralCount, reputationPoints, defaultCollapsed = false, collapsible = false }: ReferralProgressProps) {
-  const progress = Math.min((referralCount / 50) * 100, 100);
+  const progress = Math.min((referralCount / REFERRAL_MAX_COUNT) * 100, 100);
 
   return (
     <div className="rounded-2xl bg-white/5 p-4 md:p-6 backdrop-blur-md border-2 border-purple-300/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)]">
@@ -23,15 +24,15 @@ export function ReferralProgress({ referralCount, reputationPoints, defaultColla
         }
       >
         <p className="text-sm text-neutral-800 mb-4">
-          Refer 50 friends to secure your founding spot and bonus reputation points.
+          Refer {REFERRAL_MAX_COUNT} friends to secure your founding spot and bonus reputation points.
         </p>
 
         <div className="flex items-center justify-between text-sm mb-2">
           <span className="text-neutral-700">
-            <span className="text-amber-500 font-semibold">{referralCount}/50</span> referrals
+            <span className="text-amber-500 font-semibold">{referralCount}/{REFERRAL_MAX_COUNT}</span> referrals
           </span>
           <span className="text-neutral-700/60 font-medium">
-            {50 - referralCount} more to go
+            {REFERRAL_MAX_COUNT - referralCount} more to go
           </span>
         </div>
         <div className="h-3 w-full overflow-hidden rounded-full bg-white/20 mb-4 md:mb-6">
@@ -46,14 +47,14 @@ export function ReferralProgress({ referralCount, reputationPoints, defaultColla
           <div className="flex items-center justify-between rounded-lg bg-white/5 px-3 md:px-4 py-2.5 md:py-3">
             <div className="flex items-center gap-2">
               <div className={`h-2 w-2 rounded-full flex-shrink-0 ${
-                referralCount >= 50 ? 'bg-purple-300' : 'bg-amber-500'
+                referralCount >= REFERRAL_MAX_COUNT ? 'bg-purple-300' : 'bg-amber-500'
               }`} />
               <span className="text-xs md:text-sm text-neutral-700">Early Access</span>
             </div>
             <div className={`text-sm md:text-base font-bold ${
-              referralCount >= 50 ? 'text-purple-300' : 'text-amber-500'
+              referralCount >= REFERRAL_MAX_COUNT ? 'text-purple-300' : 'text-amber-500'
             }`}>
-              {referralCount >= 50 ? 'Access Granted' : 'On Waitlist'}
+              {referralCount >= REFERRAL_MAX_COUNT ? 'Access Granted' : 'On Waitlist'}
             </div>
           </div>
           <div className="flex items-center justify-between rounded-lg bg-white/5 px-3 md:px-4 py-2.5 md:py-3">
