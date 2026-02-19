@@ -25,13 +25,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       : 'https://waitlist.zenko.gg';
 
     return {
-      title: `${userName} invited you to Zenko | Where Real Performance Determines the Outcome`,
-      description: `Join ${userName} on Zenko - the ultimate platform where skill matters. Use referral code ${code} to skip the waitlist!`,
+      title: `${userName} invited you to Zenko | Reputation has no off-season`,
+      description: `Join ${userName} on Zenko — every game feeds your name. Use referral code ${code} to join The Origin`,
       openGraph: {
         type: 'website',
         url: `${baseUrl}/r/${code}`,
         title: `${userName} invited you to Zenko`,
-        description: `Join ${userName} on Zenko - where real performance determines the outcome. Use code ${code}!`,
+        description: `Reputation has no off-season. Use code ${code} to join The Origin`,
         images: [
           {
             url: `${baseUrl}/api/og?ref=${code}`,
@@ -44,7 +44,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       twitter: {
         card: 'summary_large_image',
         title: `${userName} invited you to Zenko`,
-        description: `Join ${userName} on Zenko - where real performance determines the outcome. Use code ${code}!`,
+        description: `Reputation has no off-season. Use code ${code} to join The Origin`,
         images: [`${baseUrl}/api/og?ref=${code}`],
       },
     };
@@ -57,8 +57,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       : 'https://waitlist.zenko.gg';
 
     return {
-      title: 'Join Zenko Waitlist | Where Real Performance Determines the Outcome',
-      description: 'Join Zenko - the ultimate platform where skill matters.',
+      title: 'Join Zenko | Reputation has no off-season',
+      description: 'Every game feeds your name. Join The Origin.',
       openGraph: {
         images: [`${baseUrl}/api/og?ref=${code}`],
       },

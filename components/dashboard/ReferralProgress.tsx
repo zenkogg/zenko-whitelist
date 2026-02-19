@@ -20,11 +20,11 @@ export function ReferralProgress({ referralCount, reputationPoints, defaultColla
         defaultCollapsed={defaultCollapsed}
         collapsible={collapsible}
         title={
-          <h2 className="text-base md:text-lg font-semibold text-white whitespace-nowrap">Referral progress</h2>
+          <h2 className="text-base md:text-lg font-semibold text-white whitespace-nowrap">Fill the roster</h2>
         }
       >
         <p className="text-sm text-neutral-800 mb-4">
-          Refer {REFERRAL_MAX_COUNT} friends to secure your founding spot and bonus reputation points.
+          Unlock Day One status. Bonus rep secured
         </p>
 
         <div className="flex items-center justify-between text-sm mb-2">

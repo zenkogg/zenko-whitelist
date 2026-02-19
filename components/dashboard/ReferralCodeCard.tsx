@@ -39,7 +39,7 @@ export function ReferralCodeCard({ referralCode, referralCount, defaultCollapsed
     if (typeof window === 'undefined') return;
 
     const referralLink = `${window.location.origin}/r/${referralCode}`;
-    const tweetText = `I just joined the @zenkogginc waitlist — a competitive gaming platform where skill actually matters.\n\nUse my code ${referralCode} and we both earn bonus XP 👇`;
+    const tweetText = `Reputation has no off-season. I just joined @zenkogginc — The Origin.\n\nUse my code ${referralCode} and we both earn bonus XP 👇`;
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(referralLink)}`;
 
     window.open(twitterUrl, '_blank', 'width=550,height=420');
@@ -82,7 +82,7 @@ export function ReferralCodeCard({ referralCode, referralCount, defaultCollapsed
         }
       >
         <p className="mb-4 md:mb-6 text-sm text-neutral-800">
-          Share your unique referral code. Earn 10 referral points for every verified signup.
+          Bring your squad. History isn&apos;t built solo.
         </p>
 
         {/* Prominent Code/Link Display with Tabs */}

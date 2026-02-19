@@ -136,10 +136,10 @@ export async function GET(request: NextRequest) {
 
             {/* Headline */}
             <div tw="flex text-4xl font-bold text-white mb-3" style={{ lineHeight: 1.2, fontFamily: 'Sora' }}>
-              Where skill actually matters
+              Reputation has no off-season.
             </div>
             <div tw="flex text-xl mb-10" style={{ color: 'rgba(203, 186, 238, 0.6)', lineHeight: 1.5, fontFamily: 'Inter' }}>
-              Join the waitlist. Earn +{referralPoints} XP when you sign up with this code.
+              Join The Origin. Earn +{referralPoints} XP with this code
             </div>
 
             {/* Referral Code */}

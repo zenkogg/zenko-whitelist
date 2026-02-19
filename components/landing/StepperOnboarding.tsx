@@ -257,11 +257,11 @@ export function StepperOnboarding() {
       <div className="flex flex-col items-center space-y-6 w-full max-w-md mx-auto">
         {/* Heading */}
         <div className="text-center space-y-3">
-          <h2 className="text-2xl font-semibold text-amber-500">
-            Join the Founding 1,000
+          <h2 className="text-2xl font-semibold text-white">
+            Join The Origin, become a Day One
           </h2>
           <p className="text-gray-400">
-            Secure early access and lock in your OG reputation badge
+            Before the awards. Before the spotlight. This is where the names that matter started.
           </p>
         </div>
 
@@ -417,11 +417,11 @@ export function StepperOnboarding() {
         <div className="flex flex-col space-y-6 w-full max-w-md mx-auto">
           {/* Heading */}
           <div className="text-center">
-            <h2 className="mb-2 text-2xl font-semibold leading-tight tracking-tight text-amber-500">
+            <h2 className="mb-2 text-2xl font-semibold leading-tight tracking-tight text-white">
               Were you invited?
             </h2>
             <p className="text-gray-400">
-              Enter an invite code to earn reputation points and secure your founding spot
+              Enter an invite code to earn rep and lock in Day One status
             </p>
           </div>
 
@@ -493,7 +493,7 @@ export function StepperOnboarding() {
         <div className="flex flex-col space-y-6 w-full max-w-md mx-auto">
           {/* Heading */}
           <div className="text-center">
-            <h2 className="mb-2 text-2xl font-semibold leading-tight tracking-tight text-amber-500">
+            <h2 className="mb-2 text-2xl font-semibold leading-tight tracking-tight text-white">
               Which games do you play?
             </h2>
             <p className="text-gray-400">
@@ -533,7 +533,7 @@ export function StepperOnboarding() {
 
             {/* Footer Message */}
             <p className="text-center text-xs text-gray-500">
-              Complete setup to unlock your referral link • Invite friends to join the founding 1,000 and get early access to Zenko
+              Complete setup to unlock your referral link • Join The Origin. Be a Day One
             </p>
           </form>
         </div>

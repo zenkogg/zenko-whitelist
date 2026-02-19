@@ -26,9 +26,9 @@ const pressStart2P = Press_Start_2P({
 });
 
 export const metadata: Metadata = {
-  title: "Zenko - Join the Waitlist",
+  title: "Zenko - Reputation has no off-season",
   description:
-    "Zenko is where real performance determines the outcome. Join the waitlist.",
+    "Every game feeds your name. Before the awards. Before the spotlight. This is where it starts. Join The Origin.",
   authors: [{ name: "Zenko" }],
   creator: "Zenko",
   publisher: "Zenko",
@@ -45,15 +45,15 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://waitlist.zenko.gg",
     siteName: "Zenko",
-    title: "Zenko - Join the Waitlist",
+    title: "Zenko - Reputation has no off-season",
     description:
-      "Zenko is where real performance determines the outcome. Join the waitlist.",
+      "Every game feeds your name. Before the awards. Before the spotlight. This is where it starts. Join The Origin.",
     images: [
       {
         url: "/images/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Zenko - Where Real Performance Determines the Outcome",
+        alt: "Zenko - Reputation has no off-season",
       },
     ],
   },
@@ -61,9 +61,9 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     site: "@zenkogginc",
     creator: "@zenkogginc",
-    title: "Zenko - Join the Waitlist",
+    title: "Zenko - Reputation has no off-season",
     description:
-      "Zenko is where real performance determines the outcome. Join the waitlist.",
+      "Every game feeds your name. Before the awards. Before the spotlight. This is where it starts. Join The Origin.",
     images: ["/images/og-image.png"],
   },
   robots: {
