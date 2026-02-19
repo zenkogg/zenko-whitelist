@@ -270,7 +270,7 @@ export function StepperOnboarding() {
           {/* Google Sign In */}
           <button
             onClick={() => handleOAuthSignIn('google')}
-            className="flex w-full items-center justify-center gap-3 rounded-lg border-2 border-white bg-white px-4 py-3 text-sm font-medium text-gray-900 transition-all hover:bg-white/90 cursor-pointer"
+            className="flex w-full items-center justify-center gap-3 rounded-xl bg-purple-900 px-4 py-3 text-sm font-medium text-white transition-all hover:bg-purple-800 cursor-pointer"
           >
             <Image
               src="/images/icons/google.svg"
@@ -285,7 +285,7 @@ export function StepperOnboarding() {
           {/* Twitch Sign In */}
           <button
             onClick={() => handleOAuthSignIn('twitch')}
-            className="flex w-full items-center justify-center gap-3 rounded-lg border-2 border-zenko-twitch/30 bg-zenko-twitch/80 px-4 py-3 text-sm font-medium text-white transition-all hover:bg-zenko-twitch cursor-pointer"
+            className="flex w-full items-center justify-center gap-3 rounded-xl bg-purple-900 px-4 py-3 text-sm font-medium text-white transition-all hover:bg-purple-800 cursor-pointer"
           >
             <Image
               src="/images/icons/twitch.svg"
@@ -297,20 +297,10 @@ export function StepperOnboarding() {
             <span>Sign in with Twitch</span>
           </button>
 
-        </div>
-
-        {/* OR Divider */}
-        <div className="flex w-full items-center gap-3">
-          <div className="flex-1 border-t border-white/10"></div>
-          <span className="text-xs font-medium text-gray-500">OR</span>
-          <div className="flex-1 border-t border-white/10"></div>
-        </div>
-
-        {/* X (Twitter) Sign In */}
-        <div className="w-full">
+          {/* X (Twitter) Sign In */}
           <button
             onClick={() => handleOAuthSignIn('twitter')}
-            className="flex w-full items-center justify-center gap-3 rounded-lg border-2 border-black bg-black px-4 py-3 text-sm font-medium text-white transition-all hover:bg-[#151515] hover:border-[#151515] cursor-pointer"
+            className="flex w-full items-center justify-center gap-3 rounded-xl bg-white/5 border border-purple-300/20 px-4 py-3 text-sm font-medium text-neutral-600 transition-all hover:bg-white/10 cursor-pointer"
           >
             <svg className="h-4 w-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
