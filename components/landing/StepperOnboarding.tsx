@@ -240,7 +240,7 @@ export function StepperOnboarding() {
       <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-md mx-auto py-12">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-600 border-t-transparent" />
         <div className="text-center">
-          <h2 className="mb-2 text-2xl font-semibold text-zenko-light">
+          <h2 className="mb-2 text-xl md:text-2xl font-semibold text-zenko-light">
             Connecting...
           </h2>
           <p className="text-neutral-700">
@@ -255,10 +255,32 @@ export function StepperOnboarding() {
   if (!isAuthenticated) {
     return (
       <div className="flex flex-col items-center space-y-6 w-full max-w-md mx-auto">
+        {/* Waitlist Status Pill */}
+        {!statsLoading && stats && (
+          <div className={`flex items-center gap-1.5 rounded-full border-2 px-3 py-1 ${
+            stats.waitlistStatus === 'open'
+              ? 'border-success-300/30 bg-success-300/10'
+              : 'border-error-300/30 bg-error-300/10'
+          }`}>
+            <div className={`h-1.5 w-1.5 rounded-full ${
+              stats.waitlistStatus === 'open'
+                ? 'bg-success-300 animate-pulse'
+                : 'bg-error-300'
+            }`} />
+            <span className={`text-xs font-medium ${
+              stats.waitlistStatus === 'open'
+                ? 'text-success-300'
+                : 'text-error-300'
+            }`}>
+              Waitlist {stats.waitlistStatus === 'open' ? 'open' : 'closed'}
+            </span>
+          </div>
+        )}
+
         {/* Heading */}
         <div className="text-center space-y-3">
-          <h2 className="text-2xl font-semibold text-white">
-            Join The Origin, become a Day One
+          <h2 className="text-lg md:text-xl lg:text-2xl font-semibold text-white">
+            Join Zenko, become a Day One
           </h2>
           <p className="text-gray-400">
             Before the awards. Before the spotlight. This is where the names that matter started.
@@ -270,7 +292,7 @@ export function StepperOnboarding() {
           {/* Google Sign In */}
           <button
             onClick={() => handleOAuthSignIn('google')}
-            className="flex w-full items-center justify-center gap-3 rounded-xl bg-purple-900 px-4 py-3 text-sm font-medium text-white transition-all hover:bg-purple-800 cursor-pointer"
+            className="flex w-full items-center justify-center gap-3 rounded-xl bg-white/5 border border-purple-300/20 px-4 py-3 text-sm font-medium text-neutral-600 transition-all hover:bg-white/10 cursor-pointer"
           >
             <Image
               src="/images/icons/google.svg"
@@ -285,7 +307,7 @@ export function StepperOnboarding() {
           {/* Twitch Sign In */}
           <button
             onClick={() => handleOAuthSignIn('twitch')}
-            className="flex w-full items-center justify-center gap-3 rounded-xl bg-purple-900 px-4 py-3 text-sm font-medium text-white transition-all hover:bg-purple-800 cursor-pointer"
+            className="flex w-full items-center justify-center gap-3 rounded-xl bg-white/5 border border-purple-300/20 px-4 py-3 text-sm font-medium text-neutral-600 transition-all hover:bg-white/10 cursor-pointer"
           >
             <Image
               src="/images/icons/twitch.svg"
@@ -407,11 +429,11 @@ export function StepperOnboarding() {
         <div className="flex flex-col space-y-6 w-full max-w-md mx-auto">
           {/* Heading */}
           <div className="text-center">
-            <h2 className="mb-2 text-2xl font-semibold leading-tight tracking-tight text-white">
+            <h2 className="mb-2 text-xl md:text-2xl font-semibold leading-tight tracking-tight text-white">
               Were you invited?
             </h2>
             <p className="text-gray-400">
-              Enter an invite code to earn rep and lock in Day One status
+              Enter a code and you both earn bonus rep
             </p>
           </div>
 
@@ -469,7 +491,7 @@ export function StepperOnboarding() {
                 type={user?.usedReferralCode ? 'button' : 'submit'}
                 onClick={user?.usedReferralCode ? handleSkipReferral : undefined}
                 disabled={isSubmitting || (!user?.usedReferralCode && !referralCode.trim())}
-                className={`${user?.usedReferralCode ? 'w-full' : 'flex-1'} rounded-lg px-4 py-3 text-sm font-medium text-white transition-all disabled:cursor-not-allowed disabled:opacity-50 bg-purple-500 hover:bg-purple-600 border-2 border-purple-500 cursor-pointer`}
+                className={`${user?.usedReferralCode ? 'w-full' : 'flex-1'} rounded-lg px-4 py-3 text-sm font-medium text-white transition-all disabled:cursor-not-allowed disabled:opacity-50 bg-zenko-purple hover:bg-purple-700 border-2 border-zenko-purple cursor-pointer`}
               >
                 {isSubmitting ? 'Applying...' : user?.usedReferralCode ? 'Continue' : 'Apply'}
               </button>
@@ -483,7 +505,7 @@ export function StepperOnboarding() {
         <div className="flex flex-col space-y-6 w-full max-w-md mx-auto">
           {/* Heading */}
           <div className="text-center">
-            <h2 className="mb-2 text-2xl font-semibold leading-tight tracking-tight text-white">
+            <h2 className="mb-2 text-xl md:text-2xl font-semibold leading-tight tracking-tight text-white">
               Which games do you play?
             </h2>
             <p className="text-gray-400">
@@ -516,14 +538,14 @@ export function StepperOnboarding() {
             <button
               type="submit"
               disabled={isSubmitting || selectedGames.length === 0}
-              className="w-full rounded-lg border-2 border-purple-500 px-4 py-3 text-sm font-medium text-white transition-all disabled:cursor-not-allowed disabled:opacity-50 bg-purple-500 hover:bg-purple-600 cursor-pointer"
+              className="w-full rounded-lg border-2 border-purple-500 px-4 py-3 text-sm font-medium text-white transition-all disabled:cursor-not-allowed disabled:opacity-50 bg-zenko-purple hover:bg-purple-700 cursor-pointer"
             >
               {isSubmitting ? 'Setting up...' : 'Go to dashboard'}
             </button>
 
             {/* Footer Message */}
             <p className="text-center text-xs text-gray-500">
-              Complete setup to unlock your referral link • Join The Origin. Be a Day One
+              Complete setup to unlock your referral link
             </p>
           </form>
         </div>
@@ -544,9 +566,9 @@ export function StepperOnboarding() {
           {/* Connected Account Row */}
           <div className="flex items-center justify-between w-full max-w-md mx-auto pt-8">
             {/* Left: Provider Icon + Username */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 min-w-0">
               {user.oauthProvider === 'twitter' ? (
-                <svg className="h-4 w-4 text-white" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <svg className="h-4 w-4 flex-shrink-0 text-white" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                 </svg>
               ) : (
@@ -555,10 +577,10 @@ export function StepperOnboarding() {
                   alt={user.oauthProvider}
                   width={16}
                   height={16}
-                  className="h-4 w-4"
+                  className="h-4 w-4 flex-shrink-0"
                 />
               )}
-              <span className="text-sm text-neutral-700/70 font-medium">
+              <span className="text-sm text-neutral-700/70 font-medium truncate">
                 {user.oauthProvider === 'google' && user.email
                   ? user.email
                   : (user.oauthProvider === 'twitch' || user.oauthProvider === 'twitter') && user.displayName && user.displayName !== 'User'

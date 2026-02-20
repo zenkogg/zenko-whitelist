@@ -60,7 +60,7 @@ export function ReferralCodeCard({ referralCode, referralCount, defaultCollapsed
               className="h-5 w-5 flex-shrink-0"
               style={{ filter: 'brightness(0) saturate(100%) invert(65%) sepia(85%) saturate(1574%) hue-rotate(359deg) brightness(101%) contrast(98%)' }}
             />
-            <h2 className="text-base md:text-lg font-semibold text-white whitespace-nowrap">Your referral code</h2>
+            <h2 className="text-base md:text-lg font-semibold text-white whitespace-nowrap">Bring your squad</h2>
             <div className="ml-auto flex items-center justify-end">
               <FuzzyText
                 fontSize="clamp(11px, 1.5vw, 15px)"

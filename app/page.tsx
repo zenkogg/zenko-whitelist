@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { BackgroundLayer } from '@/components/landing/BackgroundLayer';
 import { GameLogoLoop } from '@/components/landing/GameLogoLoop';
 import { CenteredOnboardingCard } from '@/components/landing/CenteredOnboardingCard';
 import { HeroSection } from '@/components/landing/HeroSection';
-import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 
 export default function Home() {
@@ -43,13 +43,32 @@ export default function Home() {
     <main className="relative min-h-screen w-full overflow-x-hidden bg-black">
       <BackgroundLayer />
 
-      {/* Transparent Navbar */}
-      <Navbar />
+      {/* Vertical Zenko Logo */}
+      <div className="relative z-10 flex justify-center pt-10 md:pt-16">
+        <div className="relative">
+          {/* Glow effect behind logo */}
+          <div
+            className="absolute inset-0 blur-3xl opacity-30"
+            style={{
+              background: 'radial-gradient(ellipse at center, #7F56D9 0%, #9E77ED 40%, transparent 70%)',
+              transform: 'scale(1.8)',
+            }}
+          />
+          <Image
+            src="/logo/logo-only-brand.svg"
+            alt="Zenko"
+            width={140}
+            height={103}
+            className="relative h-20 md:h-[103px] w-auto"
+            priority
+          />
+        </div>
+      </div>
 
       {/* Main Content */}
-      <div className="relative z-10 px-4 md:px-6 pt-24 pb-8 md:pt-32 md:pb-12 lg:pt-40 lg:pb-16">
+      <div className="relative z-10 px-4 md:px-6 pt-6 pb-8 md:pt-10 md:pb-12 lg:pb-16">
         <div className="mx-auto max-w-6xl">
-          {/* Hero Section with Title, Description, Waitlist Badge & Avatar Group */}
+          {/* Hero Section with Title */}
           <HeroSection />
 
           {/* Onboarding Card */}

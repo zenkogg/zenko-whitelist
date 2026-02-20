@@ -139,7 +139,7 @@ export async function GET(request: NextRequest) {
               Reputation has no off-season.
             </div>
             <div tw="flex text-xl mb-10" style={{ color: 'rgba(203, 186, 238, 0.6)', lineHeight: 1.5, fontFamily: 'Inter' }}>
-              Join The Origin. Earn +{referralPoints} XP with this code
+              Join Zenko. Earn +{referralPoints} XP with this code
             </div>
 
             {/* Referral Code */}

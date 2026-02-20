@@ -6,7 +6,6 @@ import { ArrowRightStartOnRectangleIcon } from '@heroicons/react/20/solid';
 import { BackgroundLayer } from '@/components/landing/BackgroundLayer';
 import { ProfileCard, ReferralCodeCard, ApplyReferralCard, AvatarGroup, ReferralProgress, Leaderboard, FAQ } from '@/components/dashboard';
 import { Footer } from '@/components/Footer';
-import Shuffle from '@/components/Shuffle';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 interface ReferrerInfo {
@@ -159,15 +158,12 @@ export default function DashboardPage() {
       {/* Header Section */}
       <div className="relative z-10 px-4 md:px-6 pt-8 md:pt-12 pb-6 md:pb-8">
         <div className="mx-auto max-w-6xl text-center">
-          <Shuffle
-            text="Level up"
-            tag="h1"
-            className="text-3xl md:text-5xl font-bold text-amber-500 mb-6 tracking-tightest md:tracking-normal"
-            style={{ fontFamily: 'var(--font-press-start)', wordSpacing: '-0.5em' }}
-          />
-          <p className="text-base text-neutral-700 mb-4 md:mb-6">
-            Your reputation starts here. Bring your squad.
-          </p>
+          <h1
+            className="text-2xl sm:text-3xl md:text-3xl font-semibold text-white mb-4 md:mb-6"
+            style={{ fontFamily: 'var(--font-sora)' }}
+          >
+            Your reputation starts <span className="text-amber-500">here</span>
+          </h1>
         </div>
       </div>
 
