@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
-import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
+import { RedirectClient } from './redirect-client';
 
 interface Props {
   params: Promise<{ code: string }>;
@@ -60,6 +60,5 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ReferralPage({ params }: Props) {
   const { code } = await params;
-  // Redirect to home with referral code in query param
-  redirect(`/?ref=${code}`);
+  return <RedirectClient code={code} />;
 }
