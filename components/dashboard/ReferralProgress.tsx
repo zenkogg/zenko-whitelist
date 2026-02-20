@@ -29,10 +29,10 @@ export function ReferralProgress({ referralCount, reputationPoints, defaultColla
 
         <div className="flex items-center justify-between text-sm mb-2">
           <span className="text-neutral-700">
-            <span className="text-amber-500 font-semibold">{referralCount}/{REFERRAL_MAX_COUNT}</span> referrals
+            <span className="text-amber-500 font-semibold">{Math.min(referralCount, REFERRAL_MAX_COUNT)}/{REFERRAL_MAX_COUNT}</span> referral boost
           </span>
           <span className="text-neutral-700/60 font-medium">
-            {REFERRAL_MAX_COUNT - referralCount} more to go
+            {referralCount} total referrals
           </span>
         </div>
         <div className="h-3 w-full overflow-hidden rounded-full bg-white/20 mb-4 md:mb-6">

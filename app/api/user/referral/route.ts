@@ -64,10 +64,8 @@ export async function POST(request: NextRequest) {
         throw new Error('CANNOT_USE_OWN_CODE');
       }
 
-      // Check if referrer has reached max referral count
-      if (referrer.referralCount >= REFERRAL_MAX_COUNT) {
-        throw new Error('REFERRER_MAX_REACHED');
-      }
+      // Referrer earns points only for the first REFERRAL_MAX_COUNT referrals
+      const referrerEarnsPoints = referrer.referralCount < REFERRAL_MAX_COUNT;
 
       // Update current user: apply referral code and add points
       const updatedUser = await tx.waitlistUser.update({
@@ -79,12 +77,12 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // Update referrer: increment referral count and add points
+      // Update referrer: always increment count, only add points if under cap
       const updatedReferrer = await tx.waitlistUser.update({
         where: { id: referrer.id },
         data: {
           referralCount: { increment: 1 },
-          reputationPoints: { increment: REFERRAL_POINTS_PER_SIGNUP },
+          ...(referrerEarnsPoints && { reputationPoints: { increment: REFERRAL_POINTS_PER_SIGNUP } }),
         },
       });
 
@@ -131,14 +129,6 @@ export async function POST(request: NextRequest) {
           return NextResponse.json(
             { error: 'Bad Request', message: 'You cannot use your own referral code' },
             { status: 400 }
-          );
-        case 'REFERRER_MAX_REACHED':
-          return NextResponse.json(
-            {
-              error: 'Conflict',
-              message: `This referral code has reached the maximum limit of ${REFERRAL_MAX_COUNT} referrals`
-            },
-            { status: 409 }
           );
       }
     }
