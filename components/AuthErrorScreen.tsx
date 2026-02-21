@@ -91,7 +91,7 @@ export function AuthErrorScreen({ error }: AuthErrorScreenProps) {
           <div className="mt-8 flex items-center gap-2 text-xs text-neutral-700/50">
             <span>If this persists, contact us on</span>
             <a
-              href="https://discord.gg/RWPUuMXAGA"
+              href="https://discord.gg/VeAHVbbgWh"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 text-purple-300/50 transition-colors hover:text-purple-300"

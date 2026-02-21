@@ -20,7 +20,7 @@ export function Footer() {
           <div className="flex items-center justify-center gap-6">
             <a href="https://www.instagram.com/zenkogg?igsh=YzdqYTc0N2ZuMzNx&utm_source=qr" target="_blank" rel="noopener noreferrer" className="text-purple-300/50 transition-colors hover:text-purple-300" aria-label="Instagram"><InstagramIcon /></a>
             <a href="https://x.com/zenkogginc?s=21&t=aZd4S6kCPZBx-rpP3YEdAg" target="_blank" rel="noopener noreferrer" className="text-purple-300/50 transition-colors hover:text-purple-300" aria-label="X (Twitter)"><XIcon /></a>
-            <a href="https://discord.gg/RWPUuMXAGA" target="_blank" rel="noopener noreferrer" className="text-purple-300/50 transition-colors hover:text-purple-300" aria-label="Discord"><DiscordIcon /></a>
+            <a href="https://discord.gg/VeAHVbbgWh" target="_blank" rel="noopener noreferrer" className="text-purple-300/50 transition-colors hover:text-purple-300" aria-label="Discord"><DiscordIcon /></a>
           </div>
           <div className="flex items-center justify-end gap-4">
             <Link href="/terms" className="text-xs text-neutral-600 transition-colors hover:text-neutral-400">Terms</Link>
@@ -45,7 +45,7 @@ export function Footer() {
             <div className="flex items-center gap-5">
               <a href="https://www.instagram.com/zenkogg?igsh=YzdqYTc0N2ZuMzNx&utm_source=qr" target="_blank" rel="noopener noreferrer" className="text-purple-300/50 transition-colors hover:text-purple-300" aria-label="Instagram"><InstagramIcon /></a>
               <a href="https://x.com/zenkogginc?s=21&t=aZd4S6kCPZBx-rpP3YEdAg" target="_blank" rel="noopener noreferrer" className="text-purple-300/50 transition-colors hover:text-purple-300" aria-label="X (Twitter)"><XIcon /></a>
-              <a href="https://discord.gg/RWPUuMXAGA" target="_blank" rel="noopener noreferrer" className="text-purple-300/50 transition-colors hover:text-purple-300" aria-label="Discord"><DiscordIcon /></a>
+              <a href="https://discord.gg/VeAHVbbgWh" target="_blank" rel="noopener noreferrer" className="text-purple-300/50 transition-colors hover:text-purple-300" aria-label="Discord"><DiscordIcon /></a>
             </div>
           </div>
           <div className="flex items-center gap-3">

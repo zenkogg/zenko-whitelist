@@ -44,7 +44,7 @@ export default function Home() {
       <BackgroundLayer />
 
       {/* Vertical Zenko Logo */}
-      <div className="relative z-10 flex justify-center pt-10 md:pt-16">
+      <div className="relative z-10 flex justify-center pt-8 md:pt-12">
         <div className="relative">
           {/* Glow effect behind logo */}
           <div
@@ -59,14 +59,14 @@ export default function Home() {
             alt="Zenko"
             width={140}
             height={103}
-            className="relative h-20 md:h-[103px] w-auto"
+            className="relative h-16 md:h-[90px] w-auto"
             priority
           />
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 px-4 md:px-6 pt-6 pb-8 md:pt-10 md:pb-12 lg:pb-16">
+      <div className="relative z-10 px-4 md:px-6 pt-4 pb-8 md:pt-6 md:pb-12 lg:pb-16">
         <div className="mx-auto max-w-6xl">
           {/* Hero Section with Title */}
           <HeroSection />

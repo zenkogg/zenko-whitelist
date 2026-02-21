@@ -280,9 +280,9 @@ export function StepperOnboarding() {
         {/* Heading */}
         <div className="text-center space-y-3">
           <h2 className="text-lg md:text-xl lg:text-2xl font-semibold text-white">
-            Join Zenko, become a Day One
+            Join Zenko. Be a <span className="text-amber-500">Day One</span>.
           </h2>
-          <p className="text-gray-400">
+          <p className="text-sm md:text-base text-gray-400">
             Before the awards. Before the spotlight. This is where the names that matter started.
           </p>
         </div>
