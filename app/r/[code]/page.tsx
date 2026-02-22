@@ -26,7 +26,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description: `They said it's just a game... we made it pay. Join ${userName} on Zenko and use referral code ${code} to earn bonus XP. Every game feeds your name.`,
       openGraph: {
         type: 'website',
+        siteName: 'Zenko',
         url: `/r/${code}`,
+        title: `${userName} invited you to Zenko — Your reputation starts here`,
+        description: `They said it's just a game... we made it pay. Join ${userName} on Zenko and use referral code ${code} to earn bonus XP. Every game feeds your name.`,
+        images: [
+          {
+            url: `/api/og?ref=${code}`,
+            width: 1200,
+            height: 630,
+            alt: `Join ${userName} on Zenko`,
+            type: 'image/png',
+          },
+        ],
+      },
+      twitter: {
+        card: 'summary_large_image',
+        site: '@zenkogginc',
         title: `${userName} invited you to Zenko — Your reputation starts here`,
         description: `They said it's just a game... we made it pay. Join ${userName} on Zenko and use referral code ${code} to earn bonus XP. Every game feeds your name.`,
         images: [
@@ -38,12 +54,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           },
         ],
       },
-      twitter: {
-        card: 'summary_large_image',
-        title: `${userName} invited you to Zenko — Your reputation starts here`,
-        description: `They said it's just a game... we made it pay. Join ${userName} on Zenko and use referral code ${code} to earn bonus XP. Every game feeds your name.`,
-        images: [`/api/og?ref=${code}`],
-      },
     };
   } catch (error) {
     console.error('Error generating referral metadata:', error);
@@ -52,7 +62,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: 'Join Zenko | Reputation has no off-season',
       description: 'Every game feeds your name. Join The Origin.',
       openGraph: {
-        images: [`/api/og?ref=${code}`],
+        siteName: 'Zenko',
+        images: [
+          {
+            url: `/api/og?ref=${code}`,
+            width: 1200,
+            height: 630,
+            alt: 'Join Zenko',
+            type: 'image/png',
+          },
+        ],
       },
     };
   }

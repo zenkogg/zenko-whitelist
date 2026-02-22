@@ -54,6 +54,7 @@ export const metadata: Metadata = {
         width: 1200,
         height: 630,
         alt: "Zenko — Every Game Feeds Your Name",
+        type: "image/png",
       },
     ],
   },
@@ -64,7 +65,14 @@ export const metadata: Metadata = {
     title: "Zenko — Every Game Feeds Your Name | Join The Origin",
     description:
       "They said it's just a game... we made it pay. Before the awards. Before the spotlight. This is where your reputation starts. Join The Origin.",
-    images: ["/images/og-image.png"],
+    images: [
+      {
+        url: "/images/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Zenko — Every Game Feeds Your Name",
+      },
+    ],
   },
   robots: {
     index: true,
