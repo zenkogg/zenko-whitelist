@@ -7,11 +7,15 @@ import { REFERRAL_MAX_COUNT } from '@/lib/referral-config';
 interface ReferralProgressProps {
   referralCount: number;
   reputationPoints: number;
+  status: string;
+  waitlistStatus: 'open' | 'closed';
   defaultCollapsed?: boolean;
   collapsible?: boolean;
 }
 
-export function ReferralProgress({ referralCount, reputationPoints, defaultCollapsed = false, collapsible = false }: ReferralProgressProps) {
+export function ReferralProgress({ referralCount, reputationPoints, status, waitlistStatus, defaultCollapsed = false, collapsible = false }: ReferralProgressProps) {
+  const isApproved = status !== 'PENDING';
+  const isNotSelected = waitlistStatus === 'closed' && status === 'PENDING';
   const progress = Math.min((referralCount / REFERRAL_MAX_COUNT) * 100, 100);
 
   return (
@@ -47,14 +51,14 @@ export function ReferralProgress({ referralCount, reputationPoints, defaultColla
           <div className="flex items-center justify-between rounded-lg bg-white/5 px-3 md:px-4 py-2.5 md:py-3">
             <div className="flex items-center gap-2">
               <div className={`h-2 w-2 rounded-full flex-shrink-0 ${
-                referralCount >= REFERRAL_MAX_COUNT ? 'bg-purple-300' : 'bg-amber-500'
+                isApproved ? 'bg-success' : isNotSelected ? 'bg-error' : 'bg-amber-500'
               }`} />
               <span className="text-xs md:text-sm text-neutral-700">Early Access</span>
             </div>
             <div className={`text-sm md:text-base font-bold ${
-              referralCount >= REFERRAL_MAX_COUNT ? 'text-purple-300' : 'text-amber-500'
+              isApproved ? 'text-success' : isNotSelected ? 'text-error' : 'text-amber-500'
             }`}>
-              {referralCount >= REFERRAL_MAX_COUNT ? 'Access Granted' : 'On Waitlist'}
+              {isApproved ? 'Access Granted' : isNotSelected ? 'Not Selected' : 'On Waitlist'}
             </div>
           </div>
           <div className="flex items-center justify-between rounded-lg bg-white/5 px-3 md:px-4 py-2.5 md:py-3">

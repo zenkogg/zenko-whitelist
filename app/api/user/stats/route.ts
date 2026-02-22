@@ -143,6 +143,7 @@ export async function POST(request: NextRequest) {
           joinedAt: ref.createdAt,
         })),
         referrerInfo,
+        waitlistStatus: process.env.WAITLIST_STATUS === 'closed' ? 'closed' : 'open',
       },
     });
   } catch (error) {

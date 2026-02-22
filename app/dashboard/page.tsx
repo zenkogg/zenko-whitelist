@@ -33,6 +33,8 @@ interface UserStats {
   referrals?: Referral[];
   estimatedRank?: number;
   totalPending?: number;
+  status: string;
+  waitlistStatus: 'open' | 'closed';
 }
 
 interface User {
@@ -109,6 +111,8 @@ export default function DashboardPage() {
           referrals: result.data.referrals || [],
           estimatedRank: result.data.stats.estimatedRank,
           totalPending: result.data.stats.totalPending,
+          status: result.data.user.status,
+          waitlistStatus: result.data.waitlistStatus || 'open',
         });
       }
     } catch (error) {
@@ -225,6 +229,8 @@ export default function DashboardPage() {
               <ReferralProgress
                 referralCount={userStats.referralCount}
                 reputationPoints={userStats.reputationPoints}
+                status={userStats.status}
+                waitlistStatus={userStats.waitlistStatus}
                 collapsible={isMobile}
               />
             </div>
