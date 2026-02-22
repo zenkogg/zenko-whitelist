@@ -139,17 +139,22 @@ export async function GET(request: NextRequest) {
               Reputation has no off-season.
             </div>
             <div tw="flex text-xl mb-10" style={{ color: 'rgba(203, 186, 238, 0.6)', lineHeight: 1.5, fontFamily: 'Inter' }}>
-              Join Zenko. Earn +{referralPoints} XP with this code
+              {`Join the waitlist and become a Day One. +${referralPoints} XP bonus`}
             </div>
 
             {/* Referral Code */}
-            <div tw="flex flex-col rounded-2xl py-6 px-8" style={{ backgroundColor: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(179, 142, 243, 0.15)' }}>
+            <div tw="flex flex-col rounded-2xl py-6 px-8 mb-4" style={{ backgroundColor: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(179, 142, 243, 0.15)' }}>
               <div tw="flex text-xs mb-3" style={{ color: 'rgba(203, 186, 238, 0.45)', letterSpacing: '0.08em', fontFamily: 'Inter' }}>
                 REFERRAL CODE
               </div>
               <div tw="flex text-5xl font-bold" style={{ color: '#fdb022', letterSpacing: '0.18em', fontFamily: 'Sora' }}>
                 {referralCode ? referralCode.toUpperCase() : 'ZENKO'}
               </div>
+            </div>
+
+            {/* CTA */}
+            <div tw="flex items-center text-sm" style={{ color: 'rgba(203, 186, 238, 0.5)', fontFamily: 'Inter' }}>
+              {`Use this code at waitlist.zenko.gg · Earn +${referralPoints} XP`}
             </div>
           </div>
         </div>

@@ -26,9 +26,9 @@ const pressStart2P = Press_Start_2P({
 });
 
 export const metadata: Metadata = {
-  title: "Zenko - Reputation has no off-season",
+  title: "Zenko — Every Game Feeds Your Name | Join The Origin",
   description:
-    "Every game feeds your name. Before the awards. Before the spotlight. This is where it starts. Join The Origin.",
+    "They said it's just a game... we made it pay. Before the awards. Before the spotlight. This is where your reputation starts. Join The Origin.",
   authors: [{ name: "Zenko" }],
   creator: "Zenko",
   publisher: "Zenko",
@@ -45,15 +45,15 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://waitlist.zenko.gg",
     siteName: "Zenko",
-    title: "Zenko - Reputation has no off-season",
+    title: "Zenko — Every Game Feeds Your Name | Join The Origin",
     description:
-      "Every game feeds your name. Before the awards. Before the spotlight. This is where it starts. Join The Origin.",
+      "They said it's just a game... we made it pay. Before the awards. Before the spotlight. This is where your reputation starts. Join The Origin.",
     images: [
       {
         url: "/images/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Zenko - Reputation has no off-season",
+        alt: "Zenko — Every Game Feeds Your Name",
       },
     ],
   },
@@ -61,9 +61,9 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     site: "@zenkogginc",
     creator: "@zenkogginc",
-    title: "Zenko - Reputation has no off-season",
+    title: "Zenko — Every Game Feeds Your Name | Join The Origin",
     description:
-      "Every game feeds your name. Before the awards. Before the spotlight. This is where it starts. Join The Origin.",
+      "They said it's just a game... we made it pay. Before the awards. Before the spotlight. This is where your reputation starts. Join The Origin.",
     images: ["/images/og-image.png"],
   },
   robots: {

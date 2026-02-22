@@ -22,13 +22,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const userName = user?.displayName || 'Someone';
 
     return {
-      title: `${userName} invited you to Zenko | Reputation has no off-season`,
-      description: `Join ${userName} on Zenko — every game feeds your name. Use referral code ${code} to join The Origin`,
+      title: `${userName} invited you to Zenko — Your reputation starts here`,
+      description: `They said it's just a game... we made it pay. Join ${userName} on Zenko and use referral code ${code} to earn bonus XP. Every game feeds your name.`,
       openGraph: {
         type: 'website',
         url: `/r/${code}`,
-        title: `${userName} invited you to Zenko`,
-        description: `Reputation has no off-season. Use code ${code} to join The Origin`,
+        title: `${userName} invited you to Zenko — Your reputation starts here`,
+        description: `They said it's just a game... we made it pay. Join ${userName} on Zenko and use referral code ${code} to earn bonus XP. Every game feeds your name.`,
         images: [
           {
             url: `/api/og?ref=${code}`,
@@ -40,8 +40,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       },
       twitter: {
         card: 'summary_large_image',
-        title: `${userName} invited you to Zenko`,
-        description: `Reputation has no off-season. Use code ${code} to join The Origin`,
+        title: `${userName} invited you to Zenko — Your reputation starts here`,
+        description: `They said it's just a game... we made it pay. Join ${userName} on Zenko and use referral code ${code} to earn bonus XP. Every game feeds your name.`,
         images: [`/api/og?ref=${code}`],
       },
     };
