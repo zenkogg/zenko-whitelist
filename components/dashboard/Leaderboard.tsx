@@ -3,13 +3,11 @@
 import Image from 'next/image';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import CountUp from '@/components/CountUp';
-import { AnimatedItem } from '@/components/AnimatedList';
 import { MagnifyingGlassIcon, PlusIcon } from '@heroicons/react/20/solid';
 
 // Leaderboard Configuration
 const INITIAL_LOAD_COUNT = 7; // Number of users to load initially
 const LOAD_MORE_INCREMENT = 10; // Number of users to add per "load more" click
-const VISIBLE_ROWS = 5; // Approximate number of rows visible in viewport (controlled by max-h-[420px])
 const PREFETCH_CACHE_KEY = 'leaderboard_prefetch';
 const PREFETCH_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
@@ -321,9 +319,9 @@ export function Leaderboard({ userId, totalUsers = 0 }: LeaderboardProps) {
         className="max-h-[420px] overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-purple-300/20 [&::-webkit-scrollbar-thumb]:rounded-full pr-2"
       >
         {leaderboard.map((entry, index) => (
-          <AnimatedItem key={entry.rank} delay={index * 0.05} index={index}>
+          <div key={entry.rank} data-index={index} className="mb-4">
             {renderLeaderboardRow(entry)}
-          </AnimatedItem>
+          </div>
         ))}
       </div>
 
