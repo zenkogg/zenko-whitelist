@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { REFERRAL_MAX_POINTS } from '@/lib/referral-config';
+import { formatDisplayName } from '@/lib/utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,6 +17,8 @@ export async function POST(request: NextRequest) {
     const leaderboardResult = await prisma.$queryRaw<Array<{
       id: string;
       display_name: string;
+      oauth_provider: string;
+      email: string | null;
       oauth_avatar_url: string | null;
       custom_avatar_url: string | null;
       referral_count: number;
@@ -27,17 +29,21 @@ export async function POST(request: NextRequest) {
         SELECT
           id,
           display_name,
+          oauth_provider,
+          email,
           oauth_avatar_url,
           custom_avatar_url,
           referral_count,
           ROW_NUMBER() OVER (ORDER BY created_at) as registration_order
         FROM waitlist_users
-        WHERE status = 'PENDING'
+        WHERE status IN ('PENDING', 'APPROVED')
       ),
       ranked_users AS (
         SELECT
           id,
           display_name,
+          oauth_provider,
+          email,
           oauth_avatar_url,
           custom_avatar_url,
           referral_count,
@@ -50,6 +56,8 @@ export async function POST(request: NextRequest) {
       SELECT
         id::text,
         display_name,
+        oauth_provider,
+        email,
         oauth_avatar_url,
         custom_avatar_url,
         referral_count::int,
@@ -62,7 +70,7 @@ export async function POST(request: NextRequest) {
 
     const leaderboard = leaderboardResult.map(entry => ({
       rank: Number(entry.rank),
-      displayName: entry.display_name,
+      displayName: formatDisplayName(entry.display_name, entry.oauth_provider, entry.email),
       avatarUrl: entry.custom_avatar_url || entry.oauth_avatar_url,
       referralCount: entry.referral_count,
       registrationOrder: Number(entry.registration_order),
@@ -77,6 +85,8 @@ export async function POST(request: NextRequest) {
       const userResult = await prisma.$queryRaw<Array<{
         id: string;
         display_name: string;
+        oauth_provider: string;
+        email: string | null;
         oauth_avatar_url: string | null;
         custom_avatar_url: string | null;
         referral_count: number;
@@ -87,17 +97,21 @@ export async function POST(request: NextRequest) {
           SELECT
             id,
             display_name,
+            oauth_provider,
+            email,
             oauth_avatar_url,
             custom_avatar_url,
             referral_count,
             ROW_NUMBER() OVER (ORDER BY created_at) as registration_order
           FROM waitlist_users
-          WHERE status = 'PENDING'
+          WHERE status IN ('PENDING', 'APPROVED')
         ),
         ranked_users AS (
           SELECT
             id,
             display_name,
+            oauth_provider,
+            email,
             oauth_avatar_url,
             custom_avatar_url,
             referral_count,
@@ -110,6 +124,8 @@ export async function POST(request: NextRequest) {
         SELECT
           id::text,
           display_name,
+          oauth_provider,
+          email,
           oauth_avatar_url,
           custom_avatar_url,
           referral_count::int,
@@ -123,7 +139,7 @@ export async function POST(request: NextRequest) {
         const entry = userResult[0];
         currentUserEntry = {
           rank: Number(entry.rank),
-          displayName: entry.display_name,
+          displayName: formatDisplayName(entry.display_name, entry.oauth_provider, entry.email),
           avatarUrl: entry.custom_avatar_url || entry.oauth_avatar_url,
           referralCount: entry.referral_count,
           registrationOrder: Number(entry.registration_order),

@@ -197,7 +197,7 @@ export default function DashboardPage() {
                 className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-red-400/70 transition-all hover:text-red-400 cursor-pointer"
               >
                 <ArrowRightStartOnRectangleIcon className="h-4 w-4" />
-                <span>Disconnect</span>
+                <span>Disconnect {user.oauthProvider === 'twitter' ? 'X' : user.oauthProvider === 'twitch' ? 'Twitch' : 'Google'}</span>
               </button>
             </div>
 

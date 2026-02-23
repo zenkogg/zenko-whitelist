@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { REFERRAL_MAX_POINTS } from '@/lib/referral-config';
+import { formatDisplayName } from '@/lib/utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,6 +31,8 @@ export async function POST(request: NextRequest) {
         oauthAvatarUrl: true,
         customAvatarUrl: true,
         twitterHandle: true,
+        oauthProvider: true,
+        email: true,
       },
     });
 
@@ -50,7 +53,7 @@ export async function POST(request: NextRequest) {
           COUNT(*) OVER () as total_users,
           reputation_points
         FROM waitlist_users
-        WHERE status = 'PENDING'
+        WHERE status IN ('PENDING', 'APPROVED')
       ),
       ranked_users AS (
         SELECT
@@ -70,11 +73,21 @@ export async function POST(request: NextRequest) {
     `;
 
     const estimatedRank = rankResult.length > 0 ? Number(rankResult[0].rank) : null;
-    const registrationOrder = rankResult.length > 0 ? Number(rankResult[0].registration_order) : null;
 
-    // Get total pending users count
+    // Registration order across ALL users (not just PENDING) so it always shows
+    const regOrderResult = await prisma.$queryRaw<Array<{ registration_order: bigint }>>`
+      SELECT registration_order::int as registration_order
+      FROM (
+        SELECT id, ROW_NUMBER() OVER (ORDER BY created_at) as registration_order
+        FROM waitlist_users
+      ) t
+      WHERE id::text = ${currentUser.id};
+    `;
+    const registrationOrder = regOrderResult.length > 0 ? Number(regOrderResult[0].registration_order) : null;
+
+    // Get total ranked users count (PENDING + APPROVED)
     const totalPending = await prisma.waitlistUser.count({
-      where: { status: 'PENDING' },
+      where: { status: { in: ['PENDING', 'APPROVED'] } },
     });
 
     // Get referral stats for user's referrals
@@ -117,7 +130,7 @@ export async function POST(request: NextRequest) {
       data: {
         user: {
           id: currentUser.id,
-          displayName: currentUser.displayName,
+          displayName: formatDisplayName(currentUser.displayName || 'User', currentUser.oauthProvider, currentUser.email),
           avatarUrl: currentUser.customAvatarUrl || currentUser.oauthAvatarUrl,
           referralCode: currentUser.referralCode,
           usedReferralCode: currentUser.usedReferralCode,

@@ -24,11 +24,11 @@ export function ReferralProgress({ referralCount, reputationPoints, status, wait
         defaultCollapsed={defaultCollapsed}
         collapsible={collapsible}
         title={
-          <h2 className="text-base md:text-lg font-semibold text-white whitespace-nowrap">Fill the roster</h2>
+          <h2 className="text-base md:text-lg font-semibold text-white whitespace-nowrap">Gain priority access</h2>
         }
       >
         <p className="text-sm text-neutral-800 mb-4">
-          Unlock Day One status. Bonus rep secured
+          Refer friends to boost your rank. Each referral earns you +10 XP and moves you up the waitlist.
         </p>
 
         <div className="flex items-center justify-between text-sm mb-2">

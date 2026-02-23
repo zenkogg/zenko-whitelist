@@ -145,7 +145,10 @@ export function parseJwtClaims(jwt: string): {
 } | null {
   try {
     const [, payloadBase64] = jwt.split('.');
-    const payload = JSON.parse(atob(payloadBase64));
+    // Decode base64url → UTF-8 to properly handle non-ASCII names (e.g. Turkish, Chinese)
+    const binary = atob(payloadBase64.replace(/-/g, '+').replace(/_/g, '/'));
+    const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+    const payload = JSON.parse(new TextDecoder().decode(bytes));
     return {
       sub: payload.sub,
       email: payload.email,

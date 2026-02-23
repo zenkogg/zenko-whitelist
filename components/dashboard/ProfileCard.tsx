@@ -2,9 +2,10 @@
 
 import Image from 'next/image';
 import { useState } from 'react';
-import { XMarkIcon, PencilIcon, PowerIcon } from '@heroicons/react/20/solid';
+import { XMarkIcon, PencilIcon } from '@heroicons/react/20/solid';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import PixelCard from '@/components/PixelCard';
+import { formatDisplayName } from '@/lib/utils';
 
 interface ProfileCardProps {
   displayName: string;
@@ -31,6 +32,7 @@ export function ProfileCard({
   onAvatarUpdate,
   onLogout,
 }: ProfileCardProps) {
+  const username = formatDisplayName(displayName, oauthProvider, email);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [avatarUploadError, setAvatarUploadError] = useState('');
   const [isRemovingAvatar, setIsRemovingAvatar] = useState(false);
@@ -100,8 +102,21 @@ export function ProfileCard({
   const formattedDate = new Date(createdAt).toLocaleDateString('en-US', {
     day: 'numeric',
     month: 'short',
-    year: 'numeric',
   });
+
+  const getOrdinal = (n: number) => {
+    const mod10 = n % 10;
+    const mod100 = n % 100;
+    if (mod100 >= 11 && mod100 <= 13) return `${n}th`;
+    if (mod10 === 1) return `${n}st`;
+    if (mod10 === 2) return `${n}nd`;
+    if (mod10 === 3) return `${n}rd`;
+    return `${n}th`;
+  };
+
+  const joinedText = registrationOrder
+    ? `Joined ${getOrdinal(registrationOrder)} on ${formattedDate}`
+    : `Joined on ${formattedDate}`;
 
   return (
     <div className="h-full w-full rounded-2xl bg-white/5 p-4 md:p-6 backdrop-blur-md border-2 border-purple-300/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] flex flex-col">
@@ -253,7 +268,7 @@ export function ProfileCard({
                       />
                     )}
                     <p className="text-base font-semibold text-amber-500 truncate" style={{ fontFamily: 'var(--font-sora)' }}>
-                      {displayName}
+                      {username}
                     </p>
                   </div>
 
@@ -263,7 +278,7 @@ export function ProfileCard({
                       {/* Desktop: hover to reveal */}
                       <div className="relative h-5 overflow-hidden hidden md:block">
                         <div className="absolute inset-0 transition-transform duration-300 ease-out group-hover:-translate-y-full">
-                          <p className="text-sm text-neutral-700">Joined {formattedDate}</p>
+                          <p className="text-sm text-neutral-700">{joinedText}</p>
                         </div>
                         <div className="absolute inset-0 transition-transform duration-300 ease-out translate-y-full group-hover:translate-y-0">
                           <p className="text-sm text-neutral-700 truncate">{secondaryText}</p>
@@ -271,12 +286,12 @@ export function ProfileCard({
                       </div>
                       {/* Mobile: show both */}
                       <div className="md:hidden">
-                        <p className="text-sm text-neutral-700">Joined {formattedDate}</p>
+                        <p className="text-sm text-neutral-700">{joinedText}</p>
                         <p className="text-xs text-neutral-700/70 truncate">{secondaryText}</p>
                       </div>
                     </>
                   ) : (
-                    <p className="text-sm text-neutral-700">Joined {formattedDate}</p>
+                    <p className="text-sm text-neutral-700">{joinedText}</p>
                   )}
                 </div>
 

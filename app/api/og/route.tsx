@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { readFile } from 'fs/promises';
 import path from 'path';
 import { REFERRAL_POINTS_PER_SIGNUP } from '@/lib/referral-config';
+import { formatDisplayName } from '@/lib/utils';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -23,16 +24,16 @@ export async function GET(request: NextRequest) {
     if (referralCode) {
       const user = await prisma.waitlistUser.findUnique({
         where: { referralCode: referralCode.toUpperCase() },
-        select: { displayName: true, customAvatarUrl: true, oauthProvider: true, twitterHandle: true },
+        select: { displayName: true, email: true, customAvatarUrl: true, oauthProvider: true, twitterHandle: true },
       });
       if (user) {
         oauthProvider = user.oauthProvider;
         twitterHandle = user.twitterHandle;
-        // For Google, show display name. For X/Twitch, show username/handle.
+        // For Google, show email prefix. For X/Twitch, show username/handle.
         if (oauthProvider === 'twitter' && twitterHandle) {
           userName = `@${twitterHandle}`;
         } else {
-          userName = user.displayName || 'Join Zenko';
+          userName = formatDisplayName(user.displayName || 'Join Zenko', oauthProvider, user.email);
         }
         avatarUrl = user.customAvatarUrl;
       }

@@ -4,9 +4,8 @@ import { useState, useCallback } from 'react';
 import Image from 'next/image';
 import ShinyText from '@/components/ShinyText';
 import FuzzyText from '@/components/FuzzyText';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { CollapsibleCard } from './CollapsibleCard';
-import { REFERRAL_MAX_COUNT } from '@/lib/referral-config';
+
 
 interface ReferralCodeCardProps {
   referralCode: string;
@@ -16,24 +15,39 @@ interface ReferralCodeCardProps {
 }
 
 export function ReferralCodeCard({ referralCode, referralCount, defaultCollapsed = false, collapsible = false }: ReferralCodeCardProps) {
-  const earlyAccessStatus = referralCount >= REFERRAL_MAX_COUNT ? 'approved' : 'pending';
   const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState<'code' | 'link'>('code');
-  const [isHoveringLink, setIsHoveringLink] = useState(false);
+
+  const [linkCopied, setLinkCopied] = useState(false);
 
   const handleCopy = useCallback(() => {
-    if (activeTab === 'code') {
-      navigator.clipboard.writeText(referralCode.trim());
-    } else {
-      if (typeof window === 'undefined') return;
-      const referralLink = `${window.location.origin}/r/${referralCode.trim()}`;
-      navigator.clipboard.writeText(referralLink);
-    }
+    navigator.clipboard.writeText(referralCode.trim());
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  }, [activeTab, referralCode]);
+  }, [referralCode]);
 
-  const shouldShowLink = activeTab === 'link' || isHoveringLink;
+  const isMobile = typeof navigator !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+  const handleShareLink = useCallback(async () => {
+    if (typeof window === 'undefined') return;
+    const referralLink = `${window.location.origin}/r/${referralCode.trim()}`;
+
+    if (isMobile && navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Join Zenko',
+          text: `Use my referral code ${referralCode} and we both earn bonus XP`,
+          url: referralLink,
+        });
+        return;
+      } catch {
+        // User cancelled or share failed — fall through to clipboard
+      }
+    }
+
+    navigator.clipboard.writeText(referralLink);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
+  }, [referralCode, isMobile]);
 
   const handleShareOnTwitter = useCallback(() => {
     if (typeof window === 'undefined') return;
@@ -85,89 +99,55 @@ export function ReferralCodeCard({ referralCode, referralCount, defaultCollapsed
           Bring your squad. History isn&apos;t built solo.
         </p>
 
-        {/* Prominent Code/Link Display with Tabs */}
+        {/* Code Display */}
         <div className="mb-4 md:mb-6 rounded-xl bg-black/40 p-4 md:p-6">
-          {/* Header with Tabs */}
-          <div className="flex items-center gap-3 mb-4">
-            {/* Code Tab */}
-            <button
-              onClick={() => setActiveTab('code')}
-              className={`text-xs font-medium uppercase tracking-wide transition-all cursor-pointer ${
-                activeTab === 'code'
-                  ? 'text-white [text-shadow:0_0_4px_rgba(179,142,243,0.3)]'
-                  : 'text-purple-300/30 hover:text-purple-300/60'
-              }`}
-            >
-              Your Code
-            </button>
-
-            {/* Separator */}
-            <div className="h-4 w-px bg-white/20" />
-
-            {/* Link Tab */}
-            <button
-              onClick={() => setActiveTab('link')}
-              onMouseEnter={() => setIsHoveringLink(true)}
-              onMouseLeave={() => setIsHoveringLink(false)}
-              className={`text-xs font-medium uppercase tracking-wide transition-all cursor-pointer ${
-                activeTab === 'link'
-                  ? 'text-white [text-shadow:0_0_4px_rgba(179,142,243,0.3)]'
-                  : 'text-purple-300/30 hover:text-purple-300/60'
-              }`}
-            >
-              Your Link
-            </button>
-          </div>
-
-          {/* Display Area with Copy Icon */}
+          {/* Code + Copy Button */}
           <div className="flex items-center justify-between gap-4">
-            <div className="flex-1 relative h-12 overflow-hidden">
-              {/* Code View */}
-              <div className={`absolute left-0 top-0 w-full transition-transform duration-300 ease-out flex items-center h-12 ${
-                shouldShowLink ? '-translate-y-full' : 'translate-y-0'
-              }`}>
-                <ShinyText
-                  text={referralCode}
-                  speed={3}
-                  color="#9E77ED"
-                  shineColor="#E9D5FF"
-                  direction="right"
-                  className="text-xl md:text-3xl font-bold tracking-widest [font-family:var(--font-sora)]"
-                />
-              </div>
+            <ShinyText
+              text={referralCode}
+              speed={3}
+              color="#9E77ED"
+              shineColor="#E9D5FF"
+              direction="right"
+              className="text-xl md:text-3xl font-bold tracking-widest [font-family:var(--font-sora)]"
+            />
 
-              {/* Link View */}
-              <div className={`absolute left-0 top-0 w-full transition-transform duration-300 ease-out flex items-center h-12 ${
-                shouldShowLink ? 'translate-y-0' : 'translate-y-full'
-              }`}>
-                <span className="text-xs md:text-sm font-semibold text-purple-400 truncate">
-                  {typeof window !== 'undefined' && `${window.location.host}/r/${referralCode}`}
-                </span>
-              </div>
-            </div>
-
-            {/* Copy Button with Label */}
+            {/* Copy Button */}
             <button
               onClick={handleCopy}
               className="flex items-center gap-2 text-purple-300/80 transition-colors hover:text-purple-300 flex-shrink-0 cursor-pointer"
-              aria-label={copied ? "Copied!" : `Copy ${activeTab}`}
+              aria-label={copied ? "Copied!" : "Copy code"}
             >
               {copied ? <CheckIcon /> : <CopyIcon />}
               <span className="text-sm font-medium">
-                {copied ? 'Copied!' : activeTab === 'code' ? 'Copy code' : 'Copy link'}
+                {copied ? 'Copied!' : 'Copy code'}
               </span>
             </button>
           </div>
+
+          {/* Referral URL */}
+          <p className="mt-3 text-xs md:text-sm text-purple-400/40 truncate">
+            {typeof window !== 'undefined' && `${window.location.host}/r/${referralCode}`}
+          </p>
         </div>
 
-        {/* Share Button */}
-        <button
-          onClick={handleShareOnTwitter}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-zenko-purple px-4 py-3 text-sm font-medium text-white transition-all hover:bg-purple-700 mt-auto cursor-pointer"
-        >
-          <span>Share on</span>
-          <TwitterIcon />
-        </button>
+        {/* Share Buttons */}
+        <div className="flex flex-col gap-2 mt-auto">
+          <button
+            onClick={handleShareOnTwitter}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-zenko-purple px-4 py-3 text-sm font-medium text-white transition-all hover:bg-purple-700 cursor-pointer"
+          >
+            <span>Share on</span>
+            <TwitterIcon />
+          </button>
+          <button
+            onClick={handleShareLink}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-white/5 border border-purple-300/20 px-4 py-3 text-sm font-medium text-neutral-600 transition-all hover:bg-white/10 cursor-pointer"
+          >
+            <span className="md:hidden">{linkCopied ? 'Link copied!' : 'Share link'}</span>
+            <span className="hidden md:inline">{linkCopied ? 'Link copied!' : 'Copy link'}</span>
+          </button>
+        </div>
       </CollapsibleCard>
     </div>
   );
@@ -206,25 +186,6 @@ function CheckIcon() {
         strokeLinejoin="round"
         strokeWidth={2}
         d="M5 13l4 4L19 7"
-      />
-    </svg>
-  );
-}
-
-function LinkIcon() {
-  return (
-    <svg
-      className="h-5 w-5"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
       />
     </svg>
   );
