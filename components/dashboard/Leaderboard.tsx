@@ -10,6 +10,8 @@ import { MagnifyingGlassIcon, PlusIcon } from '@heroicons/react/20/solid';
 const INITIAL_LOAD_COUNT = 7; // Number of users to load initially
 const LOAD_MORE_INCREMENT = 10; // Number of users to add per "load more" click
 const VISIBLE_ROWS = 5; // Approximate number of rows visible in viewport (controlled by max-h-[420px])
+const PREFETCH_CACHE_KEY = 'leaderboard_prefetch';
+const PREFETCH_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 interface LeaderboardEntry {
   rank: number;
@@ -33,6 +35,7 @@ export function Leaderboard({ userId, totalUsers = 0 }: LeaderboardProps) {
   const [isRevealingUser, setIsRevealingUser] = useState(false);
   const [currentLimit, setCurrentLimit] = useState(INITIAL_LOAD_COUNT);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const prefetchedData = useRef<LeaderboardEntry[] | null>(null);
 
   const fetchLeaderboard = useCallback(async (limit: number = INITIAL_LOAD_COUNT) => {
     try {
@@ -48,6 +51,43 @@ export function Leaderboard({ userId, totalUsers = 0 }: LeaderboardProps) {
       if (result.success && result.data) {
         setLeaderboard(result.data.leaderboard);
         setCurrentUserEntry(result.data.currentUserEntry || null);
+
+        // Background prefetch: if the user isn't in the initial list, fetch up to their rank
+        const userEntry = result.data.currentUserEntry as LeaderboardEntry | null;
+        const userInList = result.data.leaderboard.some((e: LeaderboardEntry) => e.isCurrentUser);
+        if (userEntry && !userInList && limit === INITIAL_LOAD_COUNT) {
+          // Check sessionStorage cache first
+          try {
+            const cached = sessionStorage.getItem(PREFETCH_CACHE_KEY);
+            if (cached) {
+              const parsed = JSON.parse(cached) as { userId: string; ts: number; data: LeaderboardEntry[] };
+              if (parsed.userId === userId && parsed.data.length >= userEntry.rank && Date.now() - parsed.ts < PREFETCH_CACHE_TTL) {
+                prefetchedData.current = parsed.data;
+                return; // Cache hit — skip network request
+              }
+            }
+          } catch {}
+
+          fetch('/api/leaderboard', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, limit: userEntry.rank }),
+          })
+            .then(res => res.ok ? res.json() : null)
+            .then(prefetchResult => {
+              if (prefetchResult?.success && prefetchResult.data) {
+                prefetchedData.current = prefetchResult.data.leaderboard;
+                try {
+                  sessionStorage.setItem(PREFETCH_CACHE_KEY, JSON.stringify({
+                    userId,
+                    ts: Date.now(),
+                    data: prefetchResult.data.leaderboard,
+                  }));
+                } catch {}
+              }
+            })
+            .catch(() => {}); // Silent fail — prefetch is best-effort
+        }
       }
     } catch (error) {
       console.error('Failed to fetch leaderboard:', error);
@@ -69,6 +109,18 @@ export function Leaderboard({ userId, totalUsers = 0 }: LeaderboardProps) {
     const targetLimit = currentUserEntry
       ? currentUserEntry.rank // Load up to current user if they're outside the list
       : Math.min(currentLimit + LOAD_MORE_INCREMENT, totalUsers); // Otherwise load next batch or remaining
+
+    // Use prefetched data if it covers the requested range
+    if (prefetchedData.current && prefetchedData.current.length >= targetLimit) {
+      const sliced = prefetchedData.current.slice(0, targetLimit);
+      setLeaderboard(sliced);
+      setCurrentLimit(targetLimit);
+      setIsLoadingMore(false);
+      setTimeout(() => {
+        scrollToPosition(previousLength);
+      }, 100);
+      return;
+    }
 
     try {
       const response = await fetch('/api/leaderboard', {
@@ -102,6 +154,16 @@ export function Leaderboard({ userId, totalUsers = 0 }: LeaderboardProps) {
 
     // If user is not in the current leaderboard, fetch more data
     if (userRowIndex === -1 && currentUserEntry) {
+      // Use prefetched data if available — instant reveal, no spinner
+      if (prefetchedData.current) {
+        setLeaderboard(prefetchedData.current);
+        setCurrentLimit(prefetchedData.current.length);
+        setTimeout(() => {
+          scrollToPosition(prefetchedData.current!.findIndex(e => e.isCurrentUser));
+        }, 100);
+        return;
+      }
+
       setIsRevealingUser(true);
       try {
         // Fetch users up to current user's rank
