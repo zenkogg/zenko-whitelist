@@ -114,12 +114,13 @@ export async function POST(request: NextRequest) {
           oauthAvatarUrl: true,
           customAvatarUrl: true,
           oauthProvider: true,
+          twitterHandle: true,
         },
       });
 
       if (referrer) {
         referrerInfo = {
-          displayName: formatDisplayName(referrer.displayName || 'User', referrer.oauthProvider, referrer.email),
+          displayName: formatDisplayName(referrer.displayName || 'User', referrer.oauthProvider, referrer.email, referrer.twitterHandle),
           avatarUrl: referrer.customAvatarUrl || referrer.oauthAvatarUrl,
           oauthProvider: referrer.oauthProvider,
         };
@@ -131,7 +132,7 @@ export async function POST(request: NextRequest) {
       data: {
         user: {
           id: currentUser.id,
-          displayName: formatDisplayName(currentUser.displayName || 'User', currentUser.oauthProvider, currentUser.email),
+          displayName: formatDisplayName(currentUser.displayName || 'User', currentUser.oauthProvider, currentUser.email, currentUser.twitterHandle),
           avatarUrl: currentUser.customAvatarUrl || currentUser.oauthAvatarUrl,
           referralCode: currentUser.referralCode,
           usedReferralCode: currentUser.usedReferralCode,

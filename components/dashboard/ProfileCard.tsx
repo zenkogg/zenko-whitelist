@@ -32,7 +32,7 @@ export function ProfileCard({
   onAvatarUpdate,
   onLogout,
 }: ProfileCardProps) {
-  const username = formatDisplayName(displayName, oauthProvider, email);
+  const username = formatDisplayName(displayName, oauthProvider, email, twitterHandle);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [avatarUploadError, setAvatarUploadError] = useState('');
   const [isRemovingAvatar, setIsRemovingAvatar] = useState(false);
@@ -234,9 +234,7 @@ export function ProfileCard({
             {/* User Info Banner */}
             {/* Determine if we have secondary info to show on hover */}
             {(() => {
-              const secondaryText = oauthProvider === 'twitter' && twitterHandle
-                ? `@${twitterHandle}`
-                : oauthProvider === 'google' && email
+              const secondaryText = oauthProvider === 'google' && email
                   ? email
                   : null;
               return (
@@ -284,10 +282,9 @@ export function ProfileCard({
                           <p className="text-sm text-neutral-700 truncate">{secondaryText}</p>
                         </div>
                       </div>
-                      {/* Mobile: show both */}
+                      {/* Mobile: just show joined text */}
                       <div className="md:hidden">
                         <p className="text-sm text-neutral-700">{joinedText}</p>
-                        <p className="text-xs text-neutral-700/70 truncate">{secondaryText}</p>
                       </div>
                     </>
                   ) : (

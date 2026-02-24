@@ -19,6 +19,7 @@ export async function POST(request: NextRequest) {
       display_name: string;
       oauth_provider: string;
       email: string | null;
+      twitter_handle: string | null;
       oauth_avatar_url: string | null;
       custom_avatar_url: string | null;
       referral_count: number;
@@ -31,6 +32,7 @@ export async function POST(request: NextRequest) {
           display_name,
           oauth_provider,
           email,
+          twitter_handle,
           oauth_avatar_url,
           custom_avatar_url,
           referral_count,
@@ -44,6 +46,7 @@ export async function POST(request: NextRequest) {
           display_name,
           oauth_provider,
           email,
+          twitter_handle,
           oauth_avatar_url,
           custom_avatar_url,
           referral_count,
@@ -58,6 +61,7 @@ export async function POST(request: NextRequest) {
         display_name,
         oauth_provider,
         email,
+        twitter_handle,
         oauth_avatar_url,
         custom_avatar_url,
         referral_count::int,
@@ -70,7 +74,7 @@ export async function POST(request: NextRequest) {
 
     const leaderboard = leaderboardResult.map(entry => ({
       rank: Number(entry.rank),
-      displayName: formatDisplayName(entry.display_name, entry.oauth_provider, entry.email),
+      displayName: formatDisplayName(entry.display_name, entry.oauth_provider, entry.email, entry.twitter_handle),
       avatarUrl: entry.custom_avatar_url || entry.oauth_avatar_url,
       referralCount: entry.referral_count,
       registrationOrder: Number(entry.registration_order),
@@ -87,6 +91,7 @@ export async function POST(request: NextRequest) {
         display_name: string;
         oauth_provider: string;
         email: string | null;
+        twitter_handle: string | null;
         oauth_avatar_url: string | null;
         custom_avatar_url: string | null;
         referral_count: number;
@@ -99,6 +104,7 @@ export async function POST(request: NextRequest) {
             display_name,
             oauth_provider,
             email,
+            twitter_handle,
             oauth_avatar_url,
             custom_avatar_url,
             referral_count,
@@ -112,6 +118,7 @@ export async function POST(request: NextRequest) {
             display_name,
             oauth_provider,
             email,
+            twitter_handle,
             oauth_avatar_url,
             custom_avatar_url,
             referral_count,
@@ -126,6 +133,7 @@ export async function POST(request: NextRequest) {
           display_name,
           oauth_provider,
           email,
+          twitter_handle,
           oauth_avatar_url,
           custom_avatar_url,
           referral_count::int,
@@ -139,7 +147,7 @@ export async function POST(request: NextRequest) {
         const entry = userResult[0];
         currentUserEntry = {
           rank: Number(entry.rank),
-          displayName: formatDisplayName(entry.display_name, entry.oauth_provider, entry.email),
+          displayName: formatDisplayName(entry.display_name, entry.oauth_provider, entry.email, entry.twitter_handle),
           avatarUrl: entry.custom_avatar_url || entry.oauth_avatar_url,
           referralCount: entry.referral_count,
           registrationOrder: Number(entry.registration_order),

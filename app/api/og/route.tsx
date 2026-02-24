@@ -29,12 +29,7 @@ export async function GET(request: NextRequest) {
       if (user) {
         oauthProvider = user.oauthProvider;
         twitterHandle = user.twitterHandle;
-        // For Google, show email prefix. For X/Twitch, show username/handle.
-        if (oauthProvider === 'twitter' && twitterHandle) {
-          userName = `@${twitterHandle}`;
-        } else {
-          userName = formatDisplayName(user.displayName || 'Join Zenko', oauthProvider, user.email);
-        }
+        userName = formatDisplayName(user.displayName || 'Join Zenko', oauthProvider, user.email, twitterHandle);
         avatarUrl = user.customAvatarUrl;
       }
     }
