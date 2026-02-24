@@ -7,6 +7,7 @@ import { BackgroundLayer } from '@/components/landing/BackgroundLayer';
 const REDIRECT_SECONDS = 8;
 
 const FRIENDLY_MESSAGES: Record<string, string> = {
+  'Twitter sign in was cancelled': 'Sign in was cancelled. Please try again.',
   'Twitter authentication failed - missing code or verifier': 'Sign in was cancelled or expired. Please try again.',
   'OAuth callback failed': 'Sign in was cancelled or expired. Please try again.',
   'Failed to authenticate': 'Something went wrong during sign in. Please try again.',

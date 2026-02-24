@@ -13,16 +13,29 @@ export default function TwitterCallbackPage() {
     async function handleCallback() {
       try {
         const urlParams = new URLSearchParams(window.location.search);
+
+        // Check if Twitter returned an error (e.g. user denied access)
+        const twitterError = urlParams.get('error');
+        if (twitterError) {
+          const errorDesc = urlParams.get('error_description') || twitterError;
+          console.error('Twitter OAuth error:', twitterError, errorDesc);
+          setError(twitterError === 'access_denied'
+            ? 'Twitter sign in was cancelled'
+            : `Twitter error: ${errorDesc}`);
+          return;
+        }
+
         const code = urlParams.get('code');
-        const codeVerifier = sessionStorage.getItem('twitter_code_verifier');
+        const codeVerifier = localStorage.getItem('twitter_code_verifier');
 
         if (!code || !codeVerifier) {
+          console.error('Twitter callback missing params:', { hasCode: !!code, hasVerifier: !!codeVerifier });
           setError('Twitter authentication failed - missing code or verifier');
           return;
         }
 
         // Clean up
-        sessionStorage.removeItem('twitter_code_verifier');
+        localStorage.removeItem('twitter_code_verifier');
 
         // Exchange code for user info via our API
         const response = await fetch('/api/auth/twitter', {

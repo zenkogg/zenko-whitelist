@@ -95,7 +95,7 @@ export async function signInWithOAuth(provider: OAuthProvider): Promise<void> {
   if (provider === 'twitter') {
     // Twitter requires PKCE with S256
     const { codeVerifier, codeChallenge } = await generatePKCE();
-    sessionStorage.setItem('twitter_code_verifier', codeVerifier);
+    localStorage.setItem('twitter_code_verifier', codeVerifier);
     params.append('code_challenge', codeChallenge);
     params.append('code_challenge_method', 'S256');
     params.append('state', crypto.randomUUID());
