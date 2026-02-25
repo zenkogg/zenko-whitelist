@@ -159,8 +159,8 @@ export default function DashboardPage() {
       {/* Shared Background Layer with Preset Switcher */}
       <BackgroundLayer />
 
-      {/* Header Section */}
-      <div className="relative z-10 px-4 md:px-6 pt-8 md:pt-12 pb-6 md:pb-8">
+      {/* Header Section - translateZ(0) forces compositing layer to prevent Safari scroll flashing */}
+      <div className="relative z-10 px-4 md:px-6 pt-8 md:pt-12 pb-6 md:pb-8 [transform:translateZ(0)]">
         <div className="mx-auto max-w-6xl text-center">
           <h1
             className="text-2xl sm:text-3xl md:text-3xl font-semibold text-white mb-4 md:mb-6"
@@ -172,7 +172,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 px-4 md:px-6 pb-12">
+      <div className="relative z-10 px-4 md:px-6 pb-12 [transform:translateZ(0)]">
         <div className="mx-auto max-w-6xl">
           {/* Bento Grid Layout */}
           <div className="grid grid-cols-1 gap-4 md:gap-6 lg:gap-8 lg:grid-cols-6">
