@@ -192,14 +192,23 @@ const Grainient = ({
     ro.observe(container);
     setSize();
 
+    const isMobile = window.matchMedia('(max-width: 768px)').matches;
+
     let raf = 0;
     const t0 = performance.now();
-    const loop = t => {
-      program.uniforms.iTime.value = (t - t0) * 0.001;
+
+    // On mobile, render a single frame to avoid scroll compositing issues
+    if (isMobile) {
+      program.uniforms.iTime.value = 0.5; // Slight offset for a nice initial state
       renderer.render({ scene: mesh });
+    } else {
+      const loop = t => {
+        program.uniforms.iTime.value = (t - t0) * 0.001;
+        renderer.render({ scene: mesh });
+        raf = requestAnimationFrame(loop);
+      };
       raf = requestAnimationFrame(loop);
-    };
-    raf = requestAnimationFrame(loop);
+    }
 
     return () => {
       cancelAnimationFrame(raf);
