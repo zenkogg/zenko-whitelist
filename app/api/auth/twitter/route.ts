@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
 
     if (!tokenResponse.ok) {
       const tokenError = await tokenResponse.text();
-      console.error('Twitter token exchange failed:', tokenError);
+      console.error('Twitter token exchange failed:', tokenResponse.status, tokenError);
       return NextResponse.json({ error: 'Failed to exchange token' }, { status: 400 });
     }
 
@@ -57,15 +57,17 @@ export async function POST(req: NextRequest) {
     const accessToken = tokenData.access_token;
 
     // Fetch user profile from Twitter
-    const userResponse = await serverFetch('https://api.twitter.com/2/users/me?user.fields=id,name,username,profile_image_url,verified_type', {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+    const userResponse = await serverFetch('https://api.twitter.com/2/users/me?user.fields=id,name,username,profile_image_url', {
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
 
     if (!userResponse.ok) {
       const userError = await userResponse.text();
-      console.error('Twitter user fetch failed:', userError);
+      console.error('Twitter user fetch failed:', JSON.stringify({
+        status: userResponse.status,
+        body: userError,
+        headers: Object.fromEntries(userResponse.headers),
+      }, null, 2));
       return NextResponse.json({ error: 'Failed to fetch user profile' }, { status: 400 });
     }
 
