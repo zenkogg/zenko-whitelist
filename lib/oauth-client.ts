@@ -42,7 +42,7 @@ function getProviderConfig(provider: OAuthProvider): OAuthConfig {
         redirectUri: typeof window !== 'undefined'
           ? `${window.location.origin}/auth/twitter/callback`
           : 'http://localhost:3000/auth/twitter/callback',
-        scope: 'tweet.read users.read',
+        scope: 'openid profile',
         responseType: 'code',
       };
   }

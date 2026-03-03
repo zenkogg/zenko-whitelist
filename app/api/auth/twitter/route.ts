@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { put } from '@vercel/blob';
-import { serverFetch } from '@/lib/server-fetch';
 
 export async function POST(req: NextRequest) {
   try {
@@ -33,7 +31,7 @@ export async function POST(req: NextRequest) {
     const redirectUri = `${baseUrl}/auth/twitter/callback`;
 
     // Exchange authorization code for access token
-    const tokenResponse = await serverFetch('https://api.twitter.com/2/oauth2/token', {
+    const tokenResponse = await fetch('https://api.twitter.com/2/oauth2/token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -54,31 +52,23 @@ export async function POST(req: NextRequest) {
     }
 
     const tokenData = await tokenResponse.json();
-    const accessToken = tokenData.access_token;
 
-    // Fetch user profile from Twitter
-    const userResponse = await serverFetch('https://api.twitter.com/2/users/me?user.fields=id,name,username,profile_image_url', {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-
-    if (!userResponse.ok) {
-      const userError = await userResponse.text();
-      console.error('Twitter user fetch failed:', JSON.stringify({
-        status: userResponse.status,
-        body: userError,
-        headers: Object.fromEntries(userResponse.headers),
-      }, null, 2));
-      return NextResponse.json({ error: 'Failed to fetch user profile' }, { status: 400 });
+    // Decode id_token (OIDC) — no extra API call needed, works on free tier
+    const idToken = tokenData.id_token;
+    if (!idToken) {
+      console.error('Twitter token response missing id_token:', JSON.stringify(tokenData));
+      return NextResponse.json({ error: 'Twitter did not return user info' }, { status: 400 });
     }
 
-    const userJson = await userResponse.json();
-    const twitterUser = userJson.data;
+    const [, payloadB64] = idToken.split('.');
+    const payload = JSON.parse(
+      Buffer.from(payloadB64.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf-8')
+    );
 
-    const oauthId = twitterUser.id;
-    const displayName = twitterUser.name || twitterUser.username || 'User';
-    const twitterHandle = twitterUser.username || null;
-    const email = twitterUser.email || null;
-    const oauthAvatarUrl = twitterUser.profile_image_url?.replace('_normal', '_400x400') || null;
+    const oauthId = payload.sub;
+    const displayName = payload.name || payload.preferred_username || 'User';
+    const twitterHandle = payload.preferred_username || null;
+    const email: string | null = payload.email || null;
 
     // Check if user already exists
     const existingUser = await prisma.waitlistUser.findUnique({
@@ -91,24 +81,16 @@ export async function POST(req: NextRequest) {
     });
 
     if (existingUser) {
-      // Re-upload avatar if missing
-      let customAvatarUrl = existingUser.customAvatarUrl;
-      if (!customAvatarUrl && oauthAvatarUrl) {
-        customAvatarUrl = await downloadAndUploadAvatar(oauthAvatarUrl, existingUser.id);
-      }
-
       const updatedUser = await prisma.waitlistUser.update({
         where: { id: existingUser.id },
         data: {
           displayName,
-          oauthAvatarUrl,
           email: email || existingUser.email,
           twitterId: oauthId,
           twitterHandle,
           twitterConnectedAt: existingUser.twitterConnectedAt || new Date(),
           ipAddress,
           userAgent,
-          ...(customAvatarUrl && !existingUser.customAvatarUrl ? { customAvatarUrl } : {}),
         },
       });
       return NextResponse.json({ user: updatedUser });
@@ -122,10 +104,9 @@ export async function POST(req: NextRequest) {
       data: {
         oauthProvider: 'twitter',
         oauthId,
-        email: email,
+        email,
         emailVerified: !!email,
         displayName,
-        oauthAvatarUrl,
         twitterId: oauthId,
         twitterHandle,
         twitterConnectedAt: new Date(),
@@ -136,18 +117,6 @@ export async function POST(req: NextRequest) {
         status: 'PENDING',
       },
     });
-
-    // Download and upload avatar to blob storage
-    if (oauthAvatarUrl) {
-      const customAvatarUrl = await downloadAndUploadAvatar(oauthAvatarUrl, newUser.id);
-      if (customAvatarUrl) {
-        const updatedUser = await prisma.waitlistUser.update({
-          where: { id: newUser.id },
-          data: { customAvatarUrl },
-        });
-        return NextResponse.json({ user: updatedUser });
-      }
-    }
 
     return NextResponse.json({ user: newUser });
   } catch (error) {
@@ -178,39 +147,3 @@ async function generateUniqueReferralCode(): Promise<string> {
   return code;
 }
 
-async function downloadAndUploadAvatar(
-  avatarUrl: string,
-  userId: string
-): Promise<string | null> {
-  try {
-    const response = await serverFetch(avatarUrl);
-    if (!response.ok) return null;
-
-    const contentType = response.headers.get('content-type');
-    if (!contentType?.startsWith('image/')) return null;
-
-    const imageBuffer = await response.buffer();
-    const extensionMap: Record<string, string> = {
-      'image/jpeg': 'jpg',
-      'image/jpg': 'jpg',
-      'image/png': 'png',
-      'image/webp': 'webp',
-    };
-    const extension = extensionMap[contentType] || 'jpg';
-    const filename = `${userId}-oauth-${Date.now()}.${extension}`;
-
-    const isProduction = process.env.VERCEL_ENV === 'production';
-    const envPrefix = isProduction ? 'production' : 'staging';
-    const blobPath = `${envPrefix}/avatars/${filename}`;
-
-    const blob = await put(blobPath, imageBuffer, {
-      access: 'public',
-      contentType,
-    });
-
-    return blob.url;
-  } catch (error) {
-    console.error('Failed to download/upload Twitter avatar:', error);
-    return null;
-  }
-}
