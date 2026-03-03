@@ -1,12 +1,56 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import crypto from 'crypto';
+
+function buildOAuthParams(consumerKey: string, oauthToken: string, extra: Record<string, string> = {}) {
+  return {
+    oauth_consumer_key: consumerKey,
+    oauth_nonce: crypto.randomBytes(16).toString('hex'),
+    oauth_signature_method: 'HMAC-SHA1',
+    oauth_timestamp: Math.floor(Date.now() / 1000).toString(),
+    oauth_token: oauthToken,
+    oauth_version: '1.0',
+    ...extra,
+  };
+}
+
+function sign(method: string, url: string, params: Record<string, string>, consumerSecret: string, tokenSecret = '') {
+  const sorted = Object.entries(params)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+    .join('&');
+
+  const base = `${method.toUpperCase()}&${encodeURIComponent(url)}&${encodeURIComponent(sorted)}`;
+  const key = `${encodeURIComponent(consumerSecret)}&${encodeURIComponent(tokenSecret)}`;
+  return crypto.createHmac('sha1', key).update(base).digest('base64');
+}
+
+function authHeader(params: Record<string, string>) {
+  const parts = Object.entries(params)
+    .filter(([k]) => k.startsWith('oauth_'))
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, v]) => `${encodeURIComponent(k)}="${encodeURIComponent(v)}"`)
+    .join(', ');
+  return `OAuth ${parts}`;
+}
 
 export async function POST(req: NextRequest) {
   try {
-    const { code, codeVerifier, origin } = await req.json();
+    const { oauthToken, oauthVerifier } = await req.json();
+    const oauthTokenSecret = req.cookies.get('twitter_oauth_secret')?.value;
 
-    if (!code || !codeVerifier) {
-      return NextResponse.json({ error: 'Missing code or code verifier' }, { status: 400 });
+    if (!oauthToken || !oauthVerifier) {
+      return NextResponse.json({ error: 'Missing oauth_token or oauth_verifier' }, { status: 400 });
+    }
+    if (!oauthTokenSecret) {
+      return NextResponse.json({ error: 'Session expired, please try again' }, { status: 400 });
+    }
+
+    const consumerKey = process.env.TWITTER_API_KEY;
+    const consumerSecret = process.env.TWITTER_API_SECRET;
+
+    if (!consumerKey || !consumerSecret) {
+      return NextResponse.json({ error: 'Twitter API not configured' }, { status: 500 });
     }
 
     // Capture client info
@@ -16,115 +60,76 @@ export async function POST(req: NextRequest) {
       null;
     const userAgent = req.headers.get('user-agent') || null;
 
-    const clientId = process.env.NEXT_PUBLIC_TWITTER_CLIENT_ID;
-    const clientSecret = process.env.TWITTER_CLIENT_SECRET;
+    const url = 'https://api.twitter.com/oauth/access_token';
+    const params = buildOAuthParams(consumerKey, oauthToken, { oauth_verifier: oauthVerifier });
+    const signature = sign('POST', url, params, consumerSecret, oauthTokenSecret);
+    const header = authHeader({ ...params, oauth_signature: signature });
 
-    if (!clientId || !clientSecret) {
-      console.error('Missing Twitter OAuth credentials');
-      return NextResponse.json({ error: 'Twitter auth not configured' }, { status: 500 });
-    }
-
-    // Redirect URI must match exactly what the client used in the auth request
-    const baseUrl = origin || (process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : 'http://localhost:3000');
-    const redirectUri = `${baseUrl}/auth/twitter/callback`;
-
-    // Exchange authorization code for access token
-    const tokenResponse = await fetch('https://api.twitter.com/2/oauth2/token', {
+    const tokenResponse = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`,
-      },
-      body: new URLSearchParams({
-        code,
-        grant_type: 'authorization_code',
-        redirect_uri: redirectUri,
-        code_verifier: codeVerifier,
-      }).toString(),
+      headers: { Authorization: header },
     });
 
     if (!tokenResponse.ok) {
-      const tokenError = await tokenResponse.text();
-      console.error('Twitter token exchange failed:', tokenResponse.status, tokenError);
-      return NextResponse.json({ error: 'Failed to exchange token' }, { status: 400 });
+      const err = await tokenResponse.text();
+      console.error('Twitter access_token failed:', tokenResponse.status, err);
+      return NextResponse.json({ error: 'Failed to authenticate with X' }, { status: 400 });
     }
 
-    const tokenData = await tokenResponse.json();
-    const accessToken = tokenData.access_token;
+    const text = await tokenResponse.text();
+    const parsed = new URLSearchParams(text);
 
-    // Fetch user profile from X API
-    const userResponse = await fetch('https://api.twitter.com/2/users/me?user.fields=id,name,username,profile_image_url', {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
+    const oauthId = parsed.get('user_id');
+    const screenName = parsed.get('screen_name');
 
-    if (!userResponse.ok) {
-      const userError = await userResponse.text();
-      console.error('Twitter user fetch failed:', userResponse.status, userError);
-      return NextResponse.json({ error: 'X API is currently unavailable. Please try again later.' }, { status: 503 });
+    if (!oauthId || !screenName) {
+      console.error('Missing user_id or screen_name in access_token response:', text);
+      return NextResponse.json({ error: 'Invalid response from X' }, { status: 400 });
     }
-
-    const userJson = await userResponse.json();
-    const twitterUser = userJson.data;
-
-    const oauthId = twitterUser.id;
-    const displayName = twitterUser.name || twitterUser.username || 'User';
-    const twitterHandle = twitterUser.username || null;
-    const email: string | null = twitterUser.email || null;
 
     // Check if user already exists
     const existingUser = await prisma.waitlistUser.findUnique({
-      where: {
-        oauthProvider_oauthId: {
-          oauthProvider: 'twitter',
-          oauthId,
-        },
-      },
+      where: { oauthProvider_oauthId: { oauthProvider: 'twitter', oauthId } },
     });
 
-    if (existingUser) {
-      const updatedUser = await prisma.waitlistUser.update({
-        where: { id: existingUser.id },
-        data: {
-          displayName,
-          email: email || existingUser.email,
-          twitterId: oauthId,
-          twitterHandle,
-          twitterConnectedAt: existingUser.twitterConnectedAt || new Date(),
-          ipAddress,
-          userAgent,
-        },
-      });
-      return NextResponse.json({ user: updatedUser });
-    }
+    const res = existingUser
+      ? NextResponse.json({
+          user: await prisma.waitlistUser.update({
+            where: { id: existingUser.id },
+            data: {
+              twitterId: oauthId,
+              twitterHandle: screenName,
+              twitterConnectedAt: existingUser.twitterConnectedAt || new Date(),
+              ipAddress,
+              userAgent,
+            },
+          }),
+        })
+      : NextResponse.json({
+          user: await prisma.waitlistUser.create({
+            data: {
+              oauthProvider: 'twitter',
+              oauthId,
+              email: null,
+              emailVerified: false,
+              displayName: screenName,
+              twitterId: oauthId,
+              twitterHandle: screenName,
+              twitterConnectedAt: new Date(),
+              referralCode: await generateUniqueReferralCode(),
+              games: [],
+              ipAddress,
+              userAgent,
+              status: 'PENDING',
+            },
+          }),
+        });
 
-    // Generate unique referral code
-    const referralCode = await generateUniqueReferralCode();
-
-    // Create new user
-    const newUser = await prisma.waitlistUser.create({
-      data: {
-        oauthProvider: 'twitter',
-        oauthId,
-        email,
-        emailVerified: !!email,
-        displayName,
-        twitterId: oauthId,
-        twitterHandle,
-        twitterConnectedAt: new Date(),
-        referralCode,
-        games: [],
-        ipAddress,
-        userAgent,
-        status: 'PENDING',
-      },
-    });
-
-    return NextResponse.json({ user: newUser });
+    // Clear the temporary oauth secret cookie
+    res.cookies.delete('twitter_oauth_secret');
+    return res;
   } catch (error) {
     console.error('Twitter auth error:', error instanceof Error ? error.message : error);
-    console.error('Twitter auth stack:', error instanceof Error ? error.stack : 'no stack');
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -135,18 +140,10 @@ async function generateUniqueReferralCode(): Promise<string> {
   let isUnique = false;
 
   while (!isUnique) {
-    code = '';
-    for (let i = 0; i < 6; i++) {
-      code += chars[Math.floor(Math.random() * chars.length)];
-    }
-    const existing = await prisma.waitlistUser.findUnique({
-      where: { referralCode: code },
-    });
-    if (!existing) {
-      isUnique = true;
-    }
+    code = Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    const existing = await prisma.waitlistUser.findUnique({ where: { referralCode: code } });
+    if (!existing) isUnique = true;
   }
 
   return code;
 }
-

@@ -1,6 +1,7 @@
 /**
  * Client-side OAuth for waitlist app
- * Uses implicit flow to avoid server-side HTTP requests
+ * Google/Twitch: implicit flow (id_token in hash)
+ * Twitter: OAuth 1.0a via server-side request-token endpoint
  */
 
 export type OAuthProvider = 'google' | 'twitch' | 'twitter';
@@ -13,7 +14,7 @@ interface OAuthConfig {
   responseType: string;
 }
 
-function getProviderConfig(provider: OAuthProvider): OAuthConfig {
+function getProviderConfig(provider: Exclude<OAuthProvider, 'twitter'>): OAuthConfig {
   const redirectUri = typeof window !== 'undefined'
     ? `${window.location.origin}/auth/callback`
     : 'http://localhost:3000/auth/callback';
@@ -35,44 +36,10 @@ function getProviderConfig(provider: OAuthProvider): OAuthConfig {
         scope: 'openid user:read:email',
         responseType: 'id_token',
       };
-    case 'twitter':
-      return {
-        authUrl: 'https://twitter.com/i/oauth2/authorize',
-        clientId: process.env.NEXT_PUBLIC_TWITTER_CLIENT_ID!,
-        redirectUri: typeof window !== 'undefined'
-          ? `${window.location.origin}/auth/twitter/callback`
-          : 'http://localhost:3000/auth/twitter/callback',
-        scope: 'tweet.read users.read',
-        responseType: 'code',
-      };
   }
 }
 
-/**
- * Generate PKCE code verifier and challenge for Twitter OAuth 2.0
- */
-async function generatePKCE(): Promise<{ codeVerifier: string; codeChallenge: string }> {
-  const array = new Uint8Array(32);
-  crypto.getRandomValues(array);
-  const codeVerifier = btoa(String.fromCharCode(...array))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
-
-  const encoder = new TextEncoder();
-  const data = encoder.encode(codeVerifier);
-  const digest = await crypto.subtle.digest('SHA-256', data);
-  const codeChallenge = btoa(String.fromCharCode(...new Uint8Array(digest)))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
-
-  return { codeVerifier, codeChallenge };
-}
-
 export async function signInWithOAuth(provider: OAuthProvider): Promise<void> {
-  const config = getProviderConfig(provider);
-
   // Store provider and referral code (if present) in sessionStorage for callback
   if (typeof window !== 'undefined') {
     sessionStorage.setItem('oauth_provider', provider);
@@ -85,6 +52,19 @@ export async function signInWithOAuth(provider: OAuthProvider): Promise<void> {
     }
   }
 
+  if (provider === 'twitter') {
+    // OAuth 1.0a: get request token from our server first, then redirect
+    const response = await fetch('/api/auth/twitter/request-token', { method: 'POST' });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.error || 'Failed to start X sign in');
+    }
+    const { oauthToken } = await response.json();
+    window.location.href = `https://api.twitter.com/oauth/authenticate?oauth_token=${oauthToken}`;
+    return;
+  }
+
+  const config = getProviderConfig(provider);
   const params = new URLSearchParams({
     client_id: config.clientId,
     redirect_uri: config.redirectUri,
@@ -92,17 +72,8 @@ export async function signInWithOAuth(provider: OAuthProvider): Promise<void> {
     scope: config.scope,
   });
 
-  if (provider === 'twitter') {
-    // Twitter requires PKCE with S256
-    const { codeVerifier, codeChallenge } = await generatePKCE();
-    localStorage.setItem('twitter_code_verifier', codeVerifier);
-    params.append('code_challenge', codeChallenge);
-    params.append('code_challenge_method', 'S256');
-    params.append('state', crypto.randomUUID());
-  } else {
-    // Add a nonce for implicit flow providers
-    params.append('nonce', crypto.randomUUID());
-  }
+  // Add a nonce for implicit flow providers
+  params.append('nonce', crypto.randomUUID());
 
   // For Twitch, explicitly request email, picture, and username in ID token
   if (provider === 'twitch') {
