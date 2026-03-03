@@ -52,23 +52,26 @@ export async function POST(req: NextRequest) {
     }
 
     const tokenData = await tokenResponse.json();
+    const accessToken = tokenData.access_token;
 
-    // Decode id_token (OIDC) — no extra API call needed, works on free tier
-    const idToken = tokenData.id_token;
-    if (!idToken) {
-      console.error('Twitter token response missing id_token:', JSON.stringify(tokenData));
-      return NextResponse.json({ error: 'Twitter did not return user info' }, { status: 400 });
+    // Fetch user profile from X API
+    const userResponse = await fetch('https://api.twitter.com/2/users/me?user.fields=id,name,username,profile_image_url', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (!userResponse.ok) {
+      const userError = await userResponse.text();
+      console.error('Twitter user fetch failed:', userResponse.status, userError);
+      return NextResponse.json({ error: 'X API is currently unavailable. Please try again later.' }, { status: 503 });
     }
 
-    const [, payloadB64] = idToken.split('.');
-    const payload = JSON.parse(
-      Buffer.from(payloadB64.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf-8')
-    );
+    const userJson = await userResponse.json();
+    const twitterUser = userJson.data;
 
-    const oauthId = payload.sub;
-    const displayName = payload.name || payload.preferred_username || 'User';
-    const twitterHandle = payload.preferred_username || null;
-    const email: string | null = payload.email || null;
+    const oauthId = twitterUser.id;
+    const displayName = twitterUser.name || twitterUser.username || 'User';
+    const twitterHandle = twitterUser.username || null;
+    const email: string | null = twitterUser.email || null;
 
     // Check if user already exists
     const existingUser = await prisma.waitlistUser.findUnique({
