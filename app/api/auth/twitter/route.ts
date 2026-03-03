@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
+import { proxyFetch } from '@/lib/proxy-fetch';
 
 function buildOAuthParams(consumerKey: string, oauthToken: string, extra: Record<string, string> = {}) {
   return {
@@ -65,7 +66,7 @@ export async function POST(req: NextRequest) {
     const signature = sign('POST', url, params, consumerSecret, oauthTokenSecret);
     const header = authHeader({ ...params, oauth_signature: signature });
 
-    const tokenResponse = await fetch(url, {
+    const tokenResponse = await proxyFetch(url, {
       method: 'POST',
       headers: { Authorization: header },
     });

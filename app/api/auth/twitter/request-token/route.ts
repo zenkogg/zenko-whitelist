@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
+import { proxyFetch } from '@/lib/proxy-fetch';
 
 function buildOAuthParams(consumerKey: string, extra: Record<string, string> = {}) {
   return {
@@ -48,7 +49,7 @@ export async function POST(req: NextRequest) {
   const signature = sign('POST', url, params, consumerSecret);
   const header = authHeader({ ...params, oauth_signature: signature });
 
-  const response = await fetch(url, {
+  const response = await proxyFetch(url, {
     method: 'POST',
     headers: { Authorization: header },
   });
