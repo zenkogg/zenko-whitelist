@@ -256,6 +256,14 @@ export function ProfileCard({
                         height={16}
                         className="h-4 w-4 flex-shrink-0"
                       />
+                    ) : oauthProvider === 'virtualeagues' ? (
+                      <Image
+                        src="/images/icons/virtualeagues.png"
+                        alt="Virtualeagues"
+                        width={16}
+                        height={16}
+                        className="h-4 w-4 flex-shrink-0"
+                      />
                     ) : (
                       <Image
                         src="/images/icons/google.svg"
