@@ -96,7 +96,7 @@ export function StepperOnboarding() {
     setIsCheckingSession(false);
   }, [router]);
 
-  const handleOAuthSignIn = (provider: 'google' | 'twitch' | 'twitter') => {
+  const handleOAuthSignIn = (provider: 'google' | 'twitch' | 'twitter' | 'virtualeagues') => {
     setIsRedirecting(true);
     signInWithOAuth(provider);
   };
@@ -328,6 +328,21 @@ export function StepperOnboarding() {
               <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
             </svg>
             <span>Continue with X</span>
+          </button>
+
+          {/* Virtualeagues Sign In */}
+          <button
+            onClick={() => handleOAuthSignIn('virtualeagues')}
+            className="flex w-full items-center justify-center gap-3 rounded-xl bg-white/5 border border-purple-300/20 px-4 py-3 text-sm font-medium text-neutral-600 transition-all hover:bg-white/10 cursor-pointer"
+          >
+            <Image
+              src="/images/icons/virtualeagues.png"
+              alt="Virtualeagues"
+              width={16}
+              height={16}
+              className="h-4 w-4 flex-shrink-0"
+            />
+            <span>Sign in with Virtualeagues</span>
           </button>
         </div>
 
@@ -573,7 +588,13 @@ export function StepperOnboarding() {
                 </svg>
               ) : (
                 <Image
-                  src={user.oauthProvider === 'google' ? '/images/icons/google.svg' : '/images/icons/twitch.svg'}
+                  src={
+                    user.oauthProvider === 'google'
+                      ? '/images/icons/google.svg'
+                      : user.oauthProvider === 'virtualeagues'
+                      ? '/images/icons/virtualeagues.png'
+                      : '/images/icons/twitch.svg'
+                  }
                   alt={user.oauthProvider}
                   width={16}
                   height={16}
@@ -583,7 +604,11 @@ export function StepperOnboarding() {
               <span className="text-sm text-neutral-700/70 font-medium truncate">
                 {user.oauthProvider === 'google' && user.email
                   ? user.email
-                  : (user.oauthProvider === 'twitch' || user.oauthProvider === 'twitter') && user.displayName && user.displayName !== 'User'
+                  : (user.oauthProvider === 'twitch' ||
+                      user.oauthProvider === 'twitter' ||
+                      user.oauthProvider === 'virtualeagues') &&
+                    user.displayName &&
+                    user.displayName !== 'User'
                   ? user.displayName
                   : 'Connected'}
               </span>

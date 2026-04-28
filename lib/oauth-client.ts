@@ -2,9 +2,10 @@
  * Client-side OAuth for waitlist app
  * Google/Twitch: implicit flow (id_token in hash)
  * Twitter: OAuth 1.0a via server-side request-token endpoint
+ * Virtualeagues: OAuth 2 + PKCE confidential client via server-side start endpoint
  */
 
-export type OAuthProvider = 'google' | 'twitch' | 'twitter';
+export type OAuthProvider = 'google' | 'twitch' | 'twitter' | 'virtualeagues';
 
 interface OAuthConfig {
   authUrl: string;
@@ -14,7 +15,7 @@ interface OAuthConfig {
   responseType: string;
 }
 
-function getProviderConfig(provider: Exclude<OAuthProvider, 'twitter'>): OAuthConfig {
+function getProviderConfig(provider: Exclude<OAuthProvider, 'twitter' | 'virtualeagues'>): OAuthConfig {
   const redirectUri = typeof window !== 'undefined'
     ? `${window.location.origin}/auth/callback`
     : 'http://localhost:3000/auth/callback';
@@ -61,6 +62,19 @@ export async function signInWithOAuth(provider: OAuthProvider): Promise<void> {
     }
     const { oauthToken } = await response.json();
     window.location.href = `https://api.twitter.com/oauth/authenticate?oauth_token=${oauthToken}`;
+    return;
+  }
+
+  if (provider === 'virtualeagues') {
+    // OAuth 2 + PKCE confidential client: server stashes code_verifier in an
+    // HttpOnly cookie and returns the authorize URL.
+    const response = await fetch('/api/auth/virtualeagues/start', { method: 'POST' });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.error || 'Failed to start Virtualeagues sign in');
+    }
+    const { authorizeUrl } = await response.json();
+    window.location.href = authorizeUrl;
     return;
   }
 
