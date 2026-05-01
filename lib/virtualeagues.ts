@@ -81,6 +81,15 @@ export function vlConfigured(): boolean {
   return !!process.env.VL_CLIENT_ID && !!process.env.VL_CLIENT_SECRET && !!process.env.VL_REDIRECT_URI;
 }
 
+/**
+ * Feature flag for whether VL OAuth sign-in is exposed in this environment.
+ * Uses NEXT_PUBLIC_* so the same value is readable in both server route
+ * handlers and client components (Next.js inlines it at build time).
+ */
+export function vlEnabled(): boolean {
+  return process.env.NEXT_PUBLIC_VL_LOGIN_ENABLED === 'true';
+}
+
 export function buildAuthorizeUrl(input: {
   state: string;
   codeChallenge: string;

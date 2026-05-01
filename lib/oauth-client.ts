@@ -66,6 +66,9 @@ export async function signInWithOAuth(provider: OAuthProvider): Promise<void> {
   }
 
   if (provider === 'virtualeagues') {
+    if (process.env.NEXT_PUBLIC_VL_LOGIN_ENABLED !== 'true') {
+      throw new Error('Virtualeagues sign in is not enabled');
+    }
     // OAuth 2 + PKCE confidential client: server stashes code_verifier in an
     // HttpOnly cookie and returns the authorize URL.
     const response = await fetch('/api/auth/virtualeagues/start', { method: 'POST' });
