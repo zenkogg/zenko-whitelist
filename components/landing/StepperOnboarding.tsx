@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import Stepper, { Step } from '@/components/Stepper';
 import { ArrowRightStartOnRectangleIcon } from '@heroicons/react/24/outline';
 
+const VL_LOGIN_ENABLED = process.env.NEXT_PUBLIC_VL_LOGIN_ENABLED === 'true';
+
 const GAMES = [
   { label: 'League of Legends', value: 'lol' },
   { label: 'TFT', value: 'tft' },
@@ -331,19 +333,21 @@ export function StepperOnboarding() {
           </button>
 
           {/* Virtualeagues Sign In */}
-          <button
-            onClick={() => handleOAuthSignIn('virtualeagues')}
-            className="flex w-full items-center justify-center gap-3 rounded-xl bg-white/5 border border-purple-300/20 px-4 py-3 text-sm font-medium text-neutral-600 transition-all hover:bg-white/10 cursor-pointer"
-          >
-            <Image
-              src="/images/icons/virtualeagues.png"
-              alt="Virtualeagues"
-              width={16}
-              height={16}
-              className="h-4 w-4 flex-shrink-0"
-            />
-            <span>Sign in with Virtualeagues</span>
-          </button>
+          {VL_LOGIN_ENABLED && (
+            <button
+              onClick={() => handleOAuthSignIn('virtualeagues')}
+              className="flex w-full items-center justify-center gap-3 rounded-xl bg-white/5 border border-purple-300/20 px-4 py-3 text-sm font-medium text-neutral-600 transition-all hover:bg-white/10 cursor-pointer"
+            >
+              <Image
+                src="/images/icons/virtualeagues.png"
+                alt="Virtualeagues"
+                width={16}
+                height={16}
+                className="h-4 w-4 flex-shrink-0"
+              />
+              <span>Sign in with Virtualeagues</span>
+            </button>
+          )}
         </div>
 
         {/* Avatar Group & Count - Below Buttons */}

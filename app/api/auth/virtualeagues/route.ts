@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { exchangeCode, fetchUser, VlOAuthError } from '@/lib/virtualeagues';
+import { exchangeCode, fetchUser, VlOAuthError, vlEnabled } from '@/lib/virtualeagues';
 
 const COOKIE_NAME = 'vl_oauth_state';
 const VL_PROVIDER = 'virtualeagues';
@@ -29,6 +29,9 @@ function parseStateCookie(value: string | undefined): StateCookie | null {
 }
 
 export async function POST(req: NextRequest) {
+  if (!vlEnabled()) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
   try {
     const { code, state } = await req.json();
 

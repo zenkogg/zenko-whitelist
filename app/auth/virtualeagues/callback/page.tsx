@@ -5,11 +5,17 @@ import { useRouter } from 'next/navigation';
 import { BackgroundLayer } from '@/components/landing/BackgroundLayer';
 import { AuthErrorScreen } from '@/components/AuthErrorScreen';
 
+const VL_LOGIN_ENABLED = process.env.NEXT_PUBLIC_VL_LOGIN_ENABLED === 'true';
+
 export default function VirtualeaguesCallbackPage() {
   const router = useRouter();
   const [error, setError] = useState('');
 
   useEffect(() => {
+    if (!VL_LOGIN_ENABLED) {
+      router.replace('/');
+      return;
+    }
     async function handleCallback() {
       try {
         const urlParams = new URLSearchParams(window.location.search);

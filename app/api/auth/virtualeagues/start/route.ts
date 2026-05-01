@@ -5,12 +5,16 @@ import {
   generateCodeVerifier,
   generateState,
   vlConfigured,
+  vlEnabled,
 } from '@/lib/virtualeagues';
 
 const COOKIE_NAME = 'vl_oauth_state';
 const COOKIE_MAX_AGE = 600; // 10 min
 
 export async function POST() {
+  if (!vlEnabled()) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
   if (!vlConfigured()) {
     return NextResponse.json({ error: 'Virtualeagues OAuth not configured' }, { status: 500 });
   }
