@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { exchangeCode, fetchUser, VlOAuthError, vlEnabled } from '@/lib/virtualeagues';
+import { generateUniqueUsername } from '@/lib/username';
+import { formatDisplayName } from '@/lib/utils';
 
 const COOKIE_NAME = 'vl_oauth_state';
 const VL_PROVIDER = 'virtualeagues';
@@ -89,6 +91,9 @@ export async function POST(req: NextRequest) {
             displayName,
             oauthAvatarUrl,
             referralCode: await generateUniqueReferralCode(),
+            username: await generateUniqueUsername(
+              formatDisplayName(displayName, VL_PROVIDER, vlUser.email ?? null, null)
+            ),
             games: [],
             ipAddress,
             userAgent,

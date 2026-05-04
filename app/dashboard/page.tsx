@@ -23,6 +23,7 @@ interface Referral {
 
 interface UserStats {
   referralCode: string;
+  username: string | null;
   referralCount: number;
   reputationPoints: number;
   twitterConnected: boolean;
@@ -61,7 +62,8 @@ export default function DashboardPage() {
     const urlParams = new URLSearchParams(window.location.search);
     const refCode = urlParams.get('ref');
     if (refCode) {
-      setPendingReferralCode(refCode.toUpperCase());
+      // Pass the raw value through — server normalizes (6-char codes vs username slugs).
+      setPendingReferralCode(refCode);
       // Clear the ref param from URL after reading
       window.history.replaceState({}, '', '/dashboard');
       // Clear from sessionStorage
@@ -101,6 +103,7 @@ export default function DashboardPage() {
       if (result.success && result.data) {
         setUserStats({
           referralCode: result.data.user.referralCode,
+          username: result.data.user.username ?? null,
           referralCount: result.data.stats.referralCount,
           reputationPoints: result.data.stats.reputationPoints,
           twitterConnected: !!result.data.user.twitterHandle,
@@ -205,6 +208,7 @@ export default function DashboardPage() {
             <div className="lg:col-span-4 flex">
               <ReferralCodeCard
                 referralCode={userStats.referralCode}
+                username={userStats.username}
                 referralCount={userStats.referralCount}
                 collapsible={isMobile}
               />

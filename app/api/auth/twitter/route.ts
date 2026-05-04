@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
 import { proxyFetch } from '@/lib/proxy-fetch';
+import { generateUniqueUsername } from '@/lib/username';
 
 function buildOAuthParams(consumerKey: string, oauthToken: string, extra: Record<string, string> = {}) {
   return {
@@ -118,6 +119,7 @@ export async function POST(req: NextRequest) {
               twitterHandle: screenName,
               twitterConnectedAt: new Date(),
               referralCode: await generateUniqueReferralCode(),
+              username: await generateUniqueUsername(screenName),
               games: [],
               ipAddress,
               userAgent,

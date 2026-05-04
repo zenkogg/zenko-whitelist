@@ -1,10 +1,10 @@
 import { ImageResponse } from 'next/og';
 import { NextRequest } from 'next/server';
-import { prisma } from '@/lib/prisma';
 import { readFile } from 'fs/promises';
 import path from 'path';
 import { REFERRAL_POINTS_PER_SIGNUP } from '@/lib/referral-config';
 import { formatDisplayName } from '@/lib/utils';
+import { resolveReferralIdentifier } from '@/lib/username';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -13,24 +13,23 @@ export const revalidate = 3600;
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const referralCode = searchParams.get('ref');
+    const refParam = searchParams.get('ref');
 
     let userName = 'Join Zenko';
     let avatarUrl = null;
     let oauthProvider = 'google';
     let twitterHandle: string | null = null;
+    let displayCode: string | null = null;
     const referralPoints = String(REFERRAL_POINTS_PER_SIGNUP);
 
-    if (referralCode) {
-      const user = await prisma.waitlistUser.findUnique({
-        where: { referralCode: referralCode.toUpperCase() },
-        select: { displayName: true, email: true, customAvatarUrl: true, oauthProvider: true, twitterHandle: true },
-      });
+    if (refParam) {
+      const user = await resolveReferralIdentifier(refParam);
       if (user) {
         oauthProvider = user.oauthProvider;
         twitterHandle = user.twitterHandle;
         userName = formatDisplayName(user.displayName || 'Join Zenko', oauthProvider, user.email, twitterHandle);
         avatarUrl = user.customAvatarUrl;
+        displayCode = user.referralCode;
       }
     }
 
@@ -144,7 +143,7 @@ export async function GET(request: NextRequest) {
                 REFERRAL CODE
               </div>
               <div tw="flex text-5xl font-bold" style={{ color: '#fdb022', letterSpacing: '0.18em', fontFamily: 'Sora' }}>
-                {referralCode ? referralCode.toUpperCase() : 'ZENKO'}
+                {displayCode || 'ZENKO'}
               </div>
             </div>
 

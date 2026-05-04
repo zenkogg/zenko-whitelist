@@ -36,6 +36,7 @@ model WaitlistUser {
 
   // Referral System
   referralCode      String   @unique @map("referral_code") // Generated 6-char code
+  username          String?  @unique                       // Slug from displayName for vanity referral URLs
   usedReferralCode  String?  @map("used_referral_code")    // Code they entered (one-time)
   referredById      String?  @map("referred_by_id")        // FK to referrer
   referredBy        WaitlistUser? @relation("Referrals", fields: [referredById], references: [id], onDelete: SetNull)
@@ -59,6 +60,7 @@ model WaitlistUser {
   @@unique([oauthProvider, oauthId])
   @@index([email])
   @@index([referralCode])
+  @@index([username])
   @@index([usedReferralCode])
   @@index([createdAt])
   @@index([status])
