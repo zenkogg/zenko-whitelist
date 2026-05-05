@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { parseJwtClaims } from '@/lib/oauth-client';
 import { put } from '@vercel/blob';
 import { serverFetch } from '@/lib/server-fetch';
+import { generateUniqueUsername } from '@/lib/username';
+import { formatDisplayName } from '@/lib/utils';
 
 export async function POST(req: NextRequest) {
   try {
@@ -81,6 +83,12 @@ export async function POST(req: NextRequest) {
         ? claims.profile_image_url || claims.picture || null
         : claims.picture || null;
 
+    // Slug derives from the same identity the profile card shows (formatDisplayName),
+    // so /r/{username} matches what users see as their name.
+    const username = await generateUniqueUsername(
+      formatDisplayName(displayName, provider, claims.email, null)
+    );
+
     // Create user first to get the user ID
     const newUser = await prisma.waitlistUser.create({
       data: {
@@ -91,6 +99,7 @@ export async function POST(req: NextRequest) {
         displayName,
         oauthAvatarUrl: oauthAvatarUrl,
         referralCode,
+        username,
         games: [],
         status: 'PENDING',
         ipAddress,

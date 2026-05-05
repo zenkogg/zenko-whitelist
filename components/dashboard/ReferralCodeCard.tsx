@@ -9,15 +9,20 @@ import { CollapsibleCard } from './CollapsibleCard';
 
 interface ReferralCodeCardProps {
   referralCode: string;
+  username?: string | null;
   referralCount: number;
   defaultCollapsed?: boolean;
   collapsible?: boolean;
 }
 
-export function ReferralCodeCard({ referralCode, referralCount, defaultCollapsed = false, collapsible = false }: ReferralCodeCardProps) {
+export function ReferralCodeCard({ referralCode, username, referralCount, defaultCollapsed = false, collapsible = false }: ReferralCodeCardProps) {
   const [copied, setCopied] = useState(false);
 
   const [linkCopied, setLinkCopied] = useState(false);
+
+  // Share slug is the canonical referral identifier — username when set, else the 6-char code.
+  // Always rendered/shared uppercase to match the existing referral-code visual treatment.
+  const shareSlug = (username ?? referralCode).toUpperCase();
 
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(referralCode.trim());
@@ -29,7 +34,7 @@ export function ReferralCodeCard({ referralCode, referralCount, defaultCollapsed
 
   const handleShareLink = useCallback(async () => {
     if (typeof window === 'undefined') return;
-    const referralLink = `${window.location.origin}/r/${referralCode.trim()}`;
+    const referralLink = `${window.location.origin}/r/${shareSlug.trim()}`;
 
     if (isMobile && navigator.share) {
       try {
@@ -47,17 +52,17 @@ export function ReferralCodeCard({ referralCode, referralCount, defaultCollapsed
     navigator.clipboard.writeText(referralLink);
     setLinkCopied(true);
     setTimeout(() => setLinkCopied(false), 2000);
-  }, [referralCode, isMobile]);
+  }, [shareSlug, referralCode, isMobile]);
 
   const handleShareOnTwitter = useCallback(() => {
     if (typeof window === 'undefined') return;
 
-    const referralLink = `${window.location.origin}/r/${referralCode}`;
+    const referralLink = `${window.location.origin}/r/${shareSlug}`;
     const tweetText = `Reputation has no off-season. I just joined @zenkogginc — The Origin.\n\nUse my code ${referralCode} and we both earn bonus XP 👇`;
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(referralLink)}`;
 
     window.open(twitterUrl, '_blank', 'width=550,height=420');
-  }, [referralCode]);
+  }, [shareSlug, referralCode]);
 
   return (
     <div className="rounded-2xl bg-white/5 p-4 md:p-6 backdrop-blur-md border-2 border-purple-300/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] flex flex-col h-full w-full">
@@ -99,36 +104,55 @@ export function ReferralCodeCard({ referralCode, referralCount, defaultCollapsed
           Bring your squad. History isn&apos;t built solo.
         </p>
 
-        {/* Code Display */}
+        {/* Share Display */}
         <div className="mb-4 md:mb-6 rounded-xl bg-black/40 p-4 md:p-6">
-          {/* Code + Copy Button */}
+          {/* Hero: share slug + copy-link button */}
           <div className="flex items-center justify-between gap-4">
             <ShinyText
-              text={referralCode}
+              text={shareSlug}
               speed={3}
               color="#9E77ED"
               shineColor="#E9D5FF"
               direction="right"
-              className="text-xl md:text-3xl font-bold tracking-widest [font-family:var(--font-sora)]"
+              className="text-xl md:text-3xl font-bold tracking-widest [font-family:var(--font-sora)] truncate"
             />
 
-            {/* Copy Button */}
+            {/* Copy Link Button */}
             <button
-              onClick={handleCopy}
+              onClick={handleShareLink}
               className="flex items-center gap-2 text-purple-300/80 transition-colors hover:text-purple-300 flex-shrink-0 cursor-pointer"
-              aria-label={copied ? "Copied!" : "Copy code"}
+              aria-label={linkCopied ? "Copied!" : "Copy link"}
             >
-              {copied ? <CheckIcon /> : <CopyIcon />}
+              {linkCopied ? <CheckIcon /> : <CopyIcon />}
               <span className="text-sm font-medium">
-                {copied ? 'Copied!' : 'Copy code'}
+                {linkCopied ? 'Copied!' : 'Copy link'}
               </span>
             </button>
           </div>
 
           {/* Referral URL */}
           <p className="mt-3 text-xs md:text-sm text-purple-400/40 truncate">
-            {typeof window !== 'undefined' && `${window.location.host}/r/${referralCode}`}
+            {typeof window !== 'undefined' && `${window.location.host}/r/${shareSlug}`}
           </p>
+
+          {/* Secondary: 6-char code (only when distinct from the hero — i.e. user has a username) */}
+          {username && (
+            <div className="mt-4 pt-4 border-t border-purple-300/10 flex items-center justify-between gap-4">
+              <p className="text-xs md:text-sm text-purple-400/50">
+                Code: <span className="font-semibold tracking-wider text-purple-300/70">{referralCode}</span>
+              </p>
+              <button
+                onClick={handleCopy}
+                className="flex items-center gap-1.5 text-purple-300/60 transition-colors hover:text-purple-300 flex-shrink-0 cursor-pointer"
+                aria-label={copied ? "Copied!" : "Copy code"}
+              >
+                {copied ? <CheckIcon /> : <CopyIcon />}
+                <span className="text-xs font-medium">
+                  {copied ? 'Copied!' : 'Copy code'}
+                </span>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Share Buttons */}

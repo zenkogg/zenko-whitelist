@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { REFERRAL_MAX_COUNT, REFERRAL_POINTS_PER_SIGNUP, REFERRAL_POINTS_PER_USAGE } from '@/lib/referral-config';
+import { resolveReferralIdentifier } from '@/lib/username';
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,13 +25,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Normalize referral code (uppercase, trim)
-    const normalizedCode = referralCode.trim().toUpperCase();
-
-    if (normalizedCode.length !== 6) {
+    // Resolve referrer up front (accepts either 6-char code or username slug).
+    const referrer = await resolveReferralIdentifier(referralCode);
+    if (!referrer) {
       return NextResponse.json(
-        { error: 'Bad Request', message: 'Referral code must be 6 characters' },
-        { status: 400 }
+        { error: 'Not Found', message: 'Invalid referral code' },
+        { status: 404 }
       );
     }
 
@@ -50,15 +50,6 @@ export async function POST(request: NextRequest) {
         throw new Error('ALREADY_USED_CODE');
       }
 
-      // Find referrer by code
-      const referrer = await tx.waitlistUser.findUnique({
-        where: { referralCode: normalizedCode },
-      });
-
-      if (!referrer) {
-        throw new Error('INVALID_CODE');
-      }
-
       // Check if user is trying to use their own code
       if (referrer.id === currentUser.id) {
         throw new Error('CANNOT_USE_OWN_CODE');
@@ -67,11 +58,13 @@ export async function POST(request: NextRequest) {
       // Referrer earns points only for the first REFERRAL_MAX_COUNT referrals
       const referrerEarnsPoints = referrer.referralCount < REFERRAL_MAX_COUNT;
 
-      // Update current user: apply referral code and add points
+      // Update current user: apply referral code and add points.
+      // Always store the canonical 6-char referrer code, even if the visitor
+      // arrived via a username slug — keeps downstream attribution / stats logic untouched.
       const updatedUser = await tx.waitlistUser.update({
         where: { id: currentUser.id },
         data: {
-          usedReferralCode: normalizedCode,
+          usedReferralCode: referrer.referralCode,
           referredById: referrer.id,
           reputationPoints: { increment: REFERRAL_POINTS_PER_USAGE },
         },
@@ -119,11 +112,6 @@ export async function POST(request: NextRequest) {
           return NextResponse.json(
             { error: 'Conflict', message: 'You have already used a referral code' },
             { status: 409 }
-          );
-        case 'INVALID_CODE':
-          return NextResponse.json(
-            { error: 'Not Found', message: 'Invalid referral code' },
-            { status: 404 }
           );
         case 'CANNOT_USE_OWN_CODE':
           return NextResponse.json(

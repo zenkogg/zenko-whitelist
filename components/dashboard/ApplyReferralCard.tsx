@@ -80,7 +80,8 @@ export function ApplyReferralCard({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            referralCode: codeToSubmit.toUpperCase(),
+            // Pass raw — server resolver handles 6-char codes and username slugs.
+            referralCode: codeToSubmit,
             userId,
           }),
         });
