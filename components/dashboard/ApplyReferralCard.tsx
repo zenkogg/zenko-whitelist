@@ -7,6 +7,7 @@ import { CollapsibleCard } from './CollapsibleCard';
 
 interface ReferrerInfo {
   displayName: string;
+  username: string | null;
   avatarUrl: string | null;
   oauthProvider: string;
 }
@@ -144,10 +145,10 @@ export function ApplyReferralCard({
         >
           <div className="w-full rounded-xl border-2 border-dashed border-purple-300/20 px-4 py-3">
             <div className="flex items-center justify-between gap-3">
-              {/* Left: Applied Code */}
-              <div className="flex items-center gap-2">
-                <span className="text-xl font-bold tracking-widest text-purple-400/50" style={{ fontFamily: 'var(--font-sora)' }}>
-                  {usedReferralCode}
+              {/* Left: Referrer's username slug (falls back to the 6-char code if they never claimed one). */}
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-xl font-bold tracking-widest text-purple-400/50 truncate" style={{ fontFamily: 'var(--font-sora)' }}>
+                  {(referrerInfo?.username ?? usedReferralCode ?? '').toUpperCase()}
                 </span>
               </div>
 

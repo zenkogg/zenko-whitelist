@@ -10,6 +10,7 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 interface ReferrerInfo {
   displayName: string;
+  username: string | null;
   avatarUrl: string | null;
   oauthProvider: string;
 }
@@ -207,9 +208,11 @@ export default function DashboardPage() {
             {/* Referral Code Card - Top right, spans 4 columns */}
             <div className="lg:col-span-4 flex">
               <ReferralCodeCard
+                userId={user.id}
                 referralCode={userStats.referralCode}
                 username={userStats.username}
                 referralCount={userStats.referralCount}
+                onUsernameUpdated={() => fetchUserStats(user.id)}
                 collapsible={isMobile}
               />
             </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import ShinyText from '@/components/ShinyText';
 import FuzzyText from '@/components/FuzzyText';
@@ -8,27 +8,112 @@ import { CollapsibleCard } from './CollapsibleCard';
 
 
 interface ReferralCodeCardProps {
+  userId: string;
   referralCode: string;
   username?: string | null;
   referralCount: number;
+  onUsernameUpdated?: (newUsername: string) => void;
   defaultCollapsed?: boolean;
   collapsible?: boolean;
 }
 
-export function ReferralCodeCard({ referralCode, username, referralCount, defaultCollapsed = false, collapsible = false }: ReferralCodeCardProps) {
-  const [copied, setCopied] = useState(false);
+type AvailabilityState =
+  | { status: 'idle' }
+  | { status: 'checking' }
+  | { status: 'available' }
+  | { status: 'invalid'; message: string };
 
+export function ReferralCodeCard({ userId, referralCode, username, referralCount, onUsernameUpdated, defaultCollapsed = false, collapsible = false }: ReferralCodeCardProps) {
   const [linkCopied, setLinkCopied] = useState(false);
 
   // Share slug is the canonical referral identifier — username when set, else the 6-char code.
   // Always rendered/shared uppercase to match the existing referral-code visual treatment.
   const shareSlug = (username ?? referralCode).toUpperCase();
 
-  const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(referralCode.trim());
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }, [referralCode]);
+  // Edit-mode state for claiming/changing the username.
+  const [isEditing, setIsEditing] = useState(false);
+  const [draft, setDraft] = useState(username ?? '');
+  const [availability, setAvailability] = useState<AvailabilityState>({ status: 'idle' });
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const checkTokenRef = useRef(0);
+
+  // Debounced availability check while typing.
+  useEffect(() => {
+    if (!isEditing) return;
+    const value = draft.trim();
+    // Same as current — skip check (no-op save would still succeed but UX-wise treat as idle).
+    if (!value || value.toLowerCase() === (username ?? '').toLowerCase()) {
+      setAvailability({ status: 'idle' });
+      return;
+    }
+    setAvailability({ status: 'checking' });
+    const myToken = ++checkTokenRef.current;
+    const handle = setTimeout(async () => {
+      try {
+        const params = new URLSearchParams({ username: value, userId });
+        const res = await fetch(`/api/user/username?${params}`);
+        const data = await res.json();
+        if (myToken !== checkTokenRef.current) return; // stale response
+        if (data.available) {
+          setAvailability({ status: 'available' });
+        } else {
+          setAvailability({ status: 'invalid', message: data.error || 'Unavailable' });
+        }
+      } catch {
+        if (myToken !== checkTokenRef.current) return;
+        setAvailability({ status: 'idle' });
+      }
+    }, 300);
+    return () => clearTimeout(handle);
+  }, [draft, isEditing, userId, username]);
+
+  const startEdit = useCallback(() => {
+    setDraft(username ?? '');
+    setSaveError(null);
+    setAvailability({ status: 'idle' });
+    setIsEditing(true);
+  }, [username]);
+
+  const cancelEdit = useCallback(() => {
+    setIsEditing(false);
+    setDraft(username ?? '');
+    setSaveError(null);
+    setAvailability({ status: 'idle' });
+  }, [username]);
+
+  const handleSave = useCallback(async () => {
+    const value = draft.trim();
+    if (!value) return;
+    setIsSaving(true);
+    setSaveError(null);
+    try {
+      const res = await fetch('/api/user/username', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, username: value }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setSaveError(data.message || 'Could not update username');
+        return;
+      }
+      const newUsername: string = data.data?.user?.username ?? value;
+      onUsernameUpdated?.(newUsername);
+      setIsEditing(false);
+    } catch {
+      setSaveError('Network error — try again');
+    } finally {
+      setIsSaving(false);
+    }
+  }, [draft, userId, onUsernameUpdated]);
+
+  const canSave =
+    !isSaving &&
+    draft.trim().length > 0 &&
+    draft.trim().toLowerCase() !== (username ?? '').toLowerCase() &&
+    availability.status !== 'invalid' &&
+    availability.status !== 'checking';
 
   const isMobile = typeof navigator !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
@@ -106,52 +191,97 @@ export function ReferralCodeCard({ referralCode, username, referralCount, defaul
 
         {/* Share Display */}
         <div className="mb-4 md:mb-6 rounded-xl bg-black/40 p-4 md:p-6">
-          {/* Hero: share slug + copy-link button */}
-          <div className="flex items-center justify-between gap-4">
-            <ShinyText
-              text={shareSlug}
-              speed={3}
-              color="#9E77ED"
-              shineColor="#E9D5FF"
-              direction="right"
-              className="text-xl md:text-3xl font-bold tracking-widest [font-family:var(--font-sora)] truncate"
-            />
-
-            {/* Copy Link Button */}
-            <button
-              onClick={handleShareLink}
-              className="flex items-center gap-2 text-purple-300/80 transition-colors hover:text-purple-300 flex-shrink-0 cursor-pointer"
-              aria-label={linkCopied ? "Copied!" : "Copy link"}
-            >
-              {linkCopied ? <CheckIcon /> : <CopyIcon />}
-              <span className="text-sm font-medium">
-                {linkCopied ? 'Copied!' : 'Copy link'}
-              </span>
-            </button>
-          </div>
-
-          {/* Referral URL */}
-          <p className="mt-3 text-xs md:text-sm text-purple-400/40 truncate">
-            {typeof window !== 'undefined' && `${window.location.host}/r/${shareSlug}`}
-          </p>
-
-          {/* Secondary: 6-char code (only when distinct from the hero — i.e. user has a username) */}
-          {username && (
-            <div className="mt-4 pt-4 border-t border-purple-300/10 flex items-center justify-between gap-4">
-              <p className="text-xs md:text-sm text-purple-400/50">
-                Code: <span className="font-semibold tracking-wider text-purple-300/70">{referralCode}</span>
-              </p>
-              <button
-                onClick={handleCopy}
-                className="flex items-center gap-1.5 text-purple-300/60 transition-colors hover:text-purple-300 flex-shrink-0 cursor-pointer"
-                aria-label={copied ? "Copied!" : "Copy code"}
-              >
-                {copied ? <CheckIcon /> : <CopyIcon />}
-                <span className="text-xs font-medium">
-                  {copied ? 'Copied!' : 'Copy code'}
+          {isEditing ? (
+            <>
+              {/* Edit mode: input + save/cancel */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm md:text-base text-purple-400/60 [font-family:var(--font-sora)] flex-shrink-0">
+                  {typeof window !== 'undefined' ? `${window.location.host}/r/` : '/r/'}
                 </span>
-              </button>
-            </div>
+                <input
+                  type="text"
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  placeholder="username"
+                  autoFocus
+                  disabled={isSaving}
+                  maxLength={30}
+                  className="flex-1 min-w-0 rounded-lg bg-black/40 px-3 py-2 text-base md:text-lg font-bold text-purple-300 placeholder-purple-400/30 outline-none border border-purple-300/20 focus:border-purple-300/60 transition-colors uppercase tracking-wider [font-family:var(--font-sora)] disabled:opacity-50"
+                  aria-label="Username"
+                  aria-invalid={availability.status === 'invalid'}
+                />
+                <button
+                  onClick={handleSave}
+                  disabled={!canSave}
+                  className="flex-shrink-0 rounded-lg bg-zenko-purple px-3 py-2 text-sm font-medium text-white transition-all hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                >
+                  {isSaving ? 'Saving...' : 'Save'}
+                </button>
+                <button
+                  onClick={cancelEdit}
+                  disabled={isSaving}
+                  className="flex-shrink-0 rounded-lg border border-purple-300/20 px-3 py-2 text-sm font-medium text-purple-300/70 transition-all hover:bg-white/5 cursor-pointer disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+              </div>
+
+              {/* Live availability + error feedback */}
+              <p className="mt-3 text-xs min-h-[1rem]" role="status" aria-live="polite">
+                {saveError ? (
+                  <span className="text-error-300">{saveError}</span>
+                ) : availability.status === 'checking' ? (
+                  <span className="text-purple-400/50">Checking...</span>
+                ) : availability.status === 'available' ? (
+                  <span className="text-success-300">✓ Available</span>
+                ) : availability.status === 'invalid' ? (
+                  <span className="text-error-300">{availability.message}</span>
+                ) : (
+                  <span className="text-purple-400/40">3–30 chars · letters, numbers, hyphens</span>
+                )}
+              </p>
+            </>
+          ) : (
+            <>
+              {/* Hero: share slug + edit + copy-link button */}
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2 min-w-0">
+                  <ShinyText
+                    text={shareSlug}
+                    speed={3}
+                    color="#9E77ED"
+                    shineColor="#E9D5FF"
+                    direction="right"
+                    className="text-xl md:text-3xl font-bold tracking-widest [font-family:var(--font-sora)] truncate"
+                  />
+                  <button
+                    onClick={startEdit}
+                    className="flex-shrink-0 text-purple-300/40 transition-colors hover:text-purple-300 cursor-pointer p-1"
+                    aria-label="Edit username"
+                    title="Edit username"
+                  >
+                    <PencilIcon />
+                  </button>
+                </div>
+
+                {/* Copy Link Button */}
+                <button
+                  onClick={handleShareLink}
+                  className="flex items-center gap-2 text-purple-300/80 transition-colors hover:text-purple-300 flex-shrink-0 cursor-pointer"
+                  aria-label={linkCopied ? "Copied!" : "Copy link"}
+                >
+                  {linkCopied ? <CheckIcon /> : <CopyIcon />}
+                  <span className="text-sm font-medium">
+                    {linkCopied ? 'Copied!' : 'Copy link'}
+                  </span>
+                </button>
+              </div>
+
+              {/* Referral URL */}
+              <p className="mt-3 text-xs md:text-sm text-purple-400/40 truncate">
+                {typeof window !== 'undefined' && `${window.location.host}/r/${shareSlug}`}
+              </p>
+            </>
           )}
         </div>
 
@@ -174,6 +304,25 @@ export function ReferralCodeCard({ referralCode, username, referralCount, defaul
         </div>
       </CollapsibleCard>
     </div>
+  );
+}
+
+function PencilIcon() {
+  return (
+    <svg
+      className="h-4 w-4"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+      />
+    </svg>
   );
 }
 
