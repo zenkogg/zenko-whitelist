@@ -111,6 +111,7 @@ export async function POST(request: NextRequest) {
         where: { referralCode: currentUser.usedReferralCode },
         select: {
           displayName: true,
+          username: true,
           email: true,
           oauthAvatarUrl: true,
           customAvatarUrl: true,
@@ -122,6 +123,7 @@ export async function POST(request: NextRequest) {
       if (referrer) {
         referrerInfo = {
           displayName: formatDisplayName(referrer.displayName || 'User', referrer.oauthProvider, referrer.email, referrer.twitterHandle),
+          username: referrer.username,
           avatarUrl: referrer.customAvatarUrl || referrer.oauthAvatarUrl,
           oauthProvider: referrer.oauthProvider,
         };
