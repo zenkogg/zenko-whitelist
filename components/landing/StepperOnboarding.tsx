@@ -66,13 +66,16 @@ export function StepperOnboarding() {
 
   // Check for user session in localStorage and URL params
   useEffect(() => {
-    // Check for referral code in URL
+    // Resolve referral code from the URL first, then fall back to sessionStorage so the
+    // value survives any navigation that drops the ?ref= param (OAuth round-trip, in-app links, etc).
     const urlParams = new URLSearchParams(window.location.search);
-    const refCode = urlParams.get('ref');
+    const urlRefCode = urlParams.get('ref');
+    if (urlRefCode) {
+      sessionStorage.setItem('pending_referral_code', urlRefCode.toUpperCase());
+    }
+    const refCode = urlRefCode || sessionStorage.getItem('pending_referral_code');
     if (refCode) {
       setReferralCode(refCode.toUpperCase());
-      // Store in sessionStorage to preserve across OAuth flow
-      sessionStorage.setItem('pending_referral_code', refCode.toUpperCase());
     }
 
     const storedUser = localStorage.getItem('waitlist_user');
@@ -110,11 +113,6 @@ export function StepperOnboarding() {
 
     if (!referralCode.trim()) {
       setError('Please enter a referral code');
-      return;
-    }
-
-    if (referralCode.length !== 6) {
-      setError('Referral code must be 6 characters');
       return;
     }
 
@@ -465,15 +463,8 @@ export function StepperOnboarding() {
               <input
                 type="text"
                 value={user?.usedReferralCode || referralCode}
-                onChange={(e) => {
-                  const value = e.target.value.toUpperCase();
-                  // Only allow alphanumeric characters
-                  if (/^[A-Z0-9]*$/.test(value)) {
-                    setReferralCode(value);
-                  }
-                }}
-                placeholder="Enter 6-character code"
-                maxLength={6}
+                onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                placeholder="Enter code or username"
                 disabled={isSubmitting || !!user?.usedReferralCode}
                 readOnly={!!user?.usedReferralCode}
                 className="w-full rounded-xl border-2 border-purple-300/20 bg-black/40 px-4 py-3 text-white/60 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-300 disabled:opacity-50"
