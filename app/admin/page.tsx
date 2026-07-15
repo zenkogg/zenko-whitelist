@@ -106,7 +106,6 @@ export default function AdminPage() {
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>('order');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
-  const [waitlistStatus, setWaitlistStatus] = useState<'open' | 'closed'>('open');
   const [timelinePage, setTimelinePage] = useState(-1); // -1 means "latest page"
   const [gameFilter, setGameFilter] = useState<string>('all');
 
@@ -147,7 +146,6 @@ export default function AdminPage() {
       })
       .then((data) => {
         if (data?.users) setUsers(data.users);
-        if (data?.waitlistStatus) setWaitlistStatus(data.waitlistStatus);
       })
       .catch(() => {
         localStorage.removeItem('admin_session');
@@ -700,30 +698,20 @@ export default function AdminPage() {
                       <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            {waitlistStatus === 'closed' ? (
-                              <select
-                                value={user.status}
-                                onChange={(e) => updateStatus(user.id, e.target.value)}
-                                className={`appearance-none rounded-full border px-2 py-0.5 text-xs font-medium outline-none cursor-pointer ${statusClasses(user.status)}`}
-                              >
-                                {STATUSES.map((s) => (
-                                  <option key={s} value={s}>
-                                    {s}
-                                  </option>
-                                ))}
-                              </select>
-                            ) : (
-                              <span
-                                className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${statusClasses(user.status)}`}
-                              >
-                                {user.status}
-                              </span>
-                            )}
+                            <select
+                              value={user.status}
+                              onChange={(e) => updateStatus(user.id, e.target.value)}
+                              className={`appearance-none rounded-full border px-2 py-0.5 text-xs font-medium outline-none cursor-pointer ${statusClasses(user.status)}`}
+                            >
+                              {STATUSES.map((s) => (
+                                <option key={s} value={s}>
+                                  {s}
+                                </option>
+                              ))}
+                            </select>
                           </TooltipTrigger>
                           <TooltipContent>
-                            {waitlistStatus === 'open'
-                              ? 'Status changes available when waitlist is closed'
-                              : STATUS_TOOLTIPS[user.status] || user.status}
+                            {STATUS_TOOLTIPS[user.status] || user.status}
                           </TooltipContent>
                         </Tooltip>
                       </td>

@@ -52,9 +52,7 @@ export async function GET(request: NextRequest) {
     },
   });
 
-  const waitlistStatus = process.env.WAITLIST_STATUS === 'closed' ? 'closed' : 'open';
-
-  return NextResponse.json({ users, waitlistStatus });
+  return NextResponse.json({ users });
 }
 
 const VALID_STATUSES = ['PENDING', 'APPROVED', 'INVITED', 'REGISTERED'] as const;
@@ -74,13 +72,6 @@ export async function PATCH(request: NextRequest) {
   const adminEmails = getAdminEmails();
   if (!adminEmails.includes(claims.email.toLowerCase())) {
     return NextResponse.json({ error: 'Access denied' }, { status: 403 });
-  }
-
-  if (process.env.WAITLIST_STATUS !== 'closed') {
-    return NextResponse.json(
-      { error: 'Status updates are only allowed when the waitlist is closed' },
-      { status: 403 }
-    );
   }
 
   const body = await request.json();
