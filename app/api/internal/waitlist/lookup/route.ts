@@ -17,10 +17,17 @@
  *       oauthId: string }
  *
  *   200 — match:
- *     { match: { id, status, email, displayName, referralCode, createdAt } }
+ *     { match: { id, status, email, displayName, referralCode, createdAt,
+ *                reputationPoints } }
  *
  *   200 — no match:
  *     { match: null }
+ *
+ * `reputationPoints` is the XP the user earned on the waitlist by referring
+ * people. Zenko converts it 1:1 into on-chain reputation once the player
+ * creates an Account, so this field is the source of truth for that grant and
+ * must be captured at signup: `status` flips to REGISTERED moments later, and
+ * the points themselves keep accruing if their referrals keep signing up.
  *
  *   400 — invalid body
  *   401 — bad/missing bearer token
@@ -77,6 +84,7 @@ export async function POST(req: NextRequest) {
         displayName: true,
         referralCode: true,
         createdAt: true,
+        reputationPoints: true,
       },
     });
 
@@ -90,6 +98,7 @@ export async function POST(req: NextRequest) {
         displayName: row.displayName,
         referralCode: row.referralCode,
         createdAt: row.createdAt.toISOString(),
+        reputationPoints: row.reputationPoints,
       },
     });
   } catch (err) {
