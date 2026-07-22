@@ -90,6 +90,11 @@ function getGoogleSignInUrl() {
   return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
 }
 
+function csvCell(value: unknown) {
+  const s = String(value ?? '');
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
 function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
   return (
     <span className={`ml-1 inline-block ${active ? 'text-purple-400' : 'text-white/20'}`}>
@@ -108,6 +113,7 @@ export default function AdminPage() {
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [timelinePage, setTimelinePage] = useState(-1); // -1 means "latest page"
   const [gameFilter, setGameFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) {
@@ -183,6 +189,9 @@ export default function AdminPage() {
     if (gameFilter !== 'all') {
       list = list.filter((u) => u.games.includes(gameFilter));
     }
+    if (statusFilter !== 'all') {
+      list = list.filter((u) => u.status === statusFilter);
+    }
 
     const sorted = [...list].sort((a, b) => {
       let cmp = 0;
@@ -207,7 +216,7 @@ export default function AdminPage() {
     });
 
     return sorted;
-  }, [users, search, gameFilter, sortKey, sortDir, signupOrder]);
+  }, [users, search, gameFilter, statusFilter, sortKey, sortDir, signupOrder]);
 
   const stats = useMemo(() => {
     const today = new Date();
@@ -329,6 +338,50 @@ export default function AdminPage() {
     },
     [session]
   );
+
+  // Exports whatever the table currently shows, so the status/game/search filters
+  // double as the export selection.
+  function exportCsv() {
+    const header = [
+      'signup_order',
+      'display_name',
+      'email',
+      'provider',
+      'games',
+      'referral_code',
+      'referral_count',
+      'reputation_points',
+      'status',
+      'used_referral_code',
+      'referred_by_email',
+      'created_at',
+    ];
+    const rows = filteredAndSortedUsers.map((u) => [
+      signupOrder.get(u.id) ?? '',
+      u.displayName ?? '',
+      u.email ?? '',
+      u.oauthProvider,
+      u.games.join('|'),
+      u.referralCode,
+      u.referralCount,
+      u.reputationPoints,
+      u.status,
+      u.usedReferralCode ?? '',
+      u.referredBy?.email ?? '',
+      new Date(u.createdAt).toISOString(),
+    ]);
+    const csv = [header, ...rows].map((r) => r.map(csvCell).join(',')).join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `zenko-waitlist-${statusFilter.toLowerCase()}-${new Date()
+      .toISOString()
+      .slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   function signOut() {
     localStorage.removeItem('admin_session');
@@ -611,8 +664,8 @@ export default function AdminPage() {
           </TooltipProvider>
         )}
 
-        {/* Search */}
-        <div className="mb-4">
+        {/* Search + export */}
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <input
             type="text"
             placeholder="Search by name, email, or referral code..."
@@ -620,6 +673,25 @@ export default function AdminPage() {
             onChange={(e) => setSearch(e.target.value)}
             className="w-full max-w-md rounded-lg bg-white/5 border border-white/10 px-4 py-2 text-sm text-white placeholder:text-white/30 outline-none focus:border-purple-500/50"
           />
+          <div className="flex items-center gap-2">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm text-white outline-none cursor-pointer focus:border-purple-500/50"
+            >
+              <option value="all">All statuses</option>
+              {STATUSES.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+            <button
+              onClick={exportCsv}
+              disabled={filteredAndSortedUsers.length === 0}
+              className="whitespace-nowrap rounded-lg bg-purple-500/20 border border-purple-500/30 px-4 py-2 text-sm text-purple-200 transition hover:bg-purple-500/30 disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              Export CSV ({filteredAndSortedUsers.length})
+            </button>
+          </div>
         </div>
 
         {/* Table */}
