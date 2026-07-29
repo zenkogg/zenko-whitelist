@@ -25,7 +25,7 @@ export function Footer() {
           <div className="flex items-center justify-end gap-4">
             <Link href="/terms" className="text-xs text-neutral-600 transition-colors hover:text-neutral-400">Terms</Link>
             <Link href="/privacy" className="text-xs text-neutral-600 transition-colors hover:text-neutral-400">Privacy</Link>
-            <span className="text-xs text-neutral-500">&copy; 2026 Zenko</span>
+            <span className="text-xs text-neutral-500">&copy; {new Date().getFullYear()} Zenko</span>
           </div>
         </div>
 
@@ -53,7 +53,7 @@ export function Footer() {
             <span className="text-neutral-700">·</span>
             <Link href="/privacy" className="text-xs text-neutral-600 transition-colors hover:text-neutral-400">Privacy</Link>
             <span className="text-neutral-700">·</span>
-            <span className="text-xs text-neutral-500">&copy; 2026 Zenko</span>
+            <span className="text-xs text-neutral-500">&copy; {new Date().getFullYear()} Zenko</span>
           </div>
         </div>
       </div>

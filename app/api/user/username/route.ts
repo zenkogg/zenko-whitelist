@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { isUsernameAvailable, validateUsernameInput } from '@/lib/username';
+import { syncWaitlistUser } from '@/lib/loops/sync';
 
 // GET /api/user/username?username=foo&userId=bar
 // Lightweight availability check used by the edit-mode live feedback.
@@ -59,6 +60,7 @@ export async function PATCH(request: NextRequest) {
         data: { username: validation.value },
         select: { id: true, username: true },
       });
+      after(() => syncWaitlistUser(updated.id));
       return NextResponse.json({ success: true, data: { user: updated } });
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError) {

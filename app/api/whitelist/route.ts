@@ -1,7 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { resend } from '@/lib/resend';
 import { WelcomeEmail } from '@/emails/WelcomeEmail';
+import { loops, betaMailingLists, loopsEnvironment } from '@/lib/loops/client';
+import { LOOPS_EVENTS, idempotencyKey } from '@/lib/loops/events';
 
 export async function POST(request: NextRequest) {
   try {
@@ -55,6 +57,15 @@ export async function POST(request: NextRequest) {
         },
       });
 
+      // Legacy email-only entry: keep the Loops contact fresh (no event on re-submit).
+      after(() =>
+        loops.updateContact({
+          email: email.toLowerCase(),
+          source: 'legacy-form',
+          environment: loopsEnvironment(),
+        })
+      );
+
       return NextResponse.json(
         { message: 'Whitelist entry updated', id: updatedEntry.id },
         { status: 200 }
@@ -69,6 +80,31 @@ export async function POST(request: NextRequest) {
         ipAddress,
         userAgent,
       },
+    });
+
+    // New legacy signup: upsert the Loops contact and fire waitlist_joined (the
+    // one event that adds them to the beta list). This is a WhitelistEntry, not a
+    // WaitlistUser, so it uses the client directly — standard fields only, no
+    // waitlist* namespace and no loops_sync_* bookkeeping (these rows are covered
+    // by the SQL->CSV backfill too).
+    after(async () => {
+      const to = email.toLowerCase();
+      const contact = await loops.updateContact({
+        email: to,
+        source: 'legacy-form',
+        environment: loopsEnvironment(),
+      });
+      if (contact.ok) {
+        await loops.sendEvent(
+          {
+            email: to,
+            eventName: LOOPS_EVENTS.WAITLIST_JOINED,
+            eventProperties: { games: games.join(','), source: 'legacy-form' },
+            mailingLists: betaMailingLists(),
+          },
+          idempotencyKey(LOOPS_EVENTS.WAITLIST_JOINED, entry.id)
+        );
+      }
     });
 
     // Send welcome email

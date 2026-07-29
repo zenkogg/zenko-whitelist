@@ -1,7 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { REFERRAL_MAX_COUNT, REFERRAL_POINTS_PER_SIGNUP, REFERRAL_POINTS_PER_USAGE } from '@/lib/referral-config';
 import { resolveReferralIdentifier } from '@/lib/username';
+import { syncWaitlistUser } from '@/lib/loops/sync';
+import { LOOPS_EVENTS, idempotencyKey } from '@/lib/loops/events';
 
 export async function POST(request: NextRequest) {
   try {
@@ -80,6 +82,24 @@ export async function POST(request: NextRequest) {
       });
 
       return { updatedUser, updatedReferrer };
+    });
+
+    // Both sides changed: the referred user applied a code, the referrer earned one.
+    // referral_earned can legitimately recur for a referrer, so key it on both ids.
+    after(() => {
+      void syncWaitlistUser(result.updatedUser.id, {
+        event: LOOPS_EVENTS.WAITLIST_REFERRAL_APPLIED,
+        eventProperties: { referralCode: result.updatedUser.usedReferralCode ?? '' },
+      });
+      void syncWaitlistUser(result.updatedReferrer.id, {
+        event: LOOPS_EVENTS.WAITLIST_REFERRAL_EARNED,
+        eventProperties: { referralCount: result.updatedReferrer.referralCount },
+        idempotencyKey: idempotencyKey(
+          LOOPS_EVENTS.WAITLIST_REFERRAL_EARNED,
+          result.updatedReferrer.id,
+          result.updatedUser.id
+        ),
+      });
     });
 
     return NextResponse.json({

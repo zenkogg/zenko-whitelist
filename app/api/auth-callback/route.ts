@@ -1,10 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { parseJwtClaims } from '@/lib/oauth-client';
 import { put } from '@vercel/blob';
 import { serverFetch } from '@/lib/server-fetch';
 import { generateUniqueUsername } from '@/lib/username';
 import { formatDisplayName } from '@/lib/utils';
+import { syncWaitlistUser } from '@/lib/loops/sync';
+import { LOOPS_EVENTS } from '@/lib/loops/events';
+import { betaMailingLists } from '@/lib/loops/client';
 
 export async function POST(req: NextRequest) {
   try {
@@ -66,6 +69,8 @@ export async function POST(req: NextRequest) {
       });
 
       console.log(`Updated user ${updatedUser.id} with displayName: ${displayName}`);
+      // Returning login: refresh the Loops contact's properties, no event.
+      after(() => syncWaitlistUser(updatedUser.id));
       return NextResponse.json({ user: updatedUser });
     }
 
@@ -106,6 +111,16 @@ export async function POST(req: NextRequest) {
         userAgent,
       },
     });
+
+    // New signup: create the Loops contact, fire waitlist_joined, and add them
+    // to the beta list (the one event that carries mailingLists). syncWaitlistUser
+    // re-reads the row, so this is correct regardless of the avatar update below.
+    after(() =>
+      syncWaitlistUser(newUser.id, {
+        event: LOOPS_EVENTS.WAITLIST_JOINED,
+        mailingLists: betaMailingLists(),
+      })
+    );
 
     // Download and upload OAuth avatar to blob storage for new users
     if (oauthAvatarUrl) {

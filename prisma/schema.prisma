@@ -57,6 +57,12 @@ model WaitlistUser {
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
 
+  // Loops (loops.so) sync state. `loopsSyncedAt` is stamped on a successful
+  // inline push (telemetry). `loopsSyncError` holds the last caught failure and
+  // is the work-list for the SQL->CSV re-export/heal (no recurring reconcile).
+  loopsSyncedAt     DateTime? @map("loops_synced_at")
+  loopsSyncError    String?   @map("loops_sync_error")
+
   @@unique([oauthProvider, oauthId])
   @@index([email])
   @@index([referralCode])
@@ -65,6 +71,7 @@ model WaitlistUser {
   @@index([createdAt])
   @@index([status])
   @@index([reputationPoints])
+  @@index([loopsSyncedAt])
   @@map("waitlist_users")
 }
 
