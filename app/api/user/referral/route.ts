@@ -86,20 +86,27 @@ export async function POST(request: NextRequest) {
 
     // Both sides changed: the referred user applied a code, the referrer earned one.
     // referral_earned can legitimately recur for a referrer, so key it on both ids.
-    after(() => {
-      void syncWaitlistUser(result.updatedUser.id, {
-        event: LOOPS_EVENTS.WAITLIST_REFERRAL_APPLIED,
-        eventProperties: { referralCode: result.updatedUser.usedReferralCode ?? '' },
-      });
-      void syncWaitlistUser(result.updatedReferrer.id, {
-        event: LOOPS_EVENTS.WAITLIST_REFERRAL_EARNED,
-        eventProperties: { referralCount: result.updatedReferrer.referralCount },
-        idempotencyKey: idempotencyKey(
-          LOOPS_EVENTS.WAITLIST_REFERRAL_EARNED,
-          result.updatedReferrer.id,
-          result.updatedUser.id
-        ),
-      });
+    //
+    // Awaited, not fire-and-forget: `after` only extends the serverless
+    // invocation for the promise its callback RETURNS (Next hands that one to
+    // Vercel's waitUntil). A floating promise inside a sync callback is untracked
+    // and dies when the invocation is torn down, silently dropping both events.
+    after(async () => {
+      await Promise.all([
+        syncWaitlistUser(result.updatedUser.id, {
+          event: LOOPS_EVENTS.WAITLIST_REFERRAL_APPLIED,
+          eventProperties: { referralCode: result.updatedUser.usedReferralCode ?? '' },
+        }),
+        syncWaitlistUser(result.updatedReferrer.id, {
+          event: LOOPS_EVENTS.WAITLIST_REFERRAL_EARNED,
+          eventProperties: { referralCount: result.updatedReferrer.referralCount },
+          idempotencyKey: idempotencyKey(
+            LOOPS_EVENTS.WAITLIST_REFERRAL_EARNED,
+            result.updatedReferrer.id,
+            result.updatedUser.id
+          ),
+        }),
+      ]);
     });
 
     return NextResponse.json({
