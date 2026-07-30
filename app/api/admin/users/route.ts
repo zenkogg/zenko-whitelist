@@ -1,5 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
+import type { WaitlistStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { syncWaitlistUser } from '@/lib/loops/sync';
+import { statusEventFor } from '@/lib/loops/events';
 
 function parseJwtClaims(jwt: string): { email?: string } | null {
   try {
@@ -81,6 +84,13 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid userId or status' }, { status: 400 });
   }
 
+  // Read the current status BEFORE the update: the Loops event depends on the
+  // old→new transition, and syncWaitlistUser re-reads only the post-update row.
+  const before = await prisma.waitlistUser.findUnique({
+    where: { id: userId },
+    select: { status: true },
+  });
+
   const data: Record<string, unknown> = { status };
   if (status === 'INVITED') data.invitedAt = new Date();
   if (status === 'REGISTERED') data.registeredAt = new Date();
@@ -90,6 +100,11 @@ export async function PATCH(request: NextRequest) {
     data,
     select: { id: true, status: true },
   });
+
+  // Fire waitlist_approved / waitlist_invited on the transition (REGISTERED is
+  // owned by the backend's zenko_registered event, so it yields no event here).
+  const event = statusEventFor(before?.status, status as WaitlistStatus);
+  after(() => syncWaitlistUser(userId, event ? { event } : {}));
 
   return NextResponse.json({ user: updated });
 }

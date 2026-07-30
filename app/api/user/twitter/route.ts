@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { syncWaitlistUser } from '@/lib/loops/sync';
 
 export async function POST(request: NextRequest) {
   try {
@@ -72,6 +73,8 @@ export async function POST(request: NextRequest) {
         twitterConnectedAt: new Date(),
       },
     });
+
+    after(() => syncWaitlistUser(updatedUser.id));
 
     return NextResponse.json({
       success: true,

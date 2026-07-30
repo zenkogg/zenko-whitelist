@@ -29,10 +29,11 @@
  *   503 — server-side `ZENKO_INTERNAL_TOKEN` not configured
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { requireInternalToken } from '@/lib/internal-auth';
+import { syncWaitlistUser } from '@/lib/loops/sync';
 
 interface MarkRegisteredBody {
   waitlistUserId?: unknown;
@@ -82,6 +83,11 @@ export async function POST(req: NextRequest) {
       where: { id: waitlistUserId },
       data: { status: 'REGISTERED', registeredAt: registeredAtDate },
     });
+    // Refresh `waitlistStatus` on the Loops contact. Without this the property
+    // stays stuck at APPROVED/INVITED for everyone who actually registers, so any
+    // "come register" campaign segmented on it keeps mailing registered players.
+    // No event: the backend owns `zenko_registered` and fires it on the same signup.
+    after(() => syncWaitlistUser(waitlistUserId));
     return NextResponse.json({ ok: true, status: 'REGISTERED' });
   } catch (err) {
     if (
