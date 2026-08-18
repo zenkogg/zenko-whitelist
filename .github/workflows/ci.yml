@@ -1,0 +1,53 @@
+name: CI
+
+# The first CI this repo has had. This app is standalone: its own lockfile, its
+# own Neon database, and no dependency on the monorepo's workspaces, so a plain
+# npm ci is enough here (unlike the service repos, which need a monorepo harness).
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # prisma generate needs a parseable URL and CI has no .env. Nothing
+      # connects: no step here touches a database.
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Generate the Prisma client
+        # Types for the waitlist model come from here, so this runs before the
+        # typecheck or every model field reads as unknown.
+        run: npx prisma generate
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        # Invoked directly because this app has no typecheck script, and the
+        # build script cannot stand in for one: it applies migrations before it
+        # compiles, so running it here would migrate whatever database
+        # DATABASE_URL points at.
+        run: npx tsc --noEmit
+
+      - name: Tests
+        run: npm test
