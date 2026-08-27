@@ -35,6 +35,7 @@ interface User {
   displayName: string | null;
   games: string[];
   referralCode: string;
+  username: string | null;
   referralCount: number;
   reputationPoints: number;
   status: string;
@@ -183,7 +184,8 @@ export default function AdminPage() {
         (u) =>
           u.displayName?.toLowerCase().includes(q) ||
           u.email?.toLowerCase().includes(q) ||
-          u.referralCode.toLowerCase().includes(q)
+          u.referralCode.toLowerCase().includes(q) ||
+          u.username?.toLowerCase().includes(q)
       );
     }
     if (gameFilter !== 'all') {
@@ -796,7 +798,19 @@ export default function AdminPage() {
                     {expandedUserId === user.id && (
                       <tr className="border-b border-white/5">
                         <td colSpan={10} className="px-6 py-4 bg-white/[0.03]">
-                          <div className="grid gap-4 sm:grid-cols-3 text-sm">
+                          <div className="grid gap-4 sm:grid-cols-4 text-sm">
+                            <div>
+                              <p className="text-xs text-white/40 uppercase tracking-wider mb-1">
+                                Username
+                              </p>
+                              <p className="text-white/80">
+                                {user.username ? (
+                                  <code className="text-blue-400 text-xs">@{user.username}</code>
+                                ) : (
+                                  <span className="text-white/30">Not set</span>
+                                )}
+                              </p>
+                            </div>
                             <div>
                               <p className="text-xs text-white/40 uppercase tracking-wider mb-1">
                                 Used Referral Code
