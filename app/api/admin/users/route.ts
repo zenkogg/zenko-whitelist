@@ -45,6 +45,7 @@ export async function GET(request: NextRequest) {
       displayName: true,
       games: true,
       referralCode: true,
+      username: true,
       referralCount: true,
       reputationPoints: true,
       status: true,
