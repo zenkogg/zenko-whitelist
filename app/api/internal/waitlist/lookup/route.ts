@@ -18,7 +18,7 @@
  *
  *   200 — match:
  *     { match: { id, status, email, displayName, referralCode, createdAt,
- *                reputationPoints } }
+ *                reputationPoints, referralCount } }
  *
  *   200 — no match:
  *     { match: null }
@@ -85,6 +85,7 @@ export async function POST(req: NextRequest) {
         referralCode: true,
         createdAt: true,
         reputationPoints: true,
+        referralCount: true,
       },
     });
 
@@ -99,6 +100,7 @@ export async function POST(req: NextRequest) {
         referralCode: row.referralCode,
         createdAt: row.createdAt.toISOString(),
         reputationPoints: row.reputationPoints,
+        referralCount: row.referralCount,
       },
     });
   } catch (err) {
