@@ -3,38 +3,11 @@ import type { WaitlistStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { syncWaitlistUser } from '@/lib/loops/sync';
 import { statusEventFor } from '@/lib/loops/events';
-
-function parseJwtClaims(jwt: string): { email?: string } | null {
-  try {
-    const [, payloadBase64] = jwt.split('.');
-    const payload = JSON.parse(atob(payloadBase64));
-    return { email: payload.email };
-  } catch {
-    return null;
-  }
-}
-
-function getAdminEmails(): string[] {
-  const raw = process.env.ADMIN_EMAILS || '';
-  return raw.split(',').map((e) => e.trim().toLowerCase()).filter(Boolean);
-}
+import { requireAdminBearer } from '@/lib/admin-auth';
 
 export async function GET(request: NextRequest) {
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader?.startsWith('Bearer ')) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const token = authHeader.slice(7);
-  const claims = parseJwtClaims(token);
-  if (!claims?.email) {
-    return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
-  }
-
-  const adminEmails = getAdminEmails();
-  if (!adminEmails.includes(claims.email.toLowerCase())) {
-    return NextResponse.json({ error: 'Access denied' }, { status: 403 });
-  }
+  const denied = await requireAdminBearer(request);
+  if (denied) return denied;
 
   const users = await prisma.waitlistUser.findMany({
     orderBy: { createdAt: 'desc' },
@@ -62,21 +35,8 @@ export async function GET(request: NextRequest) {
 const VALID_STATUSES = ['PENDING', 'APPROVED', 'INVITED', 'REGISTERED'] as const;
 
 export async function PATCH(request: NextRequest) {
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader?.startsWith('Bearer ')) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const token = authHeader.slice(7);
-  const claims = parseJwtClaims(token);
-  if (!claims?.email) {
-    return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
-  }
-
-  const adminEmails = getAdminEmails();
-  if (!adminEmails.includes(claims.email.toLowerCase())) {
-    return NextResponse.json({ error: 'Access denied' }, { status: 403 });
-  }
+  const denied = await requireAdminBearer(request);
+  if (denied) return denied;
 
   const body = await request.json();
   const { userId, status } = body as { userId?: string; status?: string };
