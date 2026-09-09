@@ -6,7 +6,7 @@ Pre-launch email collection app for Zenko closed beta.
 - **Framework:** Next.js 15 (App Router)
 - **Language:** TypeScript 5
 - **Styling:** Tailwind CSS 3
-- **Database:** Vercel Postgres
+- **Database:** Neon Postgres (its own project, separate from the main app's)
 - **Deployment:** Vercel
 
 ## Getting Started
@@ -26,6 +26,12 @@ npm run dev
 Open [http://localhost:3000](http://localhost:3000) to see the app.
 
 Copy `.env.example` to `.env` and fill in the required values before running the app.
+`DATABASE_URL` and `DATABASE_URL_UNPOOLED` must be your own database, not a
+deployed one: they are what Prisma resolves for every local read and write.
+
+Applying migrations is the explicit `db:migrate:deploy` above. `npm run build`
+does that step only inside a Vercel build (`scripts/build-migrate.mjs`), so
+building locally cannot alter a schema, whatever your `.env` happens to hold.
 
 ## Sign-in providers
 
