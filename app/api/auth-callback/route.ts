@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse, after } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { parseJwtClaims } from '@/lib/oauth-client';
+import { isSignInProvider, verifyIdToken } from '@/lib/id-token';
 import { put } from '@vercel/blob';
 import { serverFetch } from '@/lib/server-fetch';
 import { generateUniqueUsername } from '@/lib/username';
@@ -13,8 +13,14 @@ export async function POST(req: NextRequest) {
   try {
     const { idToken, provider } = await req.json();
 
-    if (!idToken || !provider) {
+    if (typeof idToken !== 'string' || !idToken || !provider) {
       return NextResponse.json({ error: 'Missing token or provider' }, { status: 400 });
+    }
+
+    // The other sign-in options (X, Virtualeagues) never reach this route: their
+    // routes exchange a code server side, so the provider names the account there.
+    if (!isSignInProvider(provider)) {
+      return NextResponse.json({ error: 'Unsupported provider' }, { status: 400 });
     }
 
     // Capture client info
@@ -24,51 +30,44 @@ export async function POST(req: NextRequest) {
       null;
     const userAgent = req.headers.get('user-agent') || null;
 
-    // Parse claims from JWT (in production, you'd verify the signature)
-    const claims = parseJwtClaims(idToken);
-    if (!claims) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 400 });
+    // The row this mints or refreshes is keyed on the identity in the token, so
+    // the issuer's signature over it is the only thing standing between a
+    // hand-written payload and someone else's place on the waitlist.
+    const verification = await verifyIdToken(provider, idToken);
+    if (!verification.ok) {
+      return verification.reason === 'misconfigured'
+        ? NextResponse.json({ error: 'Sign in unavailable' }, { status: 500 })
+        : NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
-    // Log claims for debugging (remove in production)
-    console.log('OAuth claims received:', JSON.stringify(claims, null, 2));
+    const identity = verification.identity;
+    const displayName = identity.displayName || 'User';
+    const avatarUrl = identity.avatarUrl || null;
 
     // Check if user already exists
     const existingUser = await prisma.waitlistUser.findUnique({
       where: {
         oauthProvider_oauthId: {
           oauthProvider: provider,
-          oauthId: claims.sub,
+          oauthId: identity.subject,
         },
       },
     });
 
     if (existingUser) {
-      // Always update user info on login to keep data fresh
-      // Extract displayName from OAuth claims
-      const displayName =
-        provider === 'twitch'
-          ? claims.preferred_username || claims.login || claims.display_name || 'User'
-          : claims.name || 'User';
-
-      const avatarUrl =
-        provider === 'twitch'
-          ? claims.profile_image_url || claims.picture || null
-          : claims.picture || null;
-
       // Always update on login to refresh username, avatar, and client info
       const updatedUser = await prisma.waitlistUser.update({
         where: { id: existingUser.id },
         data: {
           displayName,
           oauthAvatarUrl: avatarUrl,
-          email: claims.email || existingUser.email,
+          email: identity.email || existingUser.email,
+          emailVerified: identity.emailVerified,
           ipAddress,
           userAgent,
         },
       });
 
-      console.log(`Updated user ${updatedUser.id} with displayName: ${displayName}`);
       // Returning login: refresh the Loops contact's properties, no event.
       after(() => syncWaitlistUser(updatedUser.id));
       return NextResponse.json({ user: updatedUser });
@@ -77,32 +76,25 @@ export async function POST(req: NextRequest) {
     // Generate unique referral code
     const referralCode = await generateUniqueReferralCode();
 
-    // Create new waitlist user
-    const displayName =
-      provider === 'twitch'
-        ? claims.preferred_username || claims.login || claims.display_name || 'User'
-        : claims.name || 'User';
-
-    const oauthAvatarUrl =
-      provider === 'twitch'
-        ? claims.profile_image_url || claims.picture || null
-        : claims.picture || null;
-
     // Slug derives from the same identity the profile card shows (formatDisplayName),
     // so /r/{username} matches what users see as their name.
     const username = await generateUniqueUsername(
-      formatDisplayName(displayName, provider, claims.email, null)
+      formatDisplayName(displayName, provider, identity.email, null)
     );
 
     // Create user first to get the user ID
     const newUser = await prisma.waitlistUser.create({
       data: {
         oauthProvider: provider,
-        oauthId: claims.sub,
-        email: claims.email || null,
-        emailVerified: provider === 'google',
+        oauthId: identity.subject,
+        email: identity.email || null,
+        // The issuer's verdict, not an inference from which provider it is: a
+        // signed-in address is only as confirmed as the token says it is. It
+        // records the fact rather than gating sign-up, which would turn any
+        // provider quirk into a closed door for everyone using that provider.
+        emailVerified: identity.emailVerified,
         displayName,
-        oauthAvatarUrl: oauthAvatarUrl,
+        oauthAvatarUrl: avatarUrl,
         referralCode,
         username,
         games: [],
@@ -123,9 +115,9 @@ export async function POST(req: NextRequest) {
     );
 
     // Download and upload OAuth avatar to blob storage for new users
-    if (oauthAvatarUrl) {
+    if (avatarUrl) {
       const customAvatarUrl = await downloadAndUploadOAuthAvatar(
-        oauthAvatarUrl,
+        avatarUrl,
         newUser.id,
         provider
       );

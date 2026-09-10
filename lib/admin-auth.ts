@@ -3,31 +3,16 @@
  *
  * The dashboard signs in through Google's OIDC implicit flow (see
  * `getGoogleSignInUrl` in app/admin/page.tsx) and presents the resulting ID
- * token as a Bearer. Authenticating it therefore means verifying Google's
- * signature over it, pinned to the same client id that sign-in URL uses.
+ * token as a Bearer. Authenticating it is `verifyIdToken`'s job, shared with the
+ * public sign-in path; what lives here is the authorization layered on top.
  *
- * ADMIN_EMAILS is authorization layered on top of that verified identity. It is
- * not authentication on its own: an address is a claim anyone can write into a
- * token payload, and this repo is public, so the shape of the check is known.
+ * ADMIN_EMAILS is not authentication on its own: an address is a claim anyone can
+ * write into a token payload, and this repo is public, so the shape of the check
+ * is known. It only means something once the signature over the address holds.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createRemoteJWKSet, jwtVerify } from 'jose';
-
-// From Google's OIDC discovery document. It publishes RS256 only, and mints
-// `iss` both with and without the scheme, so both spellings are the one issuer.
-const GOOGLE_JWKS_URL = new URL('https://www.googleapis.com/oauth2/v3/certs');
-const GOOGLE_ISSUERS = ['https://accounts.google.com', 'accounts.google.com'];
-const GOOGLE_SIGNING_ALGORITHMS = ['RS256'];
-
-let googleJwks: ReturnType<typeof createRemoteJWKSet> | null = null;
-
-function googleKeys() {
-  // One key set for the life of the instance: jose caches Google's keys behind
-  // it, so a per-request set would refetch them on every admin call.
-  googleJwks ??= createRemoteJWKSet(GOOGLE_JWKS_URL);
-  return googleJwks;
-}
+import { verifyIdToken } from '@/lib/id-token';
 
 export type AdminAuthResult =
   | { ok: true; email: string; name?: string }
@@ -39,31 +24,14 @@ function adminEmails(): string[] {
 }
 
 export async function authenticateAdmin(idToken: string): Promise<AdminAuthResult> {
-  const audience = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-  if (!audience) {
-    // Fail closed. Without an audience to pin, any Google-signed token issued to
-    // any other application would verify, which is barely better than no check.
-    console.error('[admin-auth] NEXT_PUBLIC_GOOGLE_CLIENT_ID is not configured');
+  const verification = await verifyIdToken('google', idToken);
+  if (!verification.ok) {
+    // A deployment missing its client id and a forged token are equally unusable
+    // here, and telling them apart at the boundary would only help an attacker.
     return { ok: false, reason: 'invalid_token' };
   }
 
-  let email: string | undefined;
-  let name: string | undefined;
-
-  try {
-    const { payload } = await jwtVerify(idToken, googleKeys(), {
-      issuer: GOOGLE_ISSUERS,
-      audience,
-      algorithms: GOOGLE_SIGNING_ALGORITHMS,
-    });
-    email = typeof payload.email === 'string' ? payload.email : undefined;
-    name = typeof payload.name === 'string' ? payload.name : undefined;
-  } catch {
-    // Covers a bad signature, an unknown key, a wrong issuer or audience, and an
-    // expired token alike: none of them yield an identity worth authorizing.
-    return { ok: false, reason: 'invalid_token' };
-  }
-
+  const { email, displayName } = verification.identity;
   if (!email) {
     return { ok: false, reason: 'invalid_token' };
   }
@@ -72,7 +40,7 @@ export async function authenticateAdmin(idToken: string): Promise<AdminAuthResul
     return { ok: false, reason: 'not_admin' };
   }
 
-  return { ok: true, email, name };
+  return { ok: true, email, name: displayName };
 }
 
 /**

@@ -6,7 +6,7 @@ import {
   TEST_CLIENT_ID,
   forgedAdminToken,
   signIdToken,
-} from '@/lib/__tests__/google-id-token-fixtures';
+} from '@/lib/__tests__/id-token-fixtures';
 
 // A locally generated key pair stands in for Google's published JWKS, so every
 // case below verifies a real RS256 signature and no case reaches the network.

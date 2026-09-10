@@ -121,35 +121,6 @@ export function getStoredProvider(): OAuthProvider | null {
   return sessionStorage.getItem('oauth_provider') as OAuthProvider | null;
 }
 
-export function parseJwtClaims(jwt: string): {
-  sub: string;
-  email?: string;
-  name?: string;
-  picture?: string;
-  preferred_username?: string;
-  display_name?: string;
-  login?: string;
-  profile_image_url?: string;
-} | null {
-  try {
-    const [, payloadBase64] = jwt.split('.');
-    // Decode base64url → UTF-8 to properly handle non-ASCII names (e.g. Turkish, Chinese)
-    const binary = atob(payloadBase64.replace(/-/g, '+').replace(/_/g, '/'));
-    const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
-    const payload = JSON.parse(new TextDecoder().decode(bytes));
-    return {
-      sub: payload.sub,
-      email: payload.email,
-      // Standard OIDC claims
-      name: payload.name,
-      picture: payload.picture,
-      // Twitch-specific claims
-      preferred_username: payload.preferred_username,
-      display_name: payload.display_name,
-      login: payload.login,
-      profile_image_url: payload.profile_image_url,
-    };
-  } catch {
-    return null;
-  }
-}
+// Reading claims out of a token without checking its signature has no safe use
+// here. The identity a route acts on comes from lib/id-token.ts, which verifies
+// first; there is deliberately no unverified reader left to reach for.
