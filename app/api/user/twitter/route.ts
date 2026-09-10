@@ -1,20 +1,16 @@
 import { NextRequest, NextResponse, after } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { syncWaitlistUser } from '@/lib/loops/sync';
+import { requireSession } from '@/lib/session';
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await requireSession(request);
+    if (!session.ok) return session.response;
+
     // Parse request body
     const body = await request.json();
-    const { twitterId, twitterHandle, userId } = body;
-
-    // Validate userId
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized', message: 'User ID is required' },
-        { status: 401 }
-      );
-    }
+    const { twitterId, twitterHandle } = body;
 
     // Validate Twitter data
     if (!twitterId || typeof twitterId !== 'string') {
@@ -34,9 +30,8 @@ export async function POST(request: NextRequest) {
     // Normalize Twitter handle (remove @ if present)
     const normalizedHandle = twitterHandle.trim().replace(/^@/, '');
 
-    // Find current user by ID
     const currentUser = await prisma.waitlistUser.findUnique({
-      where: { id: userId },
+      where: { id: session.userId },
     });
 
     if (!currentUser) {

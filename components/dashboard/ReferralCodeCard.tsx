@@ -8,7 +8,6 @@ import { CollapsibleCard } from './CollapsibleCard';
 
 
 interface ReferralCodeCardProps {
-  userId: string;
   referralCode: string;
   username?: string | null;
   referralCount: number;
@@ -23,7 +22,7 @@ type AvailabilityState =
   | { status: 'available' }
   | { status: 'invalid'; message: string };
 
-export function ReferralCodeCard({ userId, referralCode, username, referralCount, onUsernameUpdated, defaultCollapsed = false, collapsible = false }: ReferralCodeCardProps) {
+export function ReferralCodeCard({ referralCode, username, referralCount, onUsernameUpdated, defaultCollapsed = false, collapsible = false }: ReferralCodeCardProps) {
   const [linkCopied, setLinkCopied] = useState(false);
 
   // Share slug is the canonical referral identifier — username when set, else the 6-char code.
@@ -51,7 +50,7 @@ export function ReferralCodeCard({ userId, referralCode, username, referralCount
     const myToken = ++checkTokenRef.current;
     const handle = setTimeout(async () => {
       try {
-        const params = new URLSearchParams({ username: value, userId });
+        const params = new URLSearchParams({ username: value });
         const res = await fetch(`/api/user/username?${params}`);
         const data = await res.json();
         if (myToken !== checkTokenRef.current) return; // stale response
@@ -66,7 +65,7 @@ export function ReferralCodeCard({ userId, referralCode, username, referralCount
       }
     }, 300);
     return () => clearTimeout(handle);
-  }, [draft, isEditing, userId, username]);
+  }, [draft, isEditing, username]);
 
   const startEdit = useCallback(() => {
     setDraft(username ?? '');
@@ -91,7 +90,7 @@ export function ReferralCodeCard({ userId, referralCode, username, referralCount
       const res = await fetch('/api/user/username', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, username: value }),
+        body: JSON.stringify({ username: value }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -106,7 +105,7 @@ export function ReferralCodeCard({ userId, referralCode, username, referralCount
     } finally {
       setIsSaving(false);
     }
-  }, [draft, userId, onUsernameUpdated]);
+  }, [draft, onUsernameUpdated]);
 
   const canSave =
     !isSaving &&

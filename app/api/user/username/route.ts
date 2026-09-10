@@ -3,21 +3,25 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { isUsernameAvailable, validateUsernameInput } from '@/lib/username';
 import { syncWaitlistUser } from '@/lib/loops/sync';
+import { requireSession } from '@/lib/session';
 
-// GET /api/user/username?username=foo&userId=bar
+// GET /api/user/username?username=foo
 // Lightweight availability check used by the edit-mode live feedback.
-// Treats the caller's own current username as available (no false 'taken' on no-op).
+// Treats the caller's own current username as available (no false 'taken' on no-op),
+// which is why it needs to know who is asking.
 export async function GET(request: NextRequest) {
+  const session = await requireSession(request);
+  if (!session.ok) return session.response;
+
   const { searchParams } = new URL(request.url);
   const raw = searchParams.get('username') ?? '';
-  const userId = searchParams.get('userId') ?? '';
 
   const validation = validateUsernameInput(raw);
   if (!validation.ok) {
     return NextResponse.json({ available: false, error: validation.error });
   }
 
-  const available = await isUsernameAvailable(validation.value, userId);
+  const available = await isUsernameAvailable(validation.value, session.userId);
   if (!available) {
     return NextResponse.json({ available: false, error: 'Already taken' });
   }
@@ -25,20 +29,17 @@ export async function GET(request: NextRequest) {
 }
 
 // PATCH /api/user/username
-// Body: { userId: string, username: string }
-// Validates + persists. Server is the source of truth — uniqueness enforced by the
-// Prisma unique index, and we surface P2002 as a 409 in case two users race.
+// Body: { username: string }
+// Validates + persists. Server is the source of truth: uniqueness is enforced by
+// the Prisma unique index, and we surface P2002 as a 409 in case two users race.
 export async function PATCH(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { userId, username } = body;
+    const session = await requireSession(request);
+    if (!session.ok) return session.response;
 
-    if (!userId || typeof userId !== 'string') {
-      return NextResponse.json(
-        { error: 'Unauthorized', message: 'User ID is required' },
-        { status: 401 }
-      );
-    }
+    const body = await request.json();
+    const { username } = body;
+
     if (!username || typeof username !== 'string') {
       return NextResponse.json(
         { error: 'Bad Request', message: 'Username is required' },
@@ -56,7 +57,7 @@ export async function PATCH(request: NextRequest) {
 
     try {
       const updated = await prisma.waitlistUser.update({
-        where: { id: userId },
+        where: { id: session.userId },
         data: { username: validation.value },
         select: { id: true, username: true },
       });

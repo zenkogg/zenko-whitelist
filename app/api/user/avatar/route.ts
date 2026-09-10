@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { put, del } from '@vercel/blob';
 import { RekognitionClient, DetectModerationLabelsCommand } from '@aws-sdk/client-rekognition';
+import { requireSession } from '@/lib/session';
 
 const rekognition = new RekognitionClient({
   region: process.env.AWS_REGION || 'us-east-2',
@@ -13,16 +14,12 @@ const rekognition = new RekognitionClient({
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await requireSession(request);
+    if (!session.ok) return session.response;
+    const userId = session.userId;
+
     const formData = await request.formData();
     const file = formData.get('avatar') as File;
-    const userId = formData.get('userId') as string;
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized', message: 'User ID is required' },
-        { status: 401 }
-      );
-    }
 
     if (!file) {
       return NextResponse.json(
@@ -157,14 +154,9 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const { userId } = await request.json();
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized', message: 'User ID is required' },
-        { status: 401 }
-      );
-    }
+    const session = await requireSession(request);
+    if (!session.ok) return session.response;
+    const userId = session.userId;
 
     // Find user
     const user = await prisma.waitlistUser.findUnique({

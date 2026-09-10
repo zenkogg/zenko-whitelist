@@ -58,6 +58,47 @@ export default function DashboardPage() {
   const [pendingReferralCode, setPendingReferralCode] = useState<string | null>(null);
   const isMobile = useMediaQuery('(max-width: 1023px)');
 
+  const fetchUserStats = useCallback(async () => {
+    try {
+      // The session cookie names the row, so the request carries no id of its own.
+      const response = await fetch('/api/user/stats', { method: 'POST' });
+      // The stored user outlives the session, so a signed-out caller still has one
+      // to render. Clearing it here is what turns an expired session back into a
+      // sign-in prompt rather than a dashboard that never loads.
+      if (response.status === 401) {
+        localStorage.removeItem('waitlist_user');
+        router.push('/');
+        return;
+      }
+      if (!response.ok) throw new Error('Failed to fetch stats');
+      const result = await response.json();
+
+      // Handle the API response format with nested data
+      if (result.success && result.data) {
+        setUserStats({
+          referralCode: result.data.user.referralCode,
+          username: result.data.user.username ?? null,
+          referralCount: result.data.stats.referralCount,
+          reputationPoints: result.data.stats.reputationPoints,
+          twitterConnected: !!result.data.user.twitterHandle,
+          twitterHandle: result.data.user.twitterHandle,
+          usedReferralCode: result.data.user.usedReferralCode,
+          referrerInfo: result.data.referrerInfo || null,
+          registrationOrder: result.data.user.registrationOrder,
+          referrals: result.data.referrals || [],
+          estimatedRank: result.data.stats.estimatedRank,
+          totalPending: result.data.stats.totalPending,
+          status: result.data.user.status,
+          waitlistStatus: result.data.waitlistStatus || 'open',
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch user stats:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [router]);
+
   useEffect(() => {
     // Check for referral code in URL
     const urlParams = new URLSearchParams(window.location.search);
@@ -87,44 +128,8 @@ export default function DashboardPage() {
     }
 
     setUser(userData);
-    fetchUserStats(userData.id);
-  }, [router]);
-
-  const fetchUserStats = async (userId: string) => {
-    try {
-      const response = await fetch('/api/user/stats', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId }),
-      });
-      if (!response.ok) throw new Error('Failed to fetch stats');
-      const result = await response.json();
-
-      // Handle the API response format with nested data
-      if (result.success && result.data) {
-        setUserStats({
-          referralCode: result.data.user.referralCode,
-          username: result.data.user.username ?? null,
-          referralCount: result.data.stats.referralCount,
-          reputationPoints: result.data.stats.reputationPoints,
-          twitterConnected: !!result.data.user.twitterHandle,
-          twitterHandle: result.data.user.twitterHandle,
-          usedReferralCode: result.data.user.usedReferralCode,
-          referrerInfo: result.data.referrerInfo || null,
-          registrationOrder: result.data.user.registrationOrder,
-          referrals: result.data.referrals || [],
-          estimatedRank: result.data.stats.estimatedRank,
-          totalPending: result.data.stats.totalPending,
-          status: result.data.user.status,
-          waitlistStatus: result.data.waitlistStatus || 'open',
-        });
-      }
-    } catch (error) {
-      console.error('Failed to fetch user stats:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    fetchUserStats();
+  }, [router, fetchUserStats]);
 
   const handleAvatarUpdate = useCallback((avatarUrl: string) => {
     if (!user) return;
@@ -138,9 +143,9 @@ export default function DashboardPage() {
 
   const handleReferralApplied = useCallback(() => {
     if (user) {
-      fetchUserStats(user.id);
+      fetchUserStats();
     }
-  }, [user]);
+  }, [user, fetchUserStats]);
 
   const handleLogout = () => {
     localStorage.removeItem('waitlist_user');
@@ -187,7 +192,6 @@ export default function DashboardPage() {
                 email={user.email}
                 customAvatarUrl={user.customAvatarUrl}
                 createdAt={user.createdAt || new Date().toISOString()}
-                userId={user.id}
                 oauthProvider={user.oauthProvider}
                 twitterHandle={userStats?.twitterHandle}
                 registrationOrder={userStats?.registrationOrder}
@@ -208,11 +212,10 @@ export default function DashboardPage() {
             {/* Referral Code Card - Top right, spans 4 columns */}
             <div className="lg:col-span-4 flex">
               <ReferralCodeCard
-                userId={user.id}
                 referralCode={userStats.referralCode}
                 username={userStats.username}
                 referralCount={userStats.referralCount}
-                onUsernameUpdated={() => fetchUserStats(user.id)}
+                onUsernameUpdated={() => fetchUserStats()}
                 collapsible={isMobile}
               />
             </div>
@@ -220,7 +223,6 @@ export default function DashboardPage() {
             {/* Apply Referral Card - Below referral code, spans 4 columns */}
             <div className="lg:col-span-4 flex">
               <ApplyReferralCard
-                userId={user.id}
                 usedReferralCode={userStats.usedReferralCode || null}
                 currentReputationPoints={userStats.reputationPoints}
                 onReferralApplied={handleReferralApplied}

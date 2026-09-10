@@ -4,20 +4,16 @@ import { REFERRAL_MAX_COUNT, REFERRAL_POINTS_PER_SIGNUP, REFERRAL_POINTS_PER_USA
 import { resolveReferralIdentifier } from '@/lib/username';
 import { syncWaitlistUser } from '@/lib/loops/sync';
 import { LOOPS_EVENTS, idempotencyKey } from '@/lib/loops/events';
+import { requireSession } from '@/lib/session';
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await requireSession(request);
+    if (!session.ok) return session.response;
+
     // Parse request body
     const body = await request.json();
-    const { referralCode, userId } = body;
-
-    // Validate userId
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized', message: 'User ID is required' },
-        { status: 401 }
-      );
-    }
+    const { referralCode } = body;
 
     // Validate referral code
     if (!referralCode || typeof referralCode !== 'string') {
@@ -38,9 +34,8 @@ export async function POST(request: NextRequest) {
 
     // Use transaction to handle race conditions
     const result = await prisma.$transaction(async (tx) => {
-      // Find current user by ID
       const currentUser = await tx.waitlistUser.findUnique({
-        where: { id: userId },
+        where: { id: session.userId },
       });
 
       if (!currentUser) {

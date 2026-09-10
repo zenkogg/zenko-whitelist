@@ -13,7 +13,6 @@ interface ReferrerInfo {
 }
 
 interface ApplyReferralCardProps {
-  userId: string;
   usedReferralCode: string | null;
   currentReputationPoints: number;
   onReferralApplied: () => void;
@@ -24,7 +23,6 @@ interface ApplyReferralCardProps {
 }
 
 export function ApplyReferralCard({
-  userId,
   usedReferralCode,
   currentReputationPoints,
   onReferralApplied,
@@ -81,9 +79,8 @@ export function ApplyReferralCard({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            // Pass raw — server resolver handles 6-char codes and username slugs.
+            // Pass raw: the server resolver handles 6-char codes and username slugs.
             referralCode: codeToSubmit,
-            userId,
           }),
         });
 
@@ -111,7 +108,7 @@ export function ApplyReferralCard({
         setIsApplyingReferral(false);
       }
     },
-    [referralCode, userId, currentReputationPoints, onReferralApplied]
+    [referralCode, currentReputationPoints, onReferralApplied]
   );
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {

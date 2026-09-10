@@ -2,22 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { REFERRAL_MAX_POINTS } from '@/lib/referral-config';
 import { formatDisplayName } from '@/lib/utils';
+import { requireSession } from '@/lib/session';
 
 export async function POST(request: NextRequest) {
   try {
-    // Get userId from request body
-    const { userId } = await request.json();
+    const session = await requireSession(request);
+    if (!session.ok) return session.response;
 
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized', message: 'User ID is required' },
-        { status: 401 }
-      );
-    }
-
-    // Find current user by ID
     const currentUser = await prisma.waitlistUser.findUnique({
-      where: { id: userId },
+      where: { id: session.userId },
       select: {
         id: true,
         referralCount: true,

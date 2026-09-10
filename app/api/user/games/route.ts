@@ -1,20 +1,16 @@
 import { NextRequest, NextResponse, after } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { syncWaitlistUser } from '@/lib/loops/sync';
+import { requireSession } from '@/lib/session';
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await requireSession(request);
+    if (!session.ok) return session.response;
+
     // Parse request body
     const body = await request.json();
-    const { games, userId } = body;
-
-    // Validate user ID
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized', message: 'User ID is required' },
-        { status: 401 }
-      );
-    }
+    const { games } = body;
 
     // Validate games input
     if (!games || !Array.isArray(games)) {
@@ -58,9 +54,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find user by ID
     const user = await prisma.waitlistUser.findUnique({
-      where: { id: userId },
+      where: { id: session.userId },
     });
 
     if (!user) {

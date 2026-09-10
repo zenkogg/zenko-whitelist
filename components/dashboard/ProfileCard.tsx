@@ -12,7 +12,6 @@ interface ProfileCardProps {
   email: string | null;
   customAvatarUrl: string | null;
   createdAt: string;
-  userId: string;
   oauthProvider: string;
   twitterHandle?: string | null;
   registrationOrder?: number;
@@ -25,7 +24,6 @@ export function ProfileCard({
   email,
   customAvatarUrl,
   createdAt,
-  userId,
   oauthProvider,
   twitterHandle,
   registrationOrder,
@@ -39,7 +37,7 @@ export function ProfileCard({
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !userId) return;
+    if (!file) return;
 
     setIsUploadingAvatar(true);
     setAvatarUploadError('');
@@ -47,7 +45,6 @@ export function ProfileCard({
     try {
       const formData = new FormData();
       formData.append('avatar', file);
-      formData.append('userId', userId);
 
       const response = await fetch('/api/user/avatar', {
         method: 'POST',
@@ -71,17 +68,11 @@ export function ProfileCard({
   };
 
   const handleRemoveAvatar = async () => {
-    if (!userId) return;
-
     setIsRemovingAvatar(true);
     setAvatarUploadError('');
 
     try {
-      const response = await fetch('/api/user/avatar', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId }),
-      });
+      const response = await fetch('/api/user/avatar', { method: 'DELETE' });
 
       if (!response.ok) {
         const error = await response.json();

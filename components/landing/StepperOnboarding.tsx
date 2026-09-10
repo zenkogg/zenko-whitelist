@@ -124,7 +124,6 @@ export function StepperOnboarding() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           referralCode: referralCode.trim().toUpperCase(),
-          userId: user?.id
         }),
       });
 
@@ -200,7 +199,7 @@ export function StepperOnboarding() {
       const response = await fetch('/api/user/games', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ games: selectedGames, userId: user?.id }),
+        body: JSON.stringify({ games: selectedGames }),
       });
 
       if (!response.ok) {
