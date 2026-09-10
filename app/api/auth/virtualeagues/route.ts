@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { exchangeCode, fetchUser, VlOAuthError, vlEnabled } from '@/lib/virtualeagues';
 import { generateUniqueUsername } from '@/lib/username';
 import { formatDisplayName } from '@/lib/utils';
+import { respondSignedIn } from '@/lib/session';
 
 const COOKIE_NAME = 'vl_oauth_state';
 const VL_PROVIDER = 'virtualeagues';
@@ -101,7 +102,7 @@ export async function POST(req: NextRequest) {
           },
         });
 
-    const res = NextResponse.json({ user });
+    const res = await respondSignedIn(user);
     res.cookies.delete(COOKIE_NAME);
     return res;
   } catch (error) {

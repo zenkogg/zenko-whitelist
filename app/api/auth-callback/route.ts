@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse, after } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { isSignInProvider, verifyIdToken } from '@/lib/id-token';
+import { respondSignedIn } from '@/lib/session';
 import { put } from '@vercel/blob';
 import { serverFetch } from '@/lib/server-fetch';
 import { generateUniqueUsername } from '@/lib/username';
@@ -70,7 +71,7 @@ export async function POST(req: NextRequest) {
 
       // Returning login: refresh the Loops contact's properties, no event.
       after(() => syncWaitlistUser(updatedUser.id));
-      return NextResponse.json({ user: updatedUser });
+      return respondSignedIn(updatedUser);
     }
 
     // Generate unique referral code
@@ -128,11 +129,11 @@ export async function POST(req: NextRequest) {
           where: { id: newUser.id },
           data: { customAvatarUrl },
         });
-        return NextResponse.json({ user: updatedUser });
+        return respondSignedIn(updatedUser);
       }
     }
 
-    return NextResponse.json({ user: newUser });
+    return respondSignedIn(newUser);
   } catch (error) {
     console.error('Auth callback error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

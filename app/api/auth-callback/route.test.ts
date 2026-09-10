@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { SESSION_COOKIE } from '@/lib/session';
 import {
   GOOGLE_ISSUER,
   TEST_CLIENT_ID,
@@ -101,9 +102,18 @@ function createdRowData() {
   return db.create.mock.calls[0][0].data;
 }
 
+/** The row a response's session names, read straight off the cookie payload. */
+function sessionSubject(response: NextResponse): string | undefined {
+  const token = response.cookies.get(SESSION_COOKIE)?.value;
+  if (!token) return undefined;
+  const [, payload] = token.split('.');
+  return JSON.parse(Buffer.from(payload, 'base64url').toString()).sub;
+}
+
 beforeEach(() => {
   process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID = TEST_CLIENT_ID;
   process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID = TEST_TWITCH_CLIENT_ID;
+  process.env.WAITLIST_SESSION_SECRET = 'test-session-secret-that-is-long-enough';
   db.findUnique.mockReset().mockResolvedValue(null);
   db.create.mockReset().mockImplementation(async ({ data }) => ({ id: 'new-user-1', ...data }));
   db.update.mockReset().mockImplementation(async ({ data }) => ({ id: 'existing-user-1', ...data }));
@@ -260,5 +270,43 @@ describe('waitlist sign-in callback', () => {
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({ error: 'Missing token or provider' });
+  });
+
+  it('leaves a new signup holding a session for the row it just created', async () => {
+    const idToken = await googleIdToken();
+
+    const response = await POST(callbackRequest({ idToken, provider: 'google' }));
+
+    expect(response.status).toBe(200);
+    expect(sessionSubject(response)).toBe('new-user-1');
+  });
+
+  it('leaves a returning signin holding a session for the row it refreshed', async () => {
+    db.findUnique.mockResolvedValueOnce({ id: 'existing-user-1', email: 'old@example.com' });
+    const idToken = await googleIdToken();
+
+    const response = await POST(callbackRequest({ idToken, provider: 'google' }));
+
+    expect(response.status).toBe(200);
+    expect(sessionSubject(response)).toBe('existing-user-1');
+  });
+
+  it('hands a refused token no session at all', async () => {
+    const idToken = await googleIdToken({}, keys.foreignPrivate!);
+
+    const response = await POST(callbackRequest({ idToken, provider: 'google' }));
+
+    expect(response.status).toBe(401);
+    expect(sessionSubject(response)).toBeUndefined();
+  });
+
+  it('refuses to sign anyone in while the session secret is unset', async () => {
+    const idToken = await googleIdToken();
+    delete process.env.WAITLIST_SESSION_SECRET;
+
+    const response = await POST(callbackRequest({ idToken, provider: 'google' }));
+
+    expect(response.status).toBe(503);
+    expect(sessionSubject(response)).toBeUndefined();
   });
 });

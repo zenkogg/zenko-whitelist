@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
 import { proxyFetch } from '@/lib/proxy-fetch';
 import { generateUniqueUsername } from '@/lib/username';
+import { respondSignedIn } from '@/lib/session';
 
 function buildOAuthParams(consumerKey: string, oauthToken: string, extra: Record<string, string> = {}) {
   return {
@@ -94,39 +95,37 @@ export async function POST(req: NextRequest) {
       where: { oauthProvider_oauthId: { oauthProvider: 'twitter', oauthId } },
     });
 
-    const res = existingUser
-      ? NextResponse.json({
-          user: await prisma.waitlistUser.update({
-            where: { id: existingUser.id },
-            data: {
-              twitterId: oauthId,
-              twitterHandle: screenName,
-              twitterConnectedAt: existingUser.twitterConnectedAt || new Date(),
-              ipAddress,
-              userAgent,
-            },
-          }),
+    const user = existingUser
+      ? await prisma.waitlistUser.update({
+          where: { id: existingUser.id },
+          data: {
+            twitterId: oauthId,
+            twitterHandle: screenName,
+            twitterConnectedAt: existingUser.twitterConnectedAt || new Date(),
+            ipAddress,
+            userAgent,
+          },
         })
-      : NextResponse.json({
-          user: await prisma.waitlistUser.create({
-            data: {
-              oauthProvider: 'twitter',
-              oauthId,
-              email: null,
-              emailVerified: false,
-              displayName: screenName,
-              twitterId: oauthId,
-              twitterHandle: screenName,
-              twitterConnectedAt: new Date(),
-              referralCode: await generateUniqueReferralCode(),
-              username: await generateUniqueUsername(screenName),
-              games: [],
-              ipAddress,
-              userAgent,
-              status: 'PENDING',
-            },
-          }),
+      : await prisma.waitlistUser.create({
+          data: {
+            oauthProvider: 'twitter',
+            oauthId,
+            email: null,
+            emailVerified: false,
+            displayName: screenName,
+            twitterId: oauthId,
+            twitterHandle: screenName,
+            twitterConnectedAt: new Date(),
+            referralCode: await generateUniqueReferralCode(),
+            username: await generateUniqueUsername(screenName),
+            games: [],
+            ipAddress,
+            userAgent,
+            status: 'PENDING',
+          },
         });
+
+    const res = await respondSignedIn(user);
 
     // Clear the temporary oauth secret cookie
     res.cookies.delete('twitter_oauth_secret');
