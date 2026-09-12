@@ -58,16 +58,21 @@ export default function DashboardPage() {
   const [pendingReferralCode, setPendingReferralCode] = useState<string | null>(null);
   const isMobile = useMediaQuery('(max-width: 1023px)');
 
+  // The stored user outlives the session, so a signed-out caller still has one to
+  // render. Clearing it is what turns an expired session back into a sign-in
+  // prompt rather than a dashboard that never loads. Every refused read on this
+  // page lands here, including the ones the cards below make.
+  const handleSessionExpired = useCallback(() => {
+    localStorage.removeItem('waitlist_user');
+    router.push('/');
+  }, [router]);
+
   const fetchUserStats = useCallback(async () => {
     try {
       // The session cookie names the row, so the request carries no id of its own.
       const response = await fetch('/api/user/stats', { method: 'POST' });
-      // The stored user outlives the session, so a signed-out caller still has one
-      // to render. Clearing it here is what turns an expired session back into a
-      // sign-in prompt rather than a dashboard that never loads.
       if (response.status === 401) {
-        localStorage.removeItem('waitlist_user');
-        router.push('/');
+        handleSessionExpired();
         return;
       }
       if (!response.ok) throw new Error('Failed to fetch stats');
@@ -97,7 +102,7 @@ export default function DashboardPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [router]);
+  }, [handleSessionExpired]);
 
   useEffect(() => {
     // Check for referral code in URL
@@ -252,7 +257,10 @@ export default function DashboardPage() {
             </div>
 
             {/* Leaderboard */}
-            <Leaderboard userId={user.id} totalUsers={userStats.totalPending} />
+            <Leaderboard
+              totalUsers={userStats.totalPending}
+              onSessionExpired={handleSessionExpired}
+            />
 
             {/* FAQ */}
             <FAQ />

@@ -1,17 +1,24 @@
+/**
+ * The referral leaderboard: the top rows, plus where the caller sits when they
+ * are not among them.
+ *
+ * The top rows are the same for everyone. The second half is a read of one named
+ * row, so it names the session's own row and no other: while that name came from
+ * the request, anyone holding a leaked id could pull back that person's rank,
+ * referral count, display name and avatar.
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { formatDisplayName } from '@/lib/utils';
+import { requireSession } from '@/lib/session';
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, limit = 10 } = await request.json();
+    const session = await requireSession(request);
+    if (!session.ok) return session.response;
 
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized', message: 'User ID is required' },
-        { status: 401 }
-      );
-    }
+    const { limit = 10 } = await request.json();
 
     // Get top users ranked by referral count only
     const leaderboardResult = await prisma.$queryRaw<Array<{
@@ -78,7 +85,7 @@ export async function POST(request: NextRequest) {
       avatarUrl: entry.custom_avatar_url || entry.oauth_avatar_url,
       referralCount: entry.referral_count,
       registrationOrder: Number(entry.registration_order),
-      isCurrentUser: entry.id === userId,
+      isCurrentUser: entry.id === session.userId,
     }));
 
     // Get current user's position if not in top leaderboard
@@ -140,7 +147,7 @@ export async function POST(request: NextRequest) {
           registration_order::int,
           rank::int
         FROM ranked_users
-        WHERE id::text = ${userId};
+        WHERE id::text = ${session.userId};
       `;
 
       if (userResult.length > 0) {

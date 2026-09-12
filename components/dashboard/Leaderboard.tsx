@@ -21,11 +21,13 @@ interface LeaderboardEntry {
 }
 
 interface LeaderboardProps {
-  userId: string;
   totalUsers?: number;
+  // Signing out belongs to the dashboard, so a refused read reports up instead of
+  // growing a second copy of it here.
+  onSessionExpired: () => void;
 }
 
-export function Leaderboard({ userId, totalUsers = 0 }: LeaderboardProps) {
+export function Leaderboard({ totalUsers = 0, onSessionExpired }: LeaderboardProps) {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [currentUserEntry, setCurrentUserEntry] = useState<LeaderboardEntry | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,12 +39,18 @@ export function Leaderboard({ userId, totalUsers = 0 }: LeaderboardProps) {
 
   const fetchLeaderboard = useCallback(async (limit: number = INITIAL_LOAD_COUNT) => {
     try {
+      // The session cookie decides whose row is marked as yours, so the request
+      // carries no id of its own.
       const response = await fetch('/api/leaderboard', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, limit }),
+        body: JSON.stringify({ limit }),
       });
 
+      if (response.status === 401) {
+        onSessionExpired();
+        return;
+      }
       if (!response.ok) throw new Error('Failed to fetch leaderboard');
 
       const result = await response.json();
@@ -54,14 +62,16 @@ export function Leaderboard({ userId, totalUsers = 0 }: LeaderboardProps) {
         const userEntry = result.data.currentUserEntry as LeaderboardEntry | null;
         const userInList = result.data.leaderboard.some((e: LeaderboardEntry) => e.isCurrentUser);
         if (userEntry && !userInList && limit === INITIAL_LOAD_COUNT) {
-          // Check sessionStorage cache first
+          // These rows are marked for one person and a browser tab outlives a
+          // sign-in, so the cache is keyed by the row the server just called ours
+          // and is passed over when it belonged to someone else.
           try {
             const cached = sessionStorage.getItem(PREFETCH_CACHE_KEY);
             if (cached) {
-              const parsed = JSON.parse(cached) as { userId: string; ts: number; data: LeaderboardEntry[] };
-              if (parsed.userId === userId && parsed.data.length >= userEntry.rank && Date.now() - parsed.ts < PREFETCH_CACHE_TTL) {
+              const parsed = JSON.parse(cached) as { registrationOrder: number; ts: number; data: LeaderboardEntry[] };
+              if (parsed.registrationOrder === userEntry.registrationOrder && parsed.data.length >= userEntry.rank && Date.now() - parsed.ts < PREFETCH_CACHE_TTL) {
                 prefetchedData.current = parsed.data;
-                return; // Cache hit — skip network request
+                return; // Cache hit, skip the network request
               }
             }
           } catch {}
@@ -69,22 +79,28 @@ export function Leaderboard({ userId, totalUsers = 0 }: LeaderboardProps) {
           fetch('/api/leaderboard', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId, limit: userEntry.rank }),
+            body: JSON.stringify({ limit: userEntry.rank }),
           })
-            .then(res => res.ok ? res.json() : null)
+            .then(res => {
+              if (res.status === 401) {
+                onSessionExpired();
+                return null;
+              }
+              return res.ok ? res.json() : null;
+            })
             .then(prefetchResult => {
               if (prefetchResult?.success && prefetchResult.data) {
                 prefetchedData.current = prefetchResult.data.leaderboard;
                 try {
                   sessionStorage.setItem(PREFETCH_CACHE_KEY, JSON.stringify({
-                    userId,
+                    registrationOrder: userEntry.registrationOrder,
                     ts: Date.now(),
                     data: prefetchResult.data.leaderboard,
                   }));
                 } catch {}
               }
             })
-            .catch(() => {}); // Silent fail — prefetch is best-effort
+            .catch(() => {}); // Silent fail, the prefetch is best-effort
         }
       }
     } catch (error) {
@@ -93,7 +109,7 @@ export function Leaderboard({ userId, totalUsers = 0 }: LeaderboardProps) {
       setIsLoading(false);
       setIsLoadingMore(false);
     }
-  }, [userId]);
+  }, [onSessionExpired]);
 
   useEffect(() => {
     fetchLeaderboard(currentLimit);
@@ -124,9 +140,13 @@ export function Leaderboard({ userId, totalUsers = 0 }: LeaderboardProps) {
       const response = await fetch('/api/leaderboard', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, limit: targetLimit }),
+        body: JSON.stringify({ limit: targetLimit }),
       });
 
+      if (response.status === 401) {
+        onSessionExpired();
+        return;
+      }
       if (!response.ok) throw new Error('Failed to fetch leaderboard');
 
       const result = await response.json();
@@ -168,9 +188,13 @@ export function Leaderboard({ userId, totalUsers = 0 }: LeaderboardProps) {
         const response = await fetch('/api/leaderboard', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId, limit: currentUserEntry.rank }),
+          body: JSON.stringify({ limit: currentUserEntry.rank }),
         });
 
+        if (response.status === 401) {
+          onSessionExpired();
+          return;
+        }
         if (!response.ok) return;
 
         const result = await response.json();
