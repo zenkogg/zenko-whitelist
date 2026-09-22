@@ -18,7 +18,7 @@
  *
  *   200 — match:
  *     { match: { id, status, email, displayName, referralCode, createdAt,
- *                reputationPoints, referralCount } }
+ *                reputationPoints, referralCount, referredBy } }
  *
  *   200 — no match:
  *     { match: null }
@@ -34,16 +34,16 @@
  *   503 — server-side `ZENKO_INTERNAL_TOKEN` not configured
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { requireInternalToken } from '@/lib/internal-auth';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { requireInternalToken } from "@/lib/internal-auth";
 
 // Whitelist app stores Twitter accounts on `twitterId`/`twitterHandle`, NOT
 // on `oauthProvider`/`oauthId` (see prisma/schema.prisma WaitlistUser). So a
 // provider="twitter" lookup against the `oauthProvider_oauthId` unique key
 // would silently return match:null even for known users — misleading. Stick
 // to the providers Zenko signup actually produces (google/twitch/virtualeagues).
-const VALID_PROVIDERS = new Set(['google', 'twitch', 'virtualeagues']);
+const VALID_PROVIDERS = new Set(["google", "twitch", "virtualeagues"]);
 
 interface LookupBody {
   provider?: unknown;
@@ -58,18 +58,25 @@ export async function POST(req: NextRequest) {
   try {
     body = (await req.json()) as LookupBody;
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
   const { provider, oauthId } = body;
-  if (typeof provider !== 'string' || typeof oauthId !== 'string') {
+  if (typeof provider !== "string" || typeof oauthId !== "string") {
     return NextResponse.json(
-      { error: 'Body must include `provider` (string) and `oauthId` (string)' },
-      { status: 400 }
+      { error: "Body must include `provider` (string) and `oauthId` (string)" },
+      { status: 400 },
     );
   }
-  if (!VALID_PROVIDERS.has(provider) || provider.length === 0 || oauthId.length === 0) {
-    return NextResponse.json({ error: 'Invalid provider or oauthId' }, { status: 400 });
+  if (
+    !VALID_PROVIDERS.has(provider) ||
+    provider.length === 0 ||
+    oauthId.length === 0
+  ) {
+    return NextResponse.json(
+      { error: "Invalid provider or oauthId" },
+      { status: 400 },
+    );
   }
 
   try {
@@ -86,6 +93,14 @@ export async function POST(req: NextRequest) {
         createdAt: true,
         reputationPoints: true,
         referralCount: true,
+        referredBy: {
+          select: {
+            id: true,
+            displayName: true,
+            oauthAvatarUrl: true,
+            customAvatarUrl: true,
+          },
+        },
       },
     });
 
@@ -101,10 +116,21 @@ export async function POST(req: NextRequest) {
         createdAt: row.createdAt.toISOString(),
         reputationPoints: row.reputationPoints,
         referralCount: row.referralCount,
+        referredBy: row.referredBy
+          ? {
+              id: row.referredBy.id,
+              displayName: row.referredBy.displayName,
+              avatarUrl:
+                row.referredBy.customAvatarUrl ?? row.referredBy.oauthAvatarUrl,
+            }
+          : null,
       },
     });
   } catch (err) {
-    console.error('[internal/waitlist/lookup] DB error:', err);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error("[internal/waitlist/lookup] DB error:", err);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }
