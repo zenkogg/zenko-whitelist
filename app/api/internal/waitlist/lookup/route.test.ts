@@ -1,39 +1,125 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { NextRequest } from 'next/server';
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { NextRequest } from "next/server";
 
 const state = vi.hoisted(() => ({ findUnique: vi.fn() }));
 
-vi.mock('@/lib/prisma', () => ({
+vi.mock("@/lib/prisma", () => ({
   prisma: { waitlistUser: { findUnique: state.findUnique } },
 }));
-vi.mock('@/lib/internal-auth', () => ({ requireInternalToken: () => null }));
+vi.mock("@/lib/internal-auth", () => ({ requireInternalToken: () => null }));
 
-import { POST } from './route';
+import { POST } from "./route";
 
 beforeEach(() => state.findUnique.mockReset());
 
-describe('internal waitlist lookup referral history', () => {
-  it('returns the denormalized waitlist referral count to the Zenko backend', async () => {
+describe("internal waitlist lookup referral history", () => {
+  it("returns the denormalized waitlist referral count to the Zenko backend", async () => {
     state.findUnique.mockResolvedValue({
-      id: 'waitlist-1',
-      status: 'PENDING',
-      email: 'player@example.com',
-      displayName: 'Player',
-      referralCode: 'ABC123',
-      createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      id: "waitlist-1",
+      status: "PENDING",
+      email: "player@example.com",
+      displayName: "Player",
+      referralCode: "ABC123",
+      createdAt: new Date("2026-01-01T00:00:00.000Z"),
       reputationPoints: 30,
       referralCount: 3,
+      referredBy: {
+        id: "waitlist-referrer",
+        displayName: "Inviter",
+        oauthAvatarUrl: "https://cdn.example/oauth.png",
+        customAvatarUrl: "https://cdn.example/custom.png",
+      },
     });
-    const request = new NextRequest('http://localhost/api/internal/waitlist/lookup', {
-      method: 'POST',
-      body: JSON.stringify({ provider: 'google', oauthId: 'oauth-1' }),
-    });
+    const request = new NextRequest(
+      "http://localhost/api/internal/waitlist/lookup",
+      {
+        method: "POST",
+        body: JSON.stringify({ provider: "google", oauthId: "oauth-1" }),
+      },
+    );
 
     const response = await POST(request);
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
-      match: { id: 'waitlist-1', reputationPoints: 30, referralCount: 3 },
+      match: {
+        id: "waitlist-1",
+        reputationPoints: 30,
+        referralCount: 3,
+        referredBy: {
+          id: "waitlist-referrer",
+          displayName: "Inviter",
+          avatarUrl: "https://cdn.example/custom.png",
+        },
+      },
     });
+  });
+
+  it("falls back to the OAuth avatar when the referrer has no custom one", async () => {
+    state.findUnique.mockResolvedValue({
+      id: "waitlist-1",
+      status: "PENDING",
+      email: "player@example.com",
+      displayName: "Player",
+      referralCode: "ABC123",
+      createdAt: new Date("2026-01-01T00:00:00.000Z"),
+      reputationPoints: 30,
+      referralCount: 3,
+      referredBy: {
+        id: "waitlist-referrer",
+        displayName: "Inviter",
+        oauthAvatarUrl: "https://cdn.example/oauth.png",
+        customAvatarUrl: null,
+      },
+    });
+    const request = new NextRequest(
+      "http://localhost/api/internal/waitlist/lookup",
+      {
+        method: "POST",
+        body: JSON.stringify({ provider: "google", oauthId: "oauth-1" }),
+      },
+    );
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      match: {
+        referredBy: { avatarUrl: "https://cdn.example/oauth.png" },
+      },
+    });
+  });
+
+  // A waitlist user with no referrer must read as an answered question, not as
+  // a field the lookup forgot to project. The backend stores this snapshot and
+  // cannot distinguish the two once written.
+  it("returns an explicit null referrer when the waitlist user has none", async () => {
+    state.findUnique.mockResolvedValue({
+      id: "waitlist-1",
+      status: "PENDING",
+      email: "player@example.com",
+      displayName: "Player",
+      referralCode: "ABC123",
+      createdAt: new Date("2026-01-01T00:00:00.000Z"),
+      reputationPoints: 30,
+      referralCount: 0,
+      referredBy: null,
+    });
+    const request = new NextRequest(
+      "http://localhost/api/internal/waitlist/lookup",
+      {
+        method: "POST",
+        body: JSON.stringify({ provider: "google", oauthId: "oauth-1" }),
+      },
+    );
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+      match: { referredBy: unknown };
+    };
+    expect(body.match).toHaveProperty("referredBy");
+    expect(body.match.referredBy).toBeNull();
   });
 });
