@@ -54,4 +54,72 @@ describe("internal waitlist lookup referral history", () => {
       },
     });
   });
+
+  it("falls back to the OAuth avatar when the referrer has no custom one", async () => {
+    state.findUnique.mockResolvedValue({
+      id: "waitlist-1",
+      status: "PENDING",
+      email: "player@example.com",
+      displayName: "Player",
+      referralCode: "ABC123",
+      createdAt: new Date("2026-01-01T00:00:00.000Z"),
+      reputationPoints: 30,
+      referralCount: 3,
+      referredBy: {
+        id: "waitlist-referrer",
+        displayName: "Inviter",
+        oauthAvatarUrl: "https://cdn.example/oauth.png",
+        customAvatarUrl: null,
+      },
+    });
+    const request = new NextRequest(
+      "http://localhost/api/internal/waitlist/lookup",
+      {
+        method: "POST",
+        body: JSON.stringify({ provider: "google", oauthId: "oauth-1" }),
+      },
+    );
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      match: {
+        referredBy: { avatarUrl: "https://cdn.example/oauth.png" },
+      },
+    });
+  });
+
+  // A waitlist user with no referrer must read as an answered question, not as
+  // a field the lookup forgot to project. The backend stores this snapshot and
+  // cannot distinguish the two once written.
+  it("returns an explicit null referrer when the waitlist user has none", async () => {
+    state.findUnique.mockResolvedValue({
+      id: "waitlist-1",
+      status: "PENDING",
+      email: "player@example.com",
+      displayName: "Player",
+      referralCode: "ABC123",
+      createdAt: new Date("2026-01-01T00:00:00.000Z"),
+      reputationPoints: 30,
+      referralCount: 0,
+      referredBy: null,
+    });
+    const request = new NextRequest(
+      "http://localhost/api/internal/waitlist/lookup",
+      {
+        method: "POST",
+        body: JSON.stringify({ provider: "google", oauthId: "oauth-1" }),
+      },
+    );
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+      match: { referredBy: unknown };
+    };
+    expect(body.match).toHaveProperty("referredBy");
+    expect(body.match.referredBy).toBeNull();
+  });
 });
