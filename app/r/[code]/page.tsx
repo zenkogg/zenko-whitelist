@@ -18,16 +18,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // URL slug rendered uppercase to match the share card and the existing referral-code style.
     const canonicalRef = user?.referralCode || normalizeForDisplay(code);
     const canonicalSlug = (user?.username || canonicalRef).toUpperCase();
-    const description = `They said it's just a game... we made it pay. Join ${userName} on Zenko and use referral code ${canonicalRef} to earn bonus XP. Every game feeds your name.`;
+    const description = `Join ${userName} on Zenko and use referral code ${canonicalRef} to earn bonus XP. Every game feeds your name.`;
 
     return {
-      title: `${userName} invited you to Zenko — Your reputation starts here`,
+      title: `${userName} invited you to Zenko: Your reputation starts here`,
       description,
       openGraph: {
         type: 'website',
         siteName: 'Zenko',
         url: `/r/${canonicalSlug}`,
-        title: `${userName} invited you to Zenko — Your reputation starts here`,
+        title: `${userName} invited you to Zenko: Your reputation starts here`,
         description,
         images: [
           {
@@ -42,7 +42,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       twitter: {
         card: 'summary_large_image',
         site: '@zenkogginc',
-        title: `${userName} invited you to Zenko — Your reputation starts here`,
+        title: `${userName} invited you to Zenko: Your reputation starts here`,
         description,
         images: [
           {
