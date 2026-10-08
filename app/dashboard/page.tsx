@@ -2,8 +2,8 @@
 
 /**
  * A signed-in waitlist player's dashboard: profile, referral code, points and
- * the leaderboard. Once Zenko itself is open, a banner on top points the
- * player to zenko.gg and the Early Access badge says the same; the points stay.
+ * the leaderboard. Once Zenko itself is open, a banner on top points the player
+ * to zenko.gg, the waitlist copy below follows, and the points stay.
  */
 
 import { useRouter } from 'next/navigation';
@@ -251,6 +251,7 @@ export default function DashboardPage() {
             <div className="lg:col-span-6 flex justify-center">
               <AvatarGroup
                 totalWaitlistUsers={userStats.totalPending || 0}
+                zenkoOpen={zenkoOpen}
               />
             </div>
 
@@ -259,7 +260,7 @@ export default function DashboardPage() {
               onSessionExpired={handleSessionExpired}
             />
 
-            <FAQ />
+            <FAQ zenkoOpen={zenkoOpen} />
           </div>
         </div>
       </div>

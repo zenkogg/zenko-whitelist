@@ -1,5 +1,10 @@
 'use client';
 
+/**
+ * The dashboard's social proof: the latest sign-ups' avatars and how many
+ * joined. Once Zenko is open the count stops calling them a waitlist.
+ */
+
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 
@@ -11,9 +16,10 @@ interface WaitlistUser {
 
 interface AvatarGroupProps {
   totalWaitlistUsers: number;
+  zenkoOpen?: boolean;
 }
 
-export function AvatarGroup({ totalWaitlistUsers }: AvatarGroupProps) {
+export function AvatarGroup({ totalWaitlistUsers, zenkoOpen = false }: AvatarGroupProps) {
   const [recentUsers, setRecentUsers] = useState<WaitlistUser[]>([]);
 
   useEffect(() => {
@@ -69,13 +75,13 @@ export function AvatarGroup({ totalWaitlistUsers }: AvatarGroupProps) {
             ))}
           </div>
 
-          {/* Bullet separator */}
           <div className="h-1.5 w-1.5 rounded-full bg-purple-300/60" />
         </>
       )}
 
       <span className="text-sm text-neutral-700">
-        <span className="font-semibold text-purple-300">{totalWaitlistUsers.toLocaleString()}</span> joined the waitlist
+        <span className="font-semibold text-purple-300">{totalWaitlistUsers.toLocaleString()}</span>{' '}
+        {zenkoOpen ? 'joined early' : 'joined the waitlist'}
       </span>
     </div>
   );

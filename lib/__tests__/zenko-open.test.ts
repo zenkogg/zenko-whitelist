@@ -9,36 +9,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { readZenkoOpen, zenkoOpenFrom } from '@/lib/zenko-open';
 
-/* GET https://api-prod.zenko.gg/api/config/games as production served it before
-   the backend learned to say whether sign-in is gated: no closedBeta key. The
-   games list is cut to one entry; nothing reads it. */
-const PRODUCTION_TODAY = {
-  games: [{ id: 'lol', name: 'League of Legends' }],
-  version: 1,
-  wagerLimits: { maxConcurrentWagers: 10 },
-  platformConfig: {
-    cancelWindowMs: 180000,
-    challengeDisputeWindowMs: 14400000,
-    tournamentDisputeWindowMs: 43200000,
-    minChallengeCredits: 100,
-    minRedemptionUsdsui: 20000000,
-    tournamentFeeBps: 500,
-    tournamentMaxWinners: 25,
-    tournamentMaxParticipants: 50,
-    tournamentPlacementBps: {
-      placement1: 4000,
-      placement2: 2500,
-      placement3: 1000,
-      placement4Plus: 100,
-    },
-    repDisputeOpen: 50,
-    composedMoneyEnabled: false,
-    composedEntryCap: 500,
-  },
-};
-
-const GATE_OFF = { games: [], platformConfig: { closedBeta: false } };
-const GATE_ON = { games: [], platformConfig: { closedBeta: true } };
+import { GATE_OFF, GATE_ON, PRODUCTION_TODAY } from './zenko-config-fixtures';
 
 function answering(body: unknown, status = 200) {
   return vi.fn(

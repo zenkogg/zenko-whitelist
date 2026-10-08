@@ -2,7 +2,8 @@
 
 /**
  * The dashboard's referral card: progress toward the referral cap, the
- * player's Early Access status and their reputation points.
+ * player's Early Access status and their reputation points. Once Zenko is open
+ * the card stops selling a place in line and says where the XP goes next.
  */
 
 import Image from 'next/image';
@@ -36,11 +37,15 @@ export function ReferralProgress({ referralCount, reputationPoints, status, wait
         defaultCollapsed={defaultCollapsed}
         collapsible={collapsible}
         title={
-          <h2 className="text-base md:text-lg font-semibold text-white whitespace-nowrap">Gain priority access</h2>
+          <h2 className="text-base md:text-lg font-semibold text-white whitespace-nowrap">
+            {zenkoOpen ? 'Take your XP to Zenko' : 'Gain priority access'}
+          </h2>
         }
       >
         <p className="text-sm text-neutral-800 mb-4">
-          Refer friends to boost your rank. Each referral earns you +10 XP and moves you up the waitlist.
+          {zenkoOpen
+            ? 'Sign up at zenko.gg with the same Google or Twitch account and your XP comes with you.'
+            : 'Refer friends to boost your rank. Each referral earns you +10 XP and moves you up the waitlist.'}
         </p>
 
         <div className="flex items-center justify-between text-sm mb-2">
