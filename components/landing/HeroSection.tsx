@@ -1,7 +1,7 @@
 /**
  * The waitlist landing's headline block: a hook, the brand statement, and one
- * line on what Zenko is. None of them promises money: the product is
- * skill-based challenges.
+ * line on what Zenko is. None of them promises money: players compete on skill
+ * and grow a reputation.
  */
 export function HeroSection() {
   return (
@@ -18,7 +18,7 @@ export function HeroSection() {
       </h1>
 
       <p className="mx-auto max-w-[20rem] sm:max-w-md md:max-w-lg text-base sm:text-lg md:text-xl text-gray-300 text-balance">
-        Compete on skill in challenges built from your own matches.
+        Compete on skill. Grow your reputation in every game you play.
       </p>
     </div>
   );
