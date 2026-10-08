@@ -1,5 +1,11 @@
 'use client';
 
+/**
+ * The waitlist's way in: OAuth sign-in for a visitor, then the referral code
+ * and game picks for a signed-in player who has not finished setup. Once Zenko
+ * itself is open, a banner on top points visitors to zenko.gg.
+ */
+
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -8,6 +14,8 @@ import { GameBadge } from './GameBadge';
 import { Button } from '@/components/ui/button';
 import Stepper, { Step } from '@/components/Stepper';
 import { ArrowRightStartOnRectangleIcon } from '@heroicons/react/24/outline';
+import { ZenkoOpenBanner } from '@/components/ZenkoOpenBanner';
+import { useZenkoOpen } from '@/hooks/useZenkoOpen';
 
 const VL_LOGIN_ENABLED = process.env.NEXT_PUBLIC_VL_LOGIN_ENABLED === 'true';
 
@@ -40,7 +48,8 @@ export function StepperOnboarding() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [isRedirecting, setIsRedirecting] = useState(false);
-  const [currentStepIndex, setCurrentStepIndex] = useState(1); // Stepper uses 1-based indexing (2 steps total)
+  // The Stepper counts from 1: referral code, then games.
+  const [currentStepIndex, setCurrentStepIndex] = useState(1);
   const [user, setUser] = useState<any>(null);
   const [selectedGames, setSelectedGames] = useState<string[]>([]);
   const [referralCode, setReferralCode] = useState('');
@@ -50,8 +59,8 @@ export function StepperOnboarding() {
   const [stats, setStats] = useState<WaitlistStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const stepClickRef = useRef<((step: number) => void) | null>(null);
+  const zenkoOpen = useZenkoOpen();
 
-  // Fetch waitlist stats
   useEffect(() => {
     fetch('/api/waitlist/stats')
       .then(res => res.json())
@@ -64,7 +73,6 @@ export function StepperOnboarding() {
       .finally(() => setStatsLoading(false));
   }, []);
 
-  // Check for user session in localStorage and URL params
   useEffect(() => {
     // Resolve referral code from the URL first, then fall back to sessionStorage so the
     // value survives any navigation that drops the ?ref= param (OAuth round-trip, in-app links, etc).
@@ -84,15 +92,12 @@ export function StepperOnboarding() {
       setUser(userData);
       setIsAuthenticated(true);
 
-      // If user has completed games, redirect to dashboard with ref if present
       if (userData.games && userData.games.length > 0) {
         const redirectUrl = refCode ? `/dashboard?ref=${refCode}` : '/dashboard';
         router.push(redirectUrl);
       } else if (userData.usedReferralCode) {
-        // If user already used a referral code, go to games (step 2)
         setCurrentStepIndex(2);
       } else {
-        // Otherwise, show referral code step (step 1)
         setCurrentStepIndex(1);
       }
     } else {
@@ -133,18 +138,16 @@ export function StepperOnboarding() {
           const errorData = await response.json();
           errorMessage = errorData.message || errorMessage;
         } catch {
-          // If JSON parsing fails, use default message
+          // A body that is not JSON keeps the default message.
         }
         throw new Error(errorMessage);
       }
 
       const { data } = await response.json();
 
-      // Calculate points earned
       const currentPoints = user?.reputationPoints || 0;
       const pointsEarned = data.user.reputationPoints - currentPoints;
 
-      // Update user in localStorage with referral info
       if (user) {
         const updatedUser = {
           ...user,
@@ -155,10 +158,9 @@ export function StepperOnboarding() {
         setUser(updatedUser);
       }
 
-      // Show success message
       setReferralSuccess(`Code applied! You earned ${pointsEarned} reputation points`);
 
-      // Wait 1.5 seconds then advance to step 2
+      // Leaves the success line up long enough to read before moving on.
       setTimeout(() => {
         if (stepClickRef.current) {
           stepClickRef.current(2);
@@ -208,13 +210,11 @@ export function StepperOnboarding() {
 
       const { data } = await response.json();
 
-      // Update user in localStorage with games
       if (user) {
         const updatedUser = { ...user, games: data.games };
         localStorage.setItem('waitlist_user', JSON.stringify(updatedUser));
       }
 
-      // Redirect to dashboard
       router.push('/dashboard');
     } catch (error) {
       console.error('Save error:', error);
@@ -224,7 +224,6 @@ export function StepperOnboarding() {
     }
   };
 
-  // Show minimal spinner while checking localStorage session
   if (isCheckingSession) {
     return (
       <div className="flex items-center justify-center w-full max-w-md mx-auto py-12">
@@ -233,7 +232,6 @@ export function StepperOnboarding() {
     );
   }
 
-  // Show connecting state while OAuth redirect is in progress
   if (isRedirecting) {
     return (
       <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-md mx-auto py-12">
@@ -250,11 +248,11 @@ export function StepperOnboarding() {
     );
   }
 
-  // Show OAuth login if not authenticated
   if (!isAuthenticated) {
     return (
       <div className="flex flex-col items-center space-y-6 w-full max-w-md mx-auto">
-        {/* Waitlist Status Pill */}
+        <ZenkoOpenBanner open={zenkoOpen} />
+
         {!statsLoading && stats && (
           <div className={`flex items-center gap-1.5 rounded-full border-2 px-3 py-1 ${
             stats.waitlistStatus === 'open'
@@ -276,7 +274,6 @@ export function StepperOnboarding() {
           </div>
         )}
 
-        {/* Heading */}
         <div className="text-center space-y-3">
           <h2 className="text-lg md:text-xl lg:text-2xl font-semibold text-white">
             Join Zenko. Be a <span className="text-amber-500">Day One</span>.
@@ -286,9 +283,7 @@ export function StepperOnboarding() {
           </p>
         </div>
 
-        {/* OAuth Buttons */}
         <div className="w-full space-y-3">
-          {/* Google Sign In */}
           <button
             onClick={() => handleOAuthSignIn('google')}
             className="flex w-full items-center justify-center gap-3 rounded-xl bg-white/5 border border-purple-300/20 px-4 py-3 text-sm font-medium text-neutral-600 transition-all hover:bg-white/10 cursor-pointer"
@@ -303,7 +298,6 @@ export function StepperOnboarding() {
             <span>Sign in with Google</span>
           </button>
 
-          {/* Twitch Sign In */}
           <button
             onClick={() => handleOAuthSignIn('twitch')}
             className="flex w-full items-center justify-center gap-3 rounded-xl bg-white/5 border border-purple-300/20 px-4 py-3 text-sm font-medium text-neutral-600 transition-all hover:bg-white/10 cursor-pointer"
@@ -318,7 +312,6 @@ export function StepperOnboarding() {
             <span>Sign in with Twitch</span>
           </button>
 
-          {/* X (Twitter) Sign In */}
           <button
             onClick={() => handleOAuthSignIn('twitter')}
             className="flex w-full items-center justify-center gap-3 rounded-xl bg-white/5 border border-purple-300/20 px-4 py-3 text-sm font-medium text-neutral-600 transition-all hover:bg-white/10 cursor-pointer"
@@ -329,7 +322,6 @@ export function StepperOnboarding() {
             <span>Continue with X</span>
           </button>
 
-          {/* Virtualeagues Sign In */}
           {VL_LOGIN_ENABLED && (
             <button
               onClick={() => handleOAuthSignIn('virtualeagues')}
@@ -347,10 +339,8 @@ export function StepperOnboarding() {
           )}
         </div>
 
-        {/* Avatar Group & Count - Below Buttons */}
         {!statsLoading && stats && (
           <div className="flex items-center justify-center gap-3">
-            {/* Avatar Stack */}
             <div className="flex -space-x-2">
               {stats.recentUsers.slice(0, 4).map((user, index) => (
                 <div
@@ -375,10 +365,8 @@ export function StepperOnboarding() {
               ))}
             </div>
 
-            {/* Bullet separator */}
             <div className="h-1.5 w-1.5 rounded-full bg-purple-300/60" />
 
-            {/* Count */}
             <span className="text-xs font-medium text-gray-400">
               <span className="text-zenko-light font-semibold">
                 {stats.totalCount.toLocaleString()}+
@@ -387,10 +375,8 @@ export function StepperOnboarding() {
           </div>
         )}
 
-        {/* Divider */}
         <div className="w-full border-t border-white/10"></div>
 
-        {/* Footer Text */}
         <p className="text-center text-xs text-gray-400 -mt-2">
           By signing in, you agree to receive updates and marketing communications.
         </p>
@@ -398,9 +384,13 @@ export function StepperOnboarding() {
     );
   }
 
-  // Show stepper with 2 steps (referral code → games)
   return (
     <div className="w-full -mt-4">
+      {zenkoOpen && (
+        <div className="pt-4">
+          <ZenkoOpenBanner open />
+        </div>
+      )}
       <Stepper
         initialStep={currentStepIndex}
         onStepChange={(step) => setCurrentStepIndex(step)}
@@ -410,7 +400,7 @@ export function StepperOnboarding() {
         footerClassName="hidden"
         className="!p-0 !aspect-auto !min-h-0"
         renderStepIndicator={({ step, currentStep, onStepClick }) => {
-          // Store the step click function in ref for programmatic navigation
+          // Kept so the referral step can advance itself once a code applies.
           if (!stepClickRef.current) {
             stepClickRef.current = onStepClick;
           }
@@ -440,10 +430,8 @@ export function StepperOnboarding() {
           );
         }}
     >
-      {/* Step 1: Referral Code */}
       <Step>
         <div className="flex flex-col space-y-6 w-full max-w-md mx-auto">
-          {/* Heading */}
           <div className="text-center">
             <h2 className="mb-2 text-xl md:text-2xl font-semibold leading-tight tracking-tight text-white">
               Were you invited?
@@ -453,7 +441,6 @@ export function StepperOnboarding() {
             </p>
           </div>
 
-          {/* Referral Code Form - Dashboard Style */}
           <form onSubmit={handleApplyReferral} className="w-full space-y-4">
             <div className="flex flex-col gap-3">
               <label className="text-sm font-medium text-white">
@@ -470,21 +457,18 @@ export function StepperOnboarding() {
               />
             </div>
 
-            {/* Error Message */}
             {error && (
               <p className="text-error-300" role="alert">
                 {error}
               </p>
             )}
 
-            {/* Success Message */}
             {referralSuccess && (
               <p className="text-success-300" role="status">
                 {referralSuccess}
               </p>
             )}
 
-            {/* Action Buttons */}
             <div className="flex gap-3">
               {!user?.usedReferralCode && (
                 <button
@@ -509,10 +493,8 @@ export function StepperOnboarding() {
         </div>
       </Step>
 
-      {/* Step 2: Game Selection */}
       <Step>
         <div className="flex flex-col space-y-6 w-full max-w-md mx-auto">
-          {/* Heading */}
           <div className="text-center">
             <h2 className="mb-2 text-xl md:text-2xl font-semibold leading-tight tracking-tight text-white">
               Which games do you play?
@@ -522,9 +504,7 @@ export function StepperOnboarding() {
             </p>
           </div>
 
-          {/* Form */}
           <form onSubmit={handleSubmitGames} className="w-full space-y-6">
-            {/* Game Selection */}
             <div className="flex flex-wrap justify-center gap-2">
               {GAMES.map((game) => (
                 <GameBadge
@@ -536,14 +516,12 @@ export function StepperOnboarding() {
               ))}
             </div>
 
-            {/* Error Message */}
             {error && (
               <div className="rounded-lg border border-error-300/20 bg-error-300/10 px-4 py-3 text-error-300">
                 {error}
               </div>
             )}
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={isSubmitting || selectedGames.length === 0}
@@ -552,7 +530,6 @@ export function StepperOnboarding() {
               {isSubmitting ? 'Setting up...' : 'Go to dashboard'}
             </button>
 
-            {/* Footer Message */}
             <p className="text-center text-xs text-gray-500">
               Complete setup to unlock your referral link
             </p>
@@ -561,10 +538,8 @@ export function StepperOnboarding() {
       </Step>
       </Stepper>
 
-      {/* Footer: Connected Account Info */}
       {user && (
         <div className="relative mt-12">
-          {/* Gradient Divider */}
           <div
             className="absolute top-0 left-0 w-full h-px"
             style={{
@@ -572,9 +547,7 @@ export function StepperOnboarding() {
             }}
           ></div>
 
-          {/* Connected Account Row */}
           <div className="flex items-center justify-between w-full max-w-md mx-auto pt-8">
-            {/* Left: Provider Icon + Username */}
             <div className="flex items-center gap-2 min-w-0">
               {user.oauthProvider === 'twitter' ? (
                 <svg className="h-4 w-4 flex-shrink-0 text-white" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -608,7 +581,6 @@ export function StepperOnboarding() {
               </span>
             </div>
 
-            {/* Right: Disconnect */}
             <button
               type="button"
               onClick={() => {

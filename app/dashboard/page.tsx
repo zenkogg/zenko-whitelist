@@ -1,5 +1,11 @@
 'use client';
 
+/**
+ * A signed-in waitlist player's dashboard: profile, referral code, points and
+ * the leaderboard. Once Zenko itself is open, a banner on top points the
+ * player to zenko.gg and the Early Access badge says the same; the points stay.
+ */
+
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import { ArrowRightStartOnRectangleIcon } from '@heroicons/react/20/solid';
@@ -7,6 +13,8 @@ import { BackgroundLayer } from '@/components/landing/BackgroundLayer';
 import { ProfileCard, ReferralCodeCard, ApplyReferralCard, AvatarGroup, ReferralProgress, Leaderboard, FAQ } from '@/components/dashboard';
 import { Footer } from '@/components/Footer';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useZenkoOpen } from '@/hooks/useZenkoOpen';
+import { ZenkoOpenBanner } from '@/components/ZenkoOpenBanner';
 
 interface ReferrerInfo {
   displayName: string;
@@ -57,6 +65,7 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [pendingReferralCode, setPendingReferralCode] = useState<string | null>(null);
   const isMobile = useMediaQuery('(max-width: 1023px)');
+  const zenkoOpen = useZenkoOpen();
 
   // The stored user outlives the session, so a signed-out caller still has one to
   // render. Clearing it is what turns an expired session back into a sign-in
@@ -78,7 +87,6 @@ export default function DashboardPage() {
       if (!response.ok) throw new Error('Failed to fetch stats');
       const result = await response.json();
 
-      // Handle the API response format with nested data
       if (result.success && result.data) {
         setUserStats({
           referralCode: result.data.user.referralCode,
@@ -105,19 +113,15 @@ export default function DashboardPage() {
   }, [handleSessionExpired]);
 
   useEffect(() => {
-    // Check for referral code in URL
     const urlParams = new URLSearchParams(window.location.search);
     const refCode = urlParams.get('ref');
     if (refCode) {
-      // Pass the raw value through — server normalizes (6-char codes vs username slugs).
+      // Passed through raw: the server tells 6-character codes from username slugs.
       setPendingReferralCode(refCode);
-      // Clear the ref param from URL after reading
       window.history.replaceState({}, '', '/dashboard');
-      // Clear from sessionStorage
       sessionStorage.removeItem('pending_referral_code');
     }
 
-    // Check localStorage for user
     const storedUser = localStorage.getItem('waitlist_user');
     if (!storedUser) {
       router.push('/');
@@ -126,7 +130,6 @@ export default function DashboardPage() {
 
     const userData = JSON.parse(storedUser);
 
-    // Redirect if no games selected
     if (!userData.games || userData.games.length === 0) {
       router.push('/?step=games');
       return;
@@ -139,8 +142,7 @@ export default function DashboardPage() {
   const handleAvatarUpdate = useCallback((avatarUrl: string) => {
     if (!user) return;
 
-    // Update user in state and localStorage
-    // Empty string means avatar was removed, set to null
+    // An empty string means the avatar was removed.
     const updatedUser = { ...user, customAvatarUrl: avatarUrl || null };
     setUser(updatedUser);
     localStorage.setItem('waitlist_user', JSON.stringify(updatedUser));
@@ -170,12 +172,15 @@ export default function DashboardPage() {
 
   return (
     <main className="relative min-h-screen w-full overflow-x-hidden bg-black">
-      {/* Shared Background Layer with Preset Switcher */}
       <BackgroundLayer />
 
-      {/* Header Section */}
       <div className="relative z-10 px-4 md:px-6 pt-8 md:pt-12 pb-6 md:pb-8">
         <div className="mx-auto max-w-6xl text-center">
+          {zenkoOpen && (
+            <div className="mb-4 md:mb-6">
+              <ZenkoOpenBanner open />
+            </div>
+          )}
           <h1
             className="text-2xl sm:text-3xl md:text-3xl font-semibold text-white mb-4 md:mb-6"
             style={{ fontFamily: 'var(--font-sora)' }}
@@ -185,12 +190,9 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Content */}
       <div className="relative z-10 px-4 md:px-6 pb-12">
         <div className="mx-auto max-w-6xl">
-          {/* Bento Grid Layout */}
           <div className="grid grid-cols-1 gap-4 md:gap-6 lg:gap-8 lg:grid-cols-6">
-            {/* Profile Card - Left column, spans 2 columns and 2 rows */}
             <div className="lg:col-span-2 lg:row-span-2 flex flex-col gap-4 md:gap-6 lg:gap-8">
               <ProfileCard
                 displayName={user.displayName}
@@ -204,7 +206,6 @@ export default function DashboardPage() {
                 onLogout={handleLogout}
               />
 
-              {/* Disconnect Button */}
               <button
                 onClick={handleLogout}
                 className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-red-400/70 transition-all hover:text-red-400 cursor-pointer"
@@ -214,7 +215,6 @@ export default function DashboardPage() {
               </button>
             </div>
 
-            {/* Referral Code Card - Top right, spans 4 columns */}
             <div className="lg:col-span-4 flex">
               <ReferralCodeCard
                 referralCode={userStats.referralCode}
@@ -225,7 +225,6 @@ export default function DashboardPage() {
               />
             </div>
 
-            {/* Apply Referral Card - Below referral code, spans 4 columns */}
             <div className="lg:col-span-4 flex">
               <ApplyReferralCard
                 usedReferralCode={userStats.usedReferralCode || null}
@@ -238,37 +237,33 @@ export default function DashboardPage() {
               />
             </div>
 
-            {/* Referral Progress */}
             <div className="lg:col-span-6">
               <ReferralProgress
                 referralCount={userStats.referralCount}
                 reputationPoints={userStats.reputationPoints}
                 status={userStats.status}
                 waitlistStatus={userStats.waitlistStatus}
+                zenkoOpen={zenkoOpen}
                 collapsible={isMobile}
               />
             </div>
 
-            {/* Avatar Group Badge */}
             <div className="lg:col-span-6 flex justify-center">
               <AvatarGroup
                 totalWaitlistUsers={userStats.totalPending || 0}
               />
             </div>
 
-            {/* Leaderboard */}
             <Leaderboard
               totalUsers={userStats.totalPending}
               onSessionExpired={handleSessionExpired}
             />
 
-            {/* FAQ */}
             <FAQ />
           </div>
         </div>
       </div>
 
-      {/* Footer */}
       <Footer />
     </main>
   );

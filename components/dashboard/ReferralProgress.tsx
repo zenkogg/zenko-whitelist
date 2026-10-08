@@ -1,21 +1,33 @@
 'use client';
 
+/**
+ * The dashboard's referral card: progress toward the referral cap, the
+ * player's Early Access status and their reputation points.
+ */
+
 import Image from 'next/image';
 import { CollapsibleCard } from './CollapsibleCard';
 import { REFERRAL_MAX_COUNT } from '@/lib/referral-config';
+import { ZENKO_SITE_URL } from '@/lib/zenko-open';
 
 interface ReferralProgressProps {
   referralCount: number;
   reputationPoints: number;
   status: string;
   waitlistStatus: 'open' | 'closed';
+  /** True only once the main backend reports Zenko open; see lib/zenko-open. */
+  zenkoOpen?: boolean;
   defaultCollapsed?: boolean;
   collapsible?: boolean;
 }
 
-export function ReferralProgress({ referralCount, reputationPoints, status, waitlistStatus, defaultCollapsed = false, collapsible = false }: ReferralProgressProps) {
+export function ReferralProgress({ referralCount, reputationPoints, status, waitlistStatus, zenkoOpen = false, defaultCollapsed = false, collapsible = false }: ReferralProgressProps) {
   const isApproved = status !== 'PENDING';
-  const isNotSelected = waitlistStatus === 'closed' && status === 'PENDING';
+  // Once Zenko is open nobody is waiting to be picked, so the open line
+  // replaces Not Selected as well as On Waitlist.
+  const isOpenToAll = zenkoOpen && !isApproved;
+  const isNotSelected = !isOpenToAll && waitlistStatus === 'closed' && status === 'PENDING';
+  const isGreen = isApproved || isOpenToAll;
   const progress = Math.min((referralCount / REFERRAL_MAX_COUNT) * 100, 100);
 
   return (
@@ -46,19 +58,36 @@ export function ReferralProgress({ referralCount, reputationPoints, status, wait
           />
         </div>
 
-        {/* Stats Badges */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex items-center justify-between rounded-lg bg-white/5 px-3 md:px-4 py-2.5 md:py-3">
             <div className="flex items-center gap-2">
               <div className={`h-2 w-2 rounded-full flex-shrink-0 ${
-                isApproved ? 'bg-success' : isNotSelected ? 'bg-error' : 'bg-amber-500'
+                isGreen ? 'bg-success' : isNotSelected ? 'bg-error' : 'bg-amber-500'
               }`} />
               <span className="text-xs md:text-sm text-neutral-700">Early Access</span>
             </div>
             <div className={`text-sm md:text-base font-bold ${
-              isApproved ? 'text-success' : isNotSelected ? 'text-error' : 'text-amber-500'
+              isGreen ? 'text-success' : isNotSelected ? 'text-error' : 'text-amber-500'
             }`}>
-              {isApproved ? 'Access Granted' : isNotSelected ? 'Not Selected' : 'On Waitlist'}
+              {isApproved ? (
+                'Access Granted'
+              ) : isOpenToAll ? (
+                <>
+                  Open, sign up at{' '}
+                  <a
+                    href={ZENKO_SITE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline decoration-success/60 underline-offset-2 hover:decoration-success"
+                  >
+                    zenko.gg
+                  </a>
+                </>
+              ) : isNotSelected ? (
+                'Not Selected'
+              ) : (
+                'On Waitlist'
+              )}
             </div>
           </div>
           <div className="flex items-center justify-between rounded-lg bg-white/5 px-3 md:px-4 py-2.5 md:py-3">
