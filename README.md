@@ -1,11 +1,12 @@
 # Zenko Whitelist
 
-Pre-launch email collection app for Zenko closed beta.
+Zenko's waitlist: players sign in, collect referral XP and climb a leaderboard,
+and are handed over to zenko.gg once Zenko itself is open.
 
 ## Tech Stack
 - **Framework:** Next.js 15 (App Router)
 - **Language:** TypeScript 5
-- **Styling:** Tailwind CSS 3
+- **Styling:** Tailwind CSS 4
 - **Database:** Neon Postgres (its own project, separate from the main app's)
 - **Deployment:** Vercel
 
@@ -40,7 +41,7 @@ The waitlist supports four OAuth providers: Google, Twitch, X (Twitter), and Vir
 **Virtualeagues** uses OAuth 2 + PKCE (confidential client). To enable it locally:
 
 1. Set `VL_CLIENT_ID`, `VL_CLIENT_SECRET`, and `VL_REDIRECT_URI` in `.env` (see `.env.example`).
-2. Register your redirect URI in the VL OAuth app's allowed list — the match is exact (scheme, host, port, path). Add both your dev URL (`http://localhost:3000/auth/virtualeagues/callback`) and any deployed environments.
+2. Register your redirect URI in the VL OAuth app's allowed list. The match is exact (scheme, host, port, path). Add both your dev URL (`http://localhost:3000/auth/virtualeagues/callback`) and any deployed environments.
 
 Each developer needs their own dev redirect URI registered, or shares a credential whose allowed list already includes `localhost:3000`.
 
@@ -52,39 +53,39 @@ invitation, referral). The app is the sole writer of the `waitlist*` contact
 properties; the zenko-mono backend writes the `zenko*` ones onto the same
 email-keyed contact.
 
-- **Runtime path** — every row mutation schedules a fire-and-forget
+- **Runtime path**: every row mutation schedules a fire-and-forget
   `after(() => syncWaitlistUser(...))` (see `lib/loops/`). It never blocks or
   breaks a request: with `LOOPS_API_KEY` unset it is a silent no-op, and a caught
   failure is recorded in `waitlist_users.loops_sync_error` for a later re-sync.
-- **Setup (once per workspace)** — create the custom properties before anything
+- **Setup (once per workspace)**: create the custom properties before anything
   syncs: `LOOPS_API_KEY=... npx tsx scripts/loops-bootstrap.ts`. Use a *separate*
-  key per environment — a wrong-key write emails a real person.
-- **Per-environment mailing lists (launch step)** — `LOOPS_MAILING_LIST_ID` is a
+  key per environment, because a wrong-key write emails a real person.
+- **Per-environment mailing lists (launch step)**: `LOOPS_MAILING_LIST_ID` is a
   per-deployment env var: local/staging point at the "Dev/Stg" list, and
   **production must set its own separate list id** (in the backend's terraform
   `loops_mailing_list_id` var and the whitelist's Vercel prod env). Contacts are
   added to their deployment's list on `waitlist_joined` / `zenko_registered`, so a
   production campaign sent to the prod list can never reach a staging contact.
   Every contact also carries an `environment` property (`staging` | `production`)
-  as a backup filter — gate real sends on `environment is production`. One list
-  per environment is enough; do **not** split by whitelist-vs-app — target
+  as a backup filter; gate real sends on `environment is production`. One list
+  per environment is enough; do **not** split by whitelist-vs-app, target
   waitlisters vs registered players by `waitlistStatus` / `zenkoRegisteredAt`
   instead. (Contacts land on one shared list; unsubscribe is therefore all-or-
-  nothing per environment — revisit topic-lists only if you need finer opt-out.)
-- **Local dev** — set `LOOPS_DRY_RUN=1` to log payloads instead of sending.
-- **Backfill** — `scripts/loops-backfill.sql` emits a CSV to import via Loops'
+  nothing per environment; revisit topic-lists only if you need finer opt-out.)
+- **Local dev**: set `LOOPS_DRY_RUN=1` to log payloads instead of sending.
+- **Backfill**: `scripts/loops-backfill.sql` emits a CSV to import via Loops'
   Audience → Import (upserts by email; leave "Trigger workflows" off). The same
   query, filtered to `loops_sync_error IS NOT NULL`, re-exports rows to heal after
   an outage.
-- **Tests** — `npm test` (vitest) covers the pure mappers, the client's
+- **Tests**: `npm test` (vitest) covers the pure mappers, the client's
   no-op/retry behaviour, and the sync orchestration with an injected client.
 
 ## Features
-- Email collection form
-- Game selection (League of Legends, Valorant, Overwatch 2)
-- Responsive design
-- PostgreSQL database integration (coming soon)
-- Admin dashboard for approvals (coming soon)
+- OAuth sign-in (Google, Twitch, X; Virtualeagues behind a flag)
+- Referral codes and reputation XP, which carry over to Zenko at sign-up through the backend's waitlist match
+- Game interest picks and a leaderboard
+- Admin dashboard for approvals
+- Copy that follows the main site's closed-beta gate (`lib/zenko-open.ts`)
 
 ## Deployment
 Automatically deploys to Vercel on push to `main` branch.
