@@ -28,7 +28,7 @@ const pressStart2P = Press_Start_2P({
 export const metadata: Metadata = {
   title: "Zenko — Every Game Feeds Your Name | Join The Origin",
   description:
-    "They said it's just a game... we made it pay. Before the awards. Before the spotlight. This is where your reputation starts. Join The Origin.",
+    "They said it's just a game... we made it count. Before the awards. Before the spotlight. This is where your reputation starts. Join The Origin.",
   authors: [{ name: "Zenko" }],
   creator: "Zenko",
   publisher: "Zenko",
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     siteName: "Zenko",
     title: "Zenko — Every Game Feeds Your Name | Join The Origin",
     description:
-      "They said it's just a game... we made it pay. Before the awards. Before the spotlight. This is where your reputation starts. Join The Origin.",
+      "They said it's just a game... we made it count. Before the awards. Before the spotlight. This is where your reputation starts. Join The Origin.",
     images: [
       {
         url: "/images/og-image.png",
@@ -64,7 +64,7 @@ export const metadata: Metadata = {
     creator: "@zenkogginc",
     title: "Zenko — Every Game Feeds Your Name | Join The Origin",
     description:
-      "They said it's just a game... we made it pay. Before the awards. Before the spotlight. This is where your reputation starts. Join The Origin.",
+      "They said it's just a game... we made it count. Before the awards. Before the spotlight. This is where your reputation starts. Join The Origin.",
     images: [
       {
         url: "/images/og-image.png",

@@ -1,13 +1,13 @@
 /**
  * The waitlist landing's headline block: a hook, the brand statement, and one
- * line on what Zenko is. That line describes skill-based challenges and never
- * promises money.
+ * line on what Zenko is. None of them promises money: the product is
+ * skill-based challenges.
  */
 export function HeroSection() {
   return (
     <div className="text-center mb-4 md:mb-8 space-y-2 md:space-y-3">
       <p className="text-base sm:text-lg md:text-xl font-semibold text-purple-300/70 italic">
-        They said it&apos;s just a game... we made it pay.
+        They said it&apos;s just a game... we made it count.
       </p>
 
       <h1
