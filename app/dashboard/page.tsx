@@ -10,7 +10,15 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import { ArrowRightStartOnRectangleIcon } from '@heroicons/react/20/solid';
 import { BackgroundLayer } from '@/components/landing/BackgroundLayer';
-import { ProfileCard, ReferralCodeCard, ApplyReferralCard, AvatarGroup, ReferralProgress, Leaderboard, FAQ } from '@/components/dashboard';
+import {
+  ProfileCard,
+  ReferralCodeCard,
+  ApplyReferralCard,
+  AvatarGroup,
+  ReferralProgress,
+  Leaderboard,
+  FAQ,
+} from '@/components/dashboard';
 import { Footer } from '@/components/Footer';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useZenkoOpen } from '@/hooks/useZenkoOpen';
@@ -139,14 +147,17 @@ export default function DashboardPage() {
     fetchUserStats();
   }, [router, fetchUserStats]);
 
-  const handleAvatarUpdate = useCallback((avatarUrl: string) => {
-    if (!user) return;
+  const handleAvatarUpdate = useCallback(
+    (avatarUrl: string) => {
+      if (!user) return;
 
-    // An empty string means the avatar was removed.
-    const updatedUser = { ...user, customAvatarUrl: avatarUrl || null };
-    setUser(updatedUser);
-    localStorage.setItem('waitlist_user', JSON.stringify(updatedUser));
-  }, [user]);
+      // An empty string means the avatar was removed.
+      const updatedUser = { ...user, customAvatarUrl: avatarUrl || null };
+      setUser(updatedUser);
+      localStorage.setItem('waitlist_user', JSON.stringify(updatedUser));
+    },
+    [user],
+  );
 
   const handleReferralApplied = useCallback(() => {
     if (user) {
@@ -211,7 +222,16 @@ export default function DashboardPage() {
                 className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-red-400/70 transition-all hover:text-red-400 cursor-pointer"
               >
                 <ArrowRightStartOnRectangleIcon className="h-4 w-4" />
-                <span>Disconnect {user.oauthProvider === 'twitter' ? 'X' : user.oauthProvider === 'twitch' ? 'Twitch' : user.oauthProvider === 'virtualeagues' ? 'Virtualeagues' : 'Google'}</span>
+                <span>
+                  Disconnect{' '}
+                  {user.oauthProvider === 'twitter'
+                    ? 'X'
+                    : user.oauthProvider === 'twitch'
+                      ? 'Twitch'
+                      : user.oauthProvider === 'virtualeagues'
+                        ? 'Virtualeagues'
+                        : 'Google'}
+                </span>
               </button>
             </div>
 
@@ -227,6 +247,7 @@ export default function DashboardPage() {
 
             <div className="lg:col-span-4 flex">
               <ApplyReferralCard
+                registered={userStats.status === 'REGISTERED'}
                 usedReferralCode={userStats.usedReferralCode || null}
                 currentReputationPoints={userStats.reputationPoints}
                 onReferralApplied={handleReferralApplied}
@@ -249,10 +270,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="lg:col-span-6 flex justify-center">
-              <AvatarGroup
-                totalWaitlistUsers={userStats.totalPending || 0}
-                zenkoOpen={zenkoOpen}
-              />
+              <AvatarGroup totalWaitlistUsers={userStats.totalPending || 0} zenkoOpen={zenkoOpen} />
             </div>
 
             <Leaderboard

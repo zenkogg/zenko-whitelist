@@ -6,7 +6,6 @@ import ShinyText from '@/components/ShinyText';
 import FuzzyText from '@/components/FuzzyText';
 import { CollapsibleCard } from './CollapsibleCard';
 
-
 interface ReferralCodeCardProps {
   referralCode: string;
   username?: string | null;
@@ -22,7 +21,14 @@ type AvailabilityState =
   | { status: 'available' }
   | { status: 'invalid'; message: string };
 
-export function ReferralCodeCard({ referralCode, username, referralCount, onUsernameUpdated, defaultCollapsed = false, collapsible = false }: ReferralCodeCardProps) {
+export function ReferralCodeCard({
+  referralCode,
+  username,
+  referralCount,
+  onUsernameUpdated,
+  defaultCollapsed = false,
+  collapsible = false,
+}: ReferralCodeCardProps) {
   const [linkCopied, setLinkCopied] = useState(false);
 
   // Share slug is the canonical referral identifier — username when set, else the 6-char code.
@@ -32,7 +38,9 @@ export function ReferralCodeCard({ referralCode, username, referralCount, onUser
   // Edit-mode state for claiming/changing the username.
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(username ?? '');
-  const [availability, setAvailability] = useState<AvailabilityState>({ status: 'idle' });
+  const [availability, setAvailability] = useState<AvailabilityState>({
+    status: 'idle',
+  });
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const checkTokenRef = useRef(0);
@@ -57,7 +65,10 @@ export function ReferralCodeCard({ referralCode, username, referralCount, onUser
         if (data.available) {
           setAvailability({ status: 'available' });
         } else {
-          setAvailability({ status: 'invalid', message: data.error || 'Unavailable' });
+          setAvailability({
+            status: 'invalid',
+            message: data.error || 'Unavailable',
+          });
         }
       } catch {
         if (myToken !== checkTokenRef.current) return;
@@ -114,7 +125,8 @@ export function ReferralCodeCard({ referralCode, username, referralCount, onUser
     availability.status !== 'invalid' &&
     availability.status !== 'checking';
 
-  const isMobile = typeof navigator !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  const isMobile =
+    typeof navigator !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
   const handleShareLink = useCallback(async () => {
     if (typeof window === 'undefined') return;
@@ -161,9 +173,14 @@ export function ReferralCodeCard({ referralCode, username, referralCount, onUser
               width={20}
               height={20}
               className="h-5 w-5 flex-shrink-0"
-              style={{ filter: 'brightness(0) saturate(100%) invert(65%) sepia(85%) saturate(1574%) hue-rotate(359deg) brightness(101%) contrast(98%)' }}
+              style={{
+                filter:
+                  'brightness(0) saturate(100%) invert(65%) sepia(85%) saturate(1574%) hue-rotate(359deg) brightness(101%) contrast(98%)',
+              }}
             />
-            <h2 className="text-base md:text-lg font-semibold text-white whitespace-nowrap">Your referral code</h2>
+            <h2 className="text-base md:text-lg font-semibold text-white whitespace-nowrap">
+              Your referral code
+            </h2>
             <div className="ml-auto flex items-center justify-end">
               <FuzzyText
                 fontSize="clamp(11px, 1.5vw, 15px)"
@@ -176,7 +193,7 @@ export function ReferralCodeCard({ referralCode, username, referralCount, onUser
                 glitchInterval={2800}
                 glitchDuration={200}
                 letterSpacing={-1}
-                className=''
+                className=""
               >
                 +10 XP
               </FuzzyText>
@@ -246,7 +263,7 @@ export function ReferralCodeCard({ referralCode, username, referralCount, onUser
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-2 min-w-0">
                   <ShinyText
-                    text={shareSlug}
+                    text={referralCode}
                     speed={3}
                     color="#9E77ED"
                     shineColor="#E9D5FF"
@@ -267,7 +284,7 @@ export function ReferralCodeCard({ referralCode, username, referralCount, onUser
                 <button
                   onClick={handleShareLink}
                   className="flex items-center gap-2 text-purple-300/80 transition-colors hover:text-purple-300 flex-shrink-0 cursor-pointer"
-                  aria-label={linkCopied ? "Copied!" : "Copy link"}
+                  aria-label={linkCopied ? 'Copied!' : 'Copy link'}
                 >
                   {linkCopied ? <CheckIcon /> : <CopyIcon />}
                   <span className="text-sm font-medium">
@@ -353,12 +370,7 @@ function CheckIcon() {
       viewBox="0 0 24 24"
       aria-hidden="true"
     >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M5 13l4 4L19 7"
-      />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
     </svg>
   );
 }

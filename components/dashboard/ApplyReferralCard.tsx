@@ -13,6 +13,7 @@ interface ReferrerInfo {
 }
 
 interface ApplyReferralCardProps {
+  registered?: boolean;
   usedReferralCode: string | null;
   currentReputationPoints: number;
   onReferralApplied: () => void;
@@ -23,6 +24,7 @@ interface ApplyReferralCardProps {
 }
 
 export function ApplyReferralCard({
+  registered = false,
   usedReferralCode,
   currentReputationPoints,
   onReferralApplied,
@@ -32,11 +34,15 @@ export function ApplyReferralCard({
   collapsible = false,
 }: ApplyReferralCardProps) {
   // Only use initialReferralCode if user hasn't already applied one
-  const [referralCode, setReferralCode] = useState(!usedReferralCode && initialReferralCode ? initialReferralCode : '');
+  const [referralCode, setReferralCode] = useState(
+    !usedReferralCode && initialReferralCode ? initialReferralCode : '',
+  );
   const [isApplyingReferral, setIsApplyingReferral] = useState(false);
   const [referralError, setReferralError] = useState('');
   const [referralSuccess, setReferralSuccess] = useState('');
-  const [shouldHighlight, setShouldHighlight] = useState(!!initialReferralCode && !usedReferralCode);
+  const [shouldHighlight, setShouldHighlight] = useState(
+    !!initialReferralCode && !usedReferralCode,
+  );
 
   // Clear highlight after animation
   useEffect(() => {
@@ -92,9 +98,7 @@ export function ApplyReferralCard({
         const { data } = await response.json();
 
         const pointsEarned = data.user.reputationPoints - currentReputationPoints;
-        setReferralSuccess(
-          `Referral code applied! You earned ${pointsEarned} reputation points.`
-        );
+        setReferralSuccess(`Referral code applied! You earned ${pointsEarned} reputation points.`);
         setReferralCode('');
 
         // Refresh user stats
@@ -108,7 +112,7 @@ export function ApplyReferralCard({
         setIsApplyingReferral(false);
       }
     },
-    [referralCode, currentReputationPoints, onReferralApplied]
+    [referralCode, currentReputationPoints, onReferralApplied],
   );
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -116,11 +120,13 @@ export function ApplyReferralCard({
   }, []);
 
   return (
-    <div className={`rounded-2xl bg-white/5 p-4 md:p-6 backdrop-blur-md border-2 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] flex flex-col h-full w-full transition-all duration-500 ${
-      shouldHighlight
-        ? 'border-amber-500/60 shadow-[0_0_40px_rgba(251,176,34,0.3),0_8px_32px_0_rgba(0,0,0,0.37)] animate-pulse'
-        : 'border-purple-300/20'
-    }`}>
+    <div
+      className={`rounded-2xl bg-white/5 p-4 md:p-6 backdrop-blur-md border-2 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] flex flex-col h-full w-full transition-all duration-500 ${
+        shouldHighlight
+          ? 'border-amber-500/60 shadow-[0_0_40px_rgba(251,176,34,0.3),0_8px_32px_0_rgba(0,0,0,0.37)] animate-pulse'
+          : 'border-purple-300/20'
+      }`}
+    >
       {usedReferralCode ? (
         /* Applied State */
         <CollapsibleCard
@@ -134,9 +140,14 @@ export function ApplyReferralCard({
                 width={20}
                 height={20}
                 className="h-5 w-5 flex-shrink-0"
-                style={{ filter: 'brightness(0) saturate(100%) invert(65%) sepia(85%) saturate(1574%) hue-rotate(359deg) brightness(101%) contrast(98%)' }}
+                style={{
+                  filter:
+                    'brightness(0) saturate(100%) invert(65%) sepia(85%) saturate(1574%) hue-rotate(359deg) brightness(101%) contrast(98%)',
+                }}
               />
-              <h2 className="text-base md:text-lg font-semibold text-white whitespace-nowrap">Applied code</h2>
+              <h2 className="text-base md:text-lg font-semibold text-white whitespace-nowrap">
+                Applied code
+              </h2>
             </div>
           }
         >
@@ -144,8 +155,11 @@ export function ApplyReferralCard({
             <div className="flex items-center justify-between gap-3">
               {/* Left: Referrer's username slug (falls back to the 6-char code if they never claimed one). */}
               <div className="flex items-center gap-2 min-w-0">
-                <span className="text-xl font-bold tracking-widest text-purple-400/50 truncate" style={{ fontFamily: 'var(--font-sora)' }}>
-                  {(referrerInfo?.username ?? usedReferralCode ?? '').toUpperCase()}
+                <span
+                  className="text-xl font-bold tracking-widest text-purple-400/50 truncate"
+                  style={{ fontFamily: 'var(--font-sora)' }}
+                >
+                  {(usedReferralCode ?? '').toUpperCase()}
                 </span>
               </div>
 
@@ -172,6 +186,16 @@ export function ApplyReferralCard({
             </div>
           </div>
         </CollapsibleCard>
+      ) : registered ? (
+        <div className="rounded-2xl border border-purple-300/20 bg-white/5 p-6 text-sm text-neutral-800">
+          <p>Your account has moved to Zenko. Manage your referral there.</p>
+          <a
+            className="mt-3 inline-block font-medium text-purple-300"
+            href="https://zenko.gg/referrals"
+          >
+            Open Zenko referrals
+          </a>
+        </div>
       ) : (
         /* Not Applied State - Show input form */
         <CollapsibleCard
@@ -185,7 +209,10 @@ export function ApplyReferralCard({
                 width={20}
                 height={20}
                 className="h-5 w-5 flex-shrink-0"
-                style={{ filter: 'brightness(0) saturate(100%) invert(65%) sepia(85%) saturate(1574%) hue-rotate(359deg) brightness(101%) contrast(98%)' }}
+                style={{
+                  filter:
+                    'brightness(0) saturate(100%) invert(65%) sepia(85%) saturate(1574%) hue-rotate(359deg) brightness(101%) contrast(98%)',
+                }}
               />
               <h2 className="text-base md:text-lg font-semibold text-white whitespace-nowrap">
                 <span className="md:hidden">Have a code?</span>
@@ -203,7 +230,7 @@ export function ApplyReferralCard({
                   glitchInterval={2800}
                   glitchDuration={200}
                   letterSpacing={-1}
-                  className=''
+                  className=""
                 >
                   +10 XP
                 </FuzzyText>
