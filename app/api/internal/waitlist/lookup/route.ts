@@ -14,7 +14,7 @@
  *
  *   Request:
  *     { provider: "google" | "twitch" | "virtualeagues",
- *       oauthId: string }
+ *       oauthId: string, register?: boolean }
  *
  *   200 — match:
  *     { match: { id, status, email, displayName, referralCode, createdAt,
@@ -26,17 +26,19 @@
  * `reputationPoints` is the XP the user earned on the waitlist by referring
  * people. Zenko converts it 1:1 into on-chain reputation once the player
  * creates an Account, so this field is the source of truth for that grant and
- * must be captured at signup: `status` flips to REGISTERED moments later, and
- * the points themselves keep accruing if their referrals keep signing up.
+ * must be captured at signup. `register: true` freezes further code application
+ * before returning the snapshot. Points from other referrals can still accrue;
+ * this lookup does not grant them or change the original registration time.
  *
  *   400 — invalid body
  *   401 — bad/missing bearer token
  *   503 — server-side `ZENKO_INTERNAL_TOKEN` not configured
  */
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireInternalToken } from "@/lib/internal-auth";
+import { syncWaitlistUser } from "@/lib/loops/sync";
 
 // Whitelist app stores Twitter accounts on `twitterId`/`twitterHandle`, NOT
 // on `oauthProvider`/`oauthId` (see prisma/schema.prisma WaitlistUser). So a
@@ -48,6 +50,7 @@ const VALID_PROVIDERS = new Set(["google", "twitch", "virtualeagues"]);
 interface LookupBody {
   provider?: unknown;
   oauthId?: unknown;
+  register?: unknown;
 }
 
 export async function POST(req: NextRequest) {
@@ -62,6 +65,12 @@ export async function POST(req: NextRequest) {
   }
 
   const { provider, oauthId } = body;
+  if (body.register !== undefined && typeof body.register !== "boolean") {
+    return NextResponse.json(
+      { error: "Invalid registration flag" },
+      { status: 400 },
+    );
+  }
   if (typeof provider !== "string" || typeof oauthId !== "string") {
     return NextResponse.json(
       { error: "Body must include `provider` (string) and `oauthId` (string)" },
@@ -80,31 +89,48 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const row = await prisma.waitlistUser.findUnique({
-      where: {
-        oauthProvider_oauthId: { oauthProvider: provider, oauthId },
-      },
-      select: {
-        id: true,
-        status: true,
-        email: true,
-        displayName: true,
-        referralCode: true,
-        createdAt: true,
-        reputationPoints: true,
-        referralCount: true,
-        referredBy: {
-          select: {
-            id: true,
-            displayName: true,
-            oauthAvatarUrl: true,
-            customAvatarUrl: true,
-          },
+    const where = {
+      oauthProvider_oauthId: { oauthProvider: provider, oauthId },
+    };
+    const select = {
+      id: true,
+      status: true,
+      email: true,
+      displayName: true,
+      referralCode: true,
+      usedReferralCode: true,
+      createdAt: true,
+      reputationPoints: true,
+      referralCount: true,
+      referredBy: {
+        select: {
+          id: true,
+          referralCode: true,
+          displayName: true,
+          oauthAvatarUrl: true,
+          customAvatarUrl: true,
         },
       },
-    });
+    } as const;
+    // Freeze further waitlist attribution before returning the signup snapshot.
+    // A competing apply either commits first and is included, or is refused.
+    const row =
+      body.register === true
+        ? await prisma.$transaction(async (tx) => {
+            await tx.waitlistUser.updateMany({
+              where: {
+                oauthProvider: provider,
+                oauthId,
+                status: { not: "REGISTERED" },
+              },
+              data: { status: "REGISTERED", registeredAt: new Date() },
+            });
+            return tx.waitlistUser.findUnique({ where, select });
+          })
+        : await prisma.waitlistUser.findUnique({ where, select });
 
     if (!row) return NextResponse.json({ match: null });
+    if (body.register === true) after(() => syncWaitlistUser(row.id));
 
     return NextResponse.json({
       match: {
@@ -113,12 +139,14 @@ export async function POST(req: NextRequest) {
         email: row.email,
         displayName: row.displayName,
         referralCode: row.referralCode,
+        usedReferralCode: row.usedReferralCode,
         createdAt: row.createdAt.toISOString(),
         reputationPoints: row.reputationPoints,
         referralCount: row.referralCount,
         referredBy: row.referredBy
           ? {
               id: row.referredBy.id,
+              referralCode: row.referredBy.referralCode,
               displayName: row.referredBy.displayName,
               avatarUrl:
                 row.referredBy.customAvatarUrl ?? row.referredBy.oauthAvatarUrl,

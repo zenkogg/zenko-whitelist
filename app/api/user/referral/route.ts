@@ -1,10 +1,15 @@
-import { NextRequest, NextResponse, after } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { REFERRAL_MAX_COUNT, REFERRAL_POINTS_PER_SIGNUP, REFERRAL_POINTS_PER_USAGE } from '@/lib/referral-config';
-import { resolveReferralIdentifier } from '@/lib/username';
-import { syncWaitlistUser } from '@/lib/loops/sync';
-import { LOOPS_EVENTS, idempotencyKey } from '@/lib/loops/events';
-import { requireSession } from '@/lib/session';
+import { NextRequest, NextResponse, after } from "next/server";
+import { prisma } from "@/lib/prisma";
+import {
+  REFERRAL_MAX_COUNT,
+  REFERRAL_POINTS_PER_SIGNUP,
+  REFERRAL_POINTS_PER_USAGE,
+} from "@/lib/referral-config";
+import { resolveReferralIdentifier } from "@/lib/username";
+import { syncWaitlistUser } from "@/lib/loops/sync";
+import { LOOPS_EVENTS, idempotencyKey } from "@/lib/loops/events";
+import { requireSession } from "@/lib/session";
+import { Prisma } from "@prisma/client";
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,10 +21,10 @@ export async function POST(request: NextRequest) {
     const { referralCode } = body;
 
     // Validate referral code
-    if (!referralCode || typeof referralCode !== 'string') {
+    if (!referralCode || typeof referralCode !== "string") {
       return NextResponse.json(
-        { error: 'Bad Request', message: 'Referral code is required' },
-        { status: 400 }
+        { error: "Bad Request", message: "Referral code is required" },
+        { status: 400 },
       );
     }
 
@@ -27,57 +32,76 @@ export async function POST(request: NextRequest) {
     const referrer = await resolveReferralIdentifier(referralCode);
     if (!referrer) {
       return NextResponse.json(
-        { error: 'Not Found', message: 'Invalid referral code' },
-        { status: 404 }
+        { error: "Not Found", message: "Invalid referral code" },
+        { status: 404 },
       );
     }
 
     // Use transaction to handle race conditions
-    const result = await prisma.$transaction(async (tx) => {
-      const currentUser = await tx.waitlistUser.findUnique({
-        where: { id: session.userId },
-      });
+    const result = await retryReferralTransaction(() =>
+      prisma.$transaction(
+        async (tx) => {
+          const currentUser = await tx.waitlistUser.findUnique({
+            where: { id: session.userId },
+          });
 
-      if (!currentUser) {
-        throw new Error('USER_NOT_FOUND');
-      }
+          if (!currentUser) {
+            throw new Error("USER_NOT_FOUND");
+          }
+          if (currentUser.status === "REGISTERED") {
+            throw new Error("MANAGED_ON_ZENKO");
+          }
 
-      // Check if user already used a referral code
-      if (currentUser.usedReferralCode) {
-        throw new Error('ALREADY_USED_CODE');
-      }
+          // Check if user already used a referral code
+          if (currentUser.usedReferralCode) {
+            throw new Error("ALREADY_USED_CODE");
+          }
 
-      // Check if user is trying to use their own code
-      if (referrer.id === currentUser.id) {
-        throw new Error('CANNOT_USE_OWN_CODE');
-      }
+          // Check if user is trying to use their own code
+          if (referrer.id === currentUser.id) {
+            throw new Error("CANNOT_USE_OWN_CODE");
+          }
 
-      // Referrer earns points only for the first REFERRAL_MAX_COUNT referrals
-      const referrerEarnsPoints = referrer.referralCount < REFERRAL_MAX_COUNT;
+          // Referrer earns points only for the first REFERRAL_MAX_COUNT referrals
+          const currentReferrer = await tx.waitlistUser.findUnique({
+            where: { id: referrer.id },
+          });
+          if (!currentReferrer) throw new Error("USER_NOT_FOUND");
+          const referrerEarnsPoints =
+            currentReferrer.referralCount < REFERRAL_MAX_COUNT;
 
-      // Update current user: apply referral code and add points.
-      // Always store the canonical 6-char referrer code, even if the visitor
-      // arrived via a username slug — keeps downstream attribution / stats logic untouched.
-      const updatedUser = await tx.waitlistUser.update({
-        where: { id: currentUser.id },
-        data: {
-          usedReferralCode: referrer.referralCode,
-          referredById: referrer.id,
-          reputationPoints: { increment: REFERRAL_POINTS_PER_USAGE },
+          // Update current user: apply referral code and add points.
+          // Always store the canonical 6-char referrer code, even if the visitor
+          // arrived via a username slug — keeps downstream attribution / stats logic untouched.
+          const updatedUser = await tx.waitlistUser.update({
+            where: {
+              id: currentUser.id,
+              usedReferralCode: null,
+              status: { not: "REGISTERED" },
+            },
+            data: {
+              usedReferralCode: referrer.referralCode,
+              referredById: referrer.id,
+              reputationPoints: { increment: REFERRAL_POINTS_PER_USAGE },
+            },
+          });
+
+          // Update referrer: always increment count, only add points if under cap
+          const updatedReferrer = await tx.waitlistUser.update({
+            where: { id: referrer.id },
+            data: {
+              referralCount: { increment: 1 },
+              ...(referrerEarnsPoints && {
+                reputationPoints: { increment: REFERRAL_POINTS_PER_SIGNUP },
+              }),
+            },
+          });
+
+          return { updatedUser, updatedReferrer };
         },
-      });
-
-      // Update referrer: always increment count, only add points if under cap
-      const updatedReferrer = await tx.waitlistUser.update({
-        where: { id: referrer.id },
-        data: {
-          referralCount: { increment: 1 },
-          ...(referrerEarnsPoints && { reputationPoints: { increment: REFERRAL_POINTS_PER_SIGNUP } }),
-        },
-      });
-
-      return { updatedUser, updatedReferrer };
-    });
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+      ),
+    );
 
     // Both sides changed: the referred user applied a code, the referrer earned one.
     // referral_earned can legitimately recur for a referrer, so key it on both ids.
@@ -90,15 +114,19 @@ export async function POST(request: NextRequest) {
       await Promise.all([
         syncWaitlistUser(result.updatedUser.id, {
           event: LOOPS_EVENTS.WAITLIST_REFERRAL_APPLIED,
-          eventProperties: { referralCode: result.updatedUser.usedReferralCode ?? '' },
+          eventProperties: {
+            referralCode: result.updatedUser.usedReferralCode ?? "",
+          },
         }),
         syncWaitlistUser(result.updatedReferrer.id, {
           event: LOOPS_EVENTS.WAITLIST_REFERRAL_EARNED,
-          eventProperties: { referralCount: result.updatedReferrer.referralCount },
+          eventProperties: {
+            referralCount: result.updatedReferrer.referralCount,
+          },
           idempotencyKey: idempotencyKey(
             LOOPS_EVENTS.WAITLIST_REFERRAL_EARNED,
             result.updatedReferrer.id,
-            result.updatedUser.id
+            result.updatedUser.id,
           ),
         }),
       ]);
@@ -106,7 +134,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Referral code applied successfully',
+      message: "Referral code applied successfully",
       data: {
         user: {
           id: result.updatedUser.id,
@@ -120,32 +148,93 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Apply referral code error:', error);
+    console.error("Apply referral code error:", error);
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2025"
+    ) {
+      return NextResponse.json(
+        {
+          error: "Conflict",
+          message:
+            "Your referral has changed. Refresh the page before trying again.",
+        },
+        { status: 409 },
+      );
+    }
 
     // Handle custom errors
     if (error instanceof Error) {
       switch (error.message) {
-        case 'USER_NOT_FOUND':
+        case "MANAGED_ON_ZENKO":
           return NextResponse.json(
-            { error: 'Not Found', message: 'User not found' },
-            { status: 404 }
+            {
+              error: "Conflict",
+              message:
+                "Your account has moved to Zenko. Manage your referral at zenko.gg/referrals.",
+            },
+            { status: 409 },
           );
-        case 'ALREADY_USED_CODE':
+        case "REFERRAL_BUSY":
           return NextResponse.json(
-            { error: 'Conflict', message: 'You have already used a referral code' },
-            { status: 409 }
+            {
+              error: "Conflict",
+              message: "Your referral is being updated. Please try again.",
+            },
+            { status: 409 },
           );
-        case 'CANNOT_USE_OWN_CODE':
+        case "USER_NOT_FOUND":
           return NextResponse.json(
-            { error: 'Bad Request', message: 'You cannot use your own referral code' },
-            { status: 400 }
+            { error: "Not Found", message: "User not found" },
+            { status: 404 },
+          );
+        case "ALREADY_USED_CODE":
+          return NextResponse.json(
+            {
+              error: "Conflict",
+              message: "You have already used a referral code",
+            },
+            { status: 409 },
+          );
+        case "CANNOT_USE_OWN_CODE":
+          return NextResponse.json(
+            {
+              error: "Bad Request",
+              message: "You cannot use your own referral code",
+            },
+            { status: 400 },
           );
       }
     }
 
     return NextResponse.json(
-      { error: 'Internal Server Error', message: 'An unexpected error occurred' },
-      { status: 500 }
+      {
+        error: "Internal Server Error",
+        message: "An unexpected error occurred",
+      },
+      { status: 500 },
     );
   }
+}
+
+/** Retries only transactions PostgreSQL proved were rolled back. */
+async function retryReferralTransaction<T>(
+  write: () => Promise<T>,
+): Promise<T> {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      return await write();
+    } catch (error) {
+      if (
+        !(error instanceof Prisma.PrismaClientKnownRequestError) ||
+        error.code !== "P2034"
+      )
+        throw error;
+      if (attempt === 2) throw new Error("REFERRAL_BUSY");
+      await new Promise((resolve) =>
+        setTimeout(resolve, 10 * 2 ** attempt + Math.random() * 20),
+      );
+    }
+  }
+  throw new Error("REFERRAL_BUSY");
 }

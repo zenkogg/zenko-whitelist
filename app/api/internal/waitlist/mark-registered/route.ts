@@ -6,10 +6,8 @@
  * `REGISTERED` and stamp `registeredAt` so the whitelist app's own admin
  * views reflect that the user actually signed up on Zenko.
  *
- * Idempotency: calling this twice for the same id is a no-op. We always
- * write `status = REGISTERED` and overwrite `registeredAt` with the
- * provided timestamp (or now), so concurrent calls converge on the same
- * end state.
+ * Idempotency: only the first transition to REGISTERED stamps registeredAt.
+ * Retries preserve the original timestamp, including overlapping calls.
  *
  * Auth: shared bearer token via `ZENKO_INTERNAL_TOKEN`. See
  * `lib/internal-auth.ts`.
@@ -29,11 +27,11 @@
  *   503 — server-side `ZENKO_INTERNAL_TOKEN` not configured
  */
 
-import { NextRequest, NextResponse, after } from 'next/server';
-import { Prisma } from '@prisma/client';
-import { prisma } from '@/lib/prisma';
-import { requireInternalToken } from '@/lib/internal-auth';
-import { syncWaitlistUser } from '@/lib/loops/sync';
+import { NextRequest, NextResponse, after } from "next/server";
+import { Prisma } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+import { requireInternalToken } from "@/lib/internal-auth";
+import { syncWaitlistUser } from "@/lib/loops/sync";
 
 interface MarkRegisteredBody {
   waitlistUserId?: unknown;
@@ -48,55 +46,67 @@ export async function POST(req: NextRequest) {
   try {
     body = (await req.json()) as MarkRegisteredBody;
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
   const { waitlistUserId, registeredAt } = body;
-  if (typeof waitlistUserId !== 'string' || waitlistUserId.length === 0) {
+  if (typeof waitlistUserId !== "string" || waitlistUserId.length === 0) {
     return NextResponse.json(
-      { error: 'Body must include `waitlistUserId` (string)' },
-      { status: 400 }
+      { error: "Body must include `waitlistUserId` (string)" },
+      { status: 400 },
     );
   }
 
   let registeredAtDate: Date;
   if (registeredAt === undefined || registeredAt === null) {
     registeredAtDate = new Date();
-  } else if (typeof registeredAt === 'string') {
+  } else if (typeof registeredAt === "string") {
     const parsed = new Date(registeredAt);
     if (Number.isNaN(parsed.getTime())) {
       return NextResponse.json(
-        { error: '`registeredAt` must be a valid ISO-8601 timestamp' },
-        { status: 400 }
+        { error: "`registeredAt` must be a valid ISO-8601 timestamp" },
+        { status: 400 },
       );
     }
     registeredAtDate = parsed;
   } else {
     return NextResponse.json(
-      { error: '`registeredAt` must be an ISO-8601 string if provided' },
-      { status: 400 }
+      { error: "`registeredAt` must be an ISO-8601 string if provided" },
+      { status: 400 },
     );
   }
 
   try {
-    await prisma.waitlistUser.update({
-      where: { id: waitlistUserId },
-      data: { status: 'REGISTERED', registeredAt: registeredAtDate },
+    await prisma.$transaction(async (tx) => {
+      await tx.waitlistUser.updateMany({
+        where: { id: waitlistUserId, status: { not: "REGISTERED" } },
+        data: { status: "REGISTERED", registeredAt: registeredAtDate },
+      });
+      await tx.waitlistUser.findUniqueOrThrow({
+        where: { id: waitlistUserId },
+        select: { id: true },
+      });
     });
     // Refresh `waitlistStatus` on the Loops contact. Without this the property
     // stays stuck at APPROVED/INVITED for everyone who actually registers, so any
     // "come register" campaign segmented on it keeps mailing registered players.
     // No event: the backend owns `zenko_registered` and fires it on the same signup.
     after(() => syncWaitlistUser(waitlistUserId));
-    return NextResponse.json({ ok: true, status: 'REGISTERED' });
+    return NextResponse.json({ ok: true, status: "REGISTERED" });
   } catch (err) {
     if (
       err instanceof Prisma.PrismaClientKnownRequestError &&
-      err.code === 'P2025'
+      err.code === "P2025"
     ) {
-      return NextResponse.json({ error: 'WaitlistUser not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: "WaitlistUser not found" },
+        { status: 404 },
+      );
     }
-    console.error('[internal/waitlist/mark-registered] DB error:', err);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error("[internal/waitlist/mark-registered] DB error:", err);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }
