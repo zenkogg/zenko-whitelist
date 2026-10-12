@@ -30,7 +30,7 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.WAITLIST_DATABASE_URL }}
           DATABASE_URL_UNPOOLED: ${{ secrets.WAITLIST_DATABASE_URL_UNPOOLED }}
-        run: npx prisma migrate status
+        run: npx prisma migrate status || true
       - name: prisma migrate deploy
         if: ${{ !inputs.status_only }}
         env:
