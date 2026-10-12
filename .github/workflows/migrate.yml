@@ -1,0 +1,39 @@
+# Applies the waitlist database migrations. The app build refuses to run
+# migrations itself, so this is the operator path. Never auto-run: migration
+# must complete before any deploy that expects new columns.
+name: Run Waitlist Database Migration
+
+on:
+  workflow_dispatch:
+    inputs:
+      status_only:
+        description: 'Stop after prisma migrate status: applies nothing'
+        required: false
+        type: boolean
+        default: true
+
+concurrency:
+  group: waitlist-migrate-production
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: prisma migrate status
+        env:
+          DATABASE_URL: ${{ secrets.WAITLIST_DATABASE_URL }}
+          DATABASE_URL_UNPOOLED: ${{ secrets.WAITLIST_DATABASE_URL_UNPOOLED }}
+        run: npx prisma migrate status
+      - name: prisma migrate deploy
+        if: ${{ !inputs.status_only }}
+        env:
+          DATABASE_URL: ${{ secrets.WAITLIST_DATABASE_URL }}
+          DATABASE_URL_UNPOOLED: ${{ secrets.WAITLIST_DATABASE_URL_UNPOOLED }}
+        run: npx prisma migrate deploy
