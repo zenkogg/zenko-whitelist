@@ -1,15 +1,15 @@
-import { NextRequest, NextResponse, after } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { NextRequest, NextResponse, after } from 'next/server';
+import { prisma } from '@/lib/prisma';
 import {
   REFERRAL_MAX_COUNT,
   REFERRAL_POINTS_PER_SIGNUP,
   REFERRAL_POINTS_PER_USAGE,
-} from "@/lib/referral-config";
-import { resolveReferralIdentifier } from "@/lib/username";
-import { syncWaitlistUser } from "@/lib/loops/sync";
-import { LOOPS_EVENTS, idempotencyKey } from "@/lib/loops/events";
-import { requireSession } from "@/lib/session";
-import { Prisma } from "@prisma/client";
+} from '@/lib/referral-config';
+import { resolveReferralIdentifier } from '@/lib/username';
+import { syncWaitlistUser } from '@/lib/loops/sync';
+import { LOOPS_EVENTS, idempotencyKey } from '@/lib/loops/events';
+import { requireSession } from '@/lib/session';
+import { Prisma } from '@prisma/client';
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,9 +21,9 @@ export async function POST(request: NextRequest) {
     const { referralCode } = body;
 
     // Validate referral code
-    if (!referralCode || typeof referralCode !== "string") {
+    if (!referralCode || typeof referralCode !== 'string') {
       return NextResponse.json(
-        { error: "Bad Request", message: "Referral code is required" },
+        { error: 'Bad Request', message: 'Referral code is required' },
         { status: 400 },
       );
     }
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     const referrer = await resolveReferralIdentifier(referralCode);
     if (!referrer) {
       return NextResponse.json(
-        { error: "Not Found", message: "Invalid referral code" },
+        { error: 'Not Found', message: 'Invalid referral code' },
         { status: 404 },
       );
     }
@@ -46,29 +46,28 @@ export async function POST(request: NextRequest) {
           });
 
           if (!currentUser) {
-            throw new Error("USER_NOT_FOUND");
+            throw new Error('USER_NOT_FOUND');
           }
-          if (currentUser.status === "REGISTERED") {
-            throw new Error("MANAGED_ON_ZENKO");
+          if (currentUser.status === 'REGISTERED') {
+            throw new Error('MANAGED_ON_ZENKO');
           }
 
           // Check if user already used a referral code
           if (currentUser.usedReferralCode) {
-            throw new Error("ALREADY_USED_CODE");
+            throw new Error('ALREADY_USED_CODE');
           }
 
           // Check if user is trying to use their own code
           if (referrer.id === currentUser.id) {
-            throw new Error("CANNOT_USE_OWN_CODE");
+            throw new Error('CANNOT_USE_OWN_CODE');
           }
 
           // Referrer earns points only for the first REFERRAL_MAX_COUNT referrals
           const currentReferrer = await tx.waitlistUser.findUnique({
             where: { id: referrer.id },
           });
-          if (!currentReferrer) throw new Error("USER_NOT_FOUND");
-          const referrerEarnsPoints =
-            currentReferrer.referralCount < REFERRAL_MAX_COUNT;
+          if (!currentReferrer) throw new Error('USER_NOT_FOUND');
+          const referrerEarnsPoints = currentReferrer.referralCount < REFERRAL_MAX_COUNT;
 
           // Update current user: apply referral code and add points.
           // Always store the canonical 6-char referrer code, even if the visitor
@@ -77,7 +76,7 @@ export async function POST(request: NextRequest) {
             where: {
               id: currentUser.id,
               usedReferralCode: null,
-              status: { not: "REGISTERED" },
+              status: { not: 'REGISTERED' },
             },
             data: {
               usedReferralCode: referrer.referralCode,
@@ -115,7 +114,7 @@ export async function POST(request: NextRequest) {
         syncWaitlistUser(result.updatedUser.id, {
           event: LOOPS_EVENTS.WAITLIST_REFERRAL_APPLIED,
           eventProperties: {
-            referralCode: result.updatedUser.usedReferralCode ?? "",
+            referralCode: result.updatedUser.usedReferralCode ?? '',
           },
         }),
         syncWaitlistUser(result.updatedReferrer.id, {
@@ -134,7 +133,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: "Referral code applied successfully",
+      message: 'Referral code applied successfully',
       data: {
         user: {
           id: result.updatedUser.id,
@@ -148,16 +147,12 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Apply referral code error:", error);
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2025"
-    ) {
+    console.error('Apply referral code error:', error);
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
       return NextResponse.json(
         {
-          error: "Conflict",
-          message:
-            "Your referral has changed. Refresh the page before trying again.",
+          error: 'Conflict',
+          message: 'Your referral has changed. Refresh the page before trying again.',
         },
         { status: 409 },
       );
@@ -166,41 +161,41 @@ export async function POST(request: NextRequest) {
     // Handle custom errors
     if (error instanceof Error) {
       switch (error.message) {
-        case "MANAGED_ON_ZENKO":
+        case 'MANAGED_ON_ZENKO':
           return NextResponse.json(
             {
-              error: "Conflict",
+              error: 'Conflict',
               message:
-                "Your account has moved to Zenko. Manage your referral at zenko.gg/referrals.",
+                'Your account has moved to Zenko. Manage your referral at zenko.gg/referrals.',
             },
             { status: 409 },
           );
-        case "REFERRAL_BUSY":
+        case 'REFERRAL_BUSY':
           return NextResponse.json(
             {
-              error: "Conflict",
-              message: "Your referral is being updated. Please try again.",
+              error: 'Conflict',
+              message: 'Your referral is being updated. Please try again.',
             },
             { status: 409 },
           );
-        case "USER_NOT_FOUND":
+        case 'USER_NOT_FOUND':
           return NextResponse.json(
-            { error: "Not Found", message: "User not found" },
+            { error: 'Not Found', message: 'User not found' },
             { status: 404 },
           );
-        case "ALREADY_USED_CODE":
+        case 'ALREADY_USED_CODE':
           return NextResponse.json(
             {
-              error: "Conflict",
-              message: "You have already used a referral code",
+              error: 'Conflict',
+              message: 'You have already used a referral code',
             },
             { status: 409 },
           );
-        case "CANNOT_USE_OWN_CODE":
+        case 'CANNOT_USE_OWN_CODE':
           return NextResponse.json(
             {
-              error: "Bad Request",
-              message: "You cannot use your own referral code",
+              error: 'Bad Request',
+              message: 'You cannot use your own referral code',
             },
             { status: 400 },
           );
@@ -209,8 +204,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       {
-        error: "Internal Server Error",
-        message: "An unexpected error occurred",
+        error: 'Internal Server Error',
+        message: 'An unexpected error occurred',
       },
       { status: 500 },
     );
@@ -218,23 +213,16 @@ export async function POST(request: NextRequest) {
 }
 
 /** Retries only transactions PostgreSQL proved were rolled back. */
-async function retryReferralTransaction<T>(
-  write: () => Promise<T>,
-): Promise<T> {
+async function retryReferralTransaction<T>(write: () => Promise<T>): Promise<T> {
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
       return await write();
     } catch (error) {
-      if (
-        !(error instanceof Prisma.PrismaClientKnownRequestError) ||
-        error.code !== "P2034"
-      )
+      if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== 'P2034')
         throw error;
-      if (attempt === 2) throw new Error("REFERRAL_BUSY");
-      await new Promise((resolve) =>
-        setTimeout(resolve, 10 * 2 ** attempt + Math.random() * 20),
-      );
+      if (attempt === 2) throw new Error('REFERRAL_BUSY');
+      await new Promise((resolve) => setTimeout(resolve, 10 * 2 ** attempt + Math.random() * 20));
     }
   }
-  throw new Error("REFERRAL_BUSY");
+  throw new Error('REFERRAL_BUSY');
 }

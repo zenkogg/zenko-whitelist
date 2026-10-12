@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useState, useCallback, useEffect } from "react";
-import Image from "next/image";
-import FuzzyText from "@/components/FuzzyText";
-import { CollapsibleCard } from "./CollapsibleCard";
+import { useState, useCallback, useEffect } from 'react';
+import Image from 'next/image';
+import FuzzyText from '@/components/FuzzyText';
+import { CollapsibleCard } from './CollapsibleCard';
 
 interface ReferrerInfo {
   displayName: string;
@@ -35,11 +35,11 @@ export function ApplyReferralCard({
 }: ApplyReferralCardProps) {
   // Only use initialReferralCode if user hasn't already applied one
   const [referralCode, setReferralCode] = useState(
-    !usedReferralCode && initialReferralCode ? initialReferralCode : "",
+    !usedReferralCode && initialReferralCode ? initialReferralCode : '',
   );
   const [isApplyingReferral, setIsApplyingReferral] = useState(false);
-  const [referralError, setReferralError] = useState("");
-  const [referralSuccess, setReferralSuccess] = useState("");
+  const [referralError, setReferralError] = useState('');
+  const [referralSuccess, setReferralSuccess] = useState('');
   const [shouldHighlight, setShouldHighlight] = useState(
     !!initialReferralCode && !usedReferralCode,
   );
@@ -55,11 +55,11 @@ export function ApplyReferralCard({
   const handleApplyReferral = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
-      setReferralError("");
-      setReferralSuccess("");
+      setReferralError('');
+      setReferralSuccess('');
 
       if (!referralCode.trim()) {
-        setReferralError("Please enter a referral code");
+        setReferralError('Please enter a referral code');
         return;
       }
 
@@ -67,7 +67,7 @@ export function ApplyReferralCard({
       let codeToSubmit = referralCode.trim();
       try {
         const url = new URL(codeToSubmit);
-        const refParam = url.searchParams.get("ref");
+        const refParam = url.searchParams.get('ref');
         const pathMatch = url.pathname.match(/^\/r\/([A-Za-z0-9]+)$/);
         if (pathMatch) {
           codeToSubmit = pathMatch[1];
@@ -81,9 +81,9 @@ export function ApplyReferralCard({
       setIsApplyingReferral(true);
 
       try {
-        const response = await fetch("/api/user/referral", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+        const response = await fetch('/api/user/referral', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             // Pass raw: the server resolver handles 6-char codes and username slugs.
             referralCode: codeToSubmit,
@@ -92,26 +92,21 @@ export function ApplyReferralCard({
 
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(error.message || "Failed to apply referral code");
+          throw new Error(error.message || 'Failed to apply referral code');
         }
 
         const { data } = await response.json();
 
-        const pointsEarned =
-          data.user.reputationPoints - currentReputationPoints;
-        setReferralSuccess(
-          `Referral code applied! You earned ${pointsEarned} reputation points.`,
-        );
-        setReferralCode("");
+        const pointsEarned = data.user.reputationPoints - currentReputationPoints;
+        setReferralSuccess(`Referral code applied! You earned ${pointsEarned} reputation points.`);
+        setReferralCode('');
 
         // Refresh user stats
         onReferralApplied();
       } catch (error: unknown) {
-        console.error("Apply referral error:", error);
+        console.error('Apply referral error:', error);
         const errorMessage =
-          error instanceof Error
-            ? error.message
-            : "Failed to apply referral code";
+          error instanceof Error ? error.message : 'Failed to apply referral code';
         setReferralError(errorMessage);
       } finally {
         setIsApplyingReferral(false);
@@ -120,19 +115,16 @@ export function ApplyReferralCard({
     [referralCode, currentReputationPoints, onReferralApplied],
   );
 
-  const handleInputChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setReferralCode(e.target.value);
-    },
-    [],
-  );
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setReferralCode(e.target.value);
+  }, []);
 
   return (
     <div
       className={`rounded-2xl bg-white/5 p-4 md:p-6 backdrop-blur-md border-2 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] flex flex-col h-full w-full transition-all duration-500 ${
         shouldHighlight
-          ? "border-amber-500/60 shadow-[0_0_40px_rgba(251,176,34,0.3),0_8px_32px_0_rgba(0,0,0,0.37)] animate-pulse"
-          : "border-purple-300/20"
+          ? 'border-amber-500/60 shadow-[0_0_40px_rgba(251,176,34,0.3),0_8px_32px_0_rgba(0,0,0,0.37)] animate-pulse'
+          : 'border-purple-300/20'
       }`}
     >
       {usedReferralCode ? (
@@ -150,7 +142,7 @@ export function ApplyReferralCard({
                 className="h-5 w-5 flex-shrink-0"
                 style={{
                   filter:
-                    "brightness(0) saturate(100%) invert(65%) sepia(85%) saturate(1574%) hue-rotate(359deg) brightness(101%) contrast(98%)",
+                    'brightness(0) saturate(100%) invert(65%) sepia(85%) saturate(1574%) hue-rotate(359deg) brightness(101%) contrast(98%)',
                 }}
               />
               <h2 className="text-base md:text-lg font-semibold text-white whitespace-nowrap">
@@ -165,9 +157,9 @@ export function ApplyReferralCard({
               <div className="flex items-center gap-2 min-w-0">
                 <span
                   className="text-xl font-bold tracking-widest text-purple-400/50 truncate"
-                  style={{ fontFamily: "var(--font-sora)" }}
+                  style={{ fontFamily: 'var(--font-sora)' }}
                 >
-                  {(usedReferralCode ?? "").toUpperCase()}
+                  {(usedReferralCode ?? '').toUpperCase()}
                 </span>
               </div>
 
@@ -184,10 +176,10 @@ export function ApplyReferralCard({
                 )}
                 <p className="text-sm text-neutral-700/70">
                   <span className="hidden md:inline">Referred by</span>
-                  <span className="md:hidden">By</span>{" "}
+                  <span className="md:hidden">By</span>{' '}
                   <span className="text-purple-300/40">
-                    {referrerInfo?.oauthProvider === "twitch" ? "@" : ""}
-                    {referrerInfo?.displayName || "a friend"}
+                    {referrerInfo?.oauthProvider === 'twitch' ? '@' : ''}
+                    {referrerInfo?.displayName || 'a friend'}
                   </span>
                 </p>
               </div>
@@ -219,7 +211,7 @@ export function ApplyReferralCard({
                 className="h-5 w-5 flex-shrink-0"
                 style={{
                   filter:
-                    "brightness(0) saturate(100%) invert(65%) sepia(85%) saturate(1574%) hue-rotate(359deg) brightness(101%) contrast(98%)",
+                    'brightness(0) saturate(100%) invert(65%) sepia(85%) saturate(1574%) hue-rotate(359deg) brightness(101%) contrast(98%)',
                 }}
               />
               <h2 className="text-base md:text-lg font-semibold text-white whitespace-nowrap">
@@ -261,7 +253,7 @@ export function ApplyReferralCard({
                 className="flex-1 min-w-0 rounded-xl bg-black/40 px-4 py-3 text-white/60 placeholder-gray-600 outline-none border border-transparent focus:border-purple-300/40 transition-colors disabled:opacity-50"
                 aria-label="Referral code"
                 aria-invalid={!!referralError}
-                aria-describedby={referralError ? "referral-error" : undefined}
+                aria-describedby={referralError ? 'referral-error' : undefined}
               />
 
               <button
@@ -269,20 +261,16 @@ export function ApplyReferralCard({
                 disabled={!referralCode || isApplyingReferral}
                 className={`flex-shrink-0 rounded-xl px-6 py-3 text-sm font-medium text-white transition-all hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer ${
                   shouldHighlight
-                    ? "bg-amber-500 hover:bg-amber-600 shadow-[0_0_20px_rgba(251,176,34,0.5)] animate-pulse"
-                    : "bg-zenko-purple"
+                    ? 'bg-amber-500 hover:bg-amber-600 shadow-[0_0_20px_rgba(251,176,34,0.5)] animate-pulse'
+                    : 'bg-zenko-purple'
                 }`}
               >
-                {isApplyingReferral ? "Applying..." : "Apply"}
+                {isApplyingReferral ? 'Applying...' : 'Apply'}
               </button>
             </div>
 
             {referralError && (
-              <p
-                id="referral-error"
-                className="text-xs text-error-300 mt-2"
-                role="alert"
-              >
+              <p id="referral-error" className="text-xs text-error-300 mt-2" role="alert">
                 {referralError}
               </p>
             )}

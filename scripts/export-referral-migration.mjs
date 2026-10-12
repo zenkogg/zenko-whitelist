@@ -1,25 +1,25 @@
-import { createHash } from "node:crypto";
-import { writeFile } from "node:fs/promises";
-import path from "node:path";
-import { PrismaClient } from "@prisma/client";
+import { createHash } from 'node:crypto';
+import { writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import { PrismaClient } from '@prisma/client';
 
 const output = process.argv[2];
 if (!output || !path.isAbsolute(output)) {
   throw new Error(
-    "Usage: node scripts/export-referral-migration.mjs /absolute/private/snapshot.json",
+    'Usage: node scripts/export-referral-migration.mjs /absolute/private/snapshot.json',
   );
 }
 const prisma = new PrismaClient();
 try {
   const snapshot = await prisma.$transaction(
     async (tx) => {
-      await tx.$executeRawUnsafe("SET TRANSACTION READ ONLY");
+      await tx.$executeRawUnsafe('SET TRANSACTION READ ONLY');
       const exportedAt = new Date().toISOString();
       const users = [];
       let cursor;
       for (;;) {
         const rows = await tx.waitlistUser.findMany({
-          orderBy: { id: "asc" },
+          orderBy: { id: 'asc' },
           take: 500,
           ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
           select: {
@@ -65,14 +65,14 @@ try {
       }
       return { version: 1, exportedAt, users };
     },
-    { isolationLevel: "RepeatableRead", timeout: 300000 },
+    { isolationLevel: 'RepeatableRead', timeout: 300000 },
   );
   const text = JSON.stringify(snapshot);
-  await writeFile(output, text, { mode: 0o600, flag: "wx" });
+  await writeFile(output, text, { mode: 0o600, flag: 'wx' });
   console.info(
     JSON.stringify({
       rows: snapshot.users.length,
-      sha256: createHash("sha256").update(text).digest("hex"),
+      sha256: createHash('sha256').update(text).digest('hex'),
     }),
   );
 } finally {

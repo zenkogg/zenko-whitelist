@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from '@prisma/client';
 
 export const referralSnapshotSelect = {
   id: true,
@@ -47,14 +47,13 @@ export async function readReferralSnapshot(tx: Prisma.TransactionClient) {
   let cursor: string | undefined;
   for (;;) {
     const rows = await tx.waitlistUser.findMany({
-      orderBy: { id: "asc" },
+      orderBy: { id: 'asc' },
       take: 500,
       select: referralSnapshotSelect,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
     users.push(...rows.map(referralSnapshotRow));
-    if (users.length > 100_000)
-      throw new Error("Waitlist snapshot exceeds the import limit");
+    if (users.length > 100_000) throw new Error('Waitlist snapshot exceeds the import limit');
     if (rows.length < 500) break;
     cursor = rows.at(-1)!.id;
   }
