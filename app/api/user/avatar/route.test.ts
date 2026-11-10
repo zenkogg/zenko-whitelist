@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { WAITLIST_CLOSED_MESSAGE } from '@/lib/waitlist-status';
 
 import {
   OWNER_ID,
@@ -165,5 +166,31 @@ describe('avatar removal', () => {
 
     expect(response.status).toBe(200);
     expect(blob.del).toHaveBeenCalledWith('https://x.blob.vercel-storage.com/old.png');
+  });
+});
+
+describe('avatar while the waitlist is closed', () => {
+  beforeEach(() => {
+    vi.stubEnv('WAITLIST_STATUS', 'closed');
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('refuses an upload and stores nothing', async () => {
+    const response = await POST(await requestAs(URL, OWNER_ID, { form: { avatar: pngFile() } }));
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({ error: 'Conflict', message: WAITLIST_CLOSED_MESSAGE });
+    expect(blob.put).not.toHaveBeenCalled();
+    expect(db.update).not.toHaveBeenCalled();
+  });
+
+  it('refuses a removal and deletes nothing', async () => {
+    const response = await DELETE(await requestAs(URL, OWNER_ID, { method: 'DELETE' }));
+
+    expect(response.status).toBe(409);
+    expect(blob.del).not.toHaveBeenCalled();
+    expect(db.update).not.toHaveBeenCalled();
   });
 });

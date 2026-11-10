@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { WAITLIST_CLOSED_MESSAGE } from '@/lib/waitlist-status';
 
 import {
   OWNER_ID,
@@ -157,5 +158,32 @@ describe('username change', () => {
 
     expect(response.status).toBe(400);
     expect(db.update).not.toHaveBeenCalled();
+  });
+});
+
+describe('username while the waitlist is closed', () => {
+  beforeEach(() => {
+    vi.stubEnv('WAITLIST_STATUS', 'closed');
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('refuses a rename and leaves the row as it is', async () => {
+    const response = await PATCH(
+      await requestAs(URL, OWNER_ID, { method: 'PATCH', body: { username: 'newname' } })
+    );
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({ error: 'Conflict', message: WAITLIST_CLOSED_MESSAGE });
+    expect(db.update).not.toHaveBeenCalled();
+  });
+
+  it('still answers the availability check, which writes nothing', async () => {
+    const response = await GET(
+      await requestAs(URL, OWNER_ID, { method: 'GET', search: { username: 'newname' } })
+    );
+
+    await expect(response.json()).resolves.toEqual({ available: true, value: 'newname' });
   });
 });

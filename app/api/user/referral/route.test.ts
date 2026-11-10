@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { WAITLIST_CLOSED_MESSAGE } from '@/lib/waitlist-status';
 
 import {
   OWNER_ID,
@@ -182,5 +183,25 @@ it('checks the unused code and handoff status in the write itself', async () => 
   });
   expect(db.transaction).toHaveBeenCalledWith(expect.any(Function), {
     isolationLevel: 'Serializable',
+  });
+});
+
+describe('applying a referral code while the waitlist is closed', () => {
+  beforeEach(() => {
+    vi.stubEnv('WAITLIST_STATUS', 'closed');
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('refuses the code and credits nobody', async () => {
+    const response = await POST(
+      await requestAs(URL, OWNER_ID, { body: { referralCode: 'XYZ789' } }),
+    );
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({ error: 'Conflict', message: WAITLIST_CLOSED_MESSAGE });
+    expect(db.transaction).not.toHaveBeenCalled();
+    expect(db.update).not.toHaveBeenCalled();
   });
 });

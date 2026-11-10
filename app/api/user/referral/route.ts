@@ -9,12 +9,14 @@ import { resolveReferralIdentifier } from '@/lib/username';
 import { syncWaitlistUser } from '@/lib/loops/sync';
 import { LOOPS_EVENTS, idempotencyKey } from '@/lib/loops/events';
 import { requireSession } from '@/lib/session';
+import { isWaitlistClosed, waitlistClosedResponse } from '@/lib/waitlist-status';
 import { Prisma } from '@prisma/client';
 
 export async function POST(request: NextRequest) {
   try {
     const session = await requireSession(request);
     if (!session.ok) return session.response;
+    if (isWaitlistClosed()) return waitlistClosedResponse();
 
     // Parse request body
     const body = await request.json();

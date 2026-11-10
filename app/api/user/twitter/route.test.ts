@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { WAITLIST_CLOSED_MESSAGE } from '@/lib/waitlist-status';
 
 import {
   OWNER_ID,
@@ -161,6 +162,23 @@ describe('connecting an X account', () => {
     const response = await POST(await requestAs(URL, OWNER_ID, { body: claimed }));
 
     expect(response.status).toBe(404);
+    expect(db.update).not.toHaveBeenCalled();
+  });
+});
+
+describe('connecting an X account while the waitlist is closed', () => {
+  beforeEach(() => {
+    vi.stubEnv('WAITLIST_STATUS', 'closed');
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('refuses the connection and leaves the row as it is', async () => {
+    const response = await POST(await requestAs(URL, OWNER_ID, { body: claimed }));
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({ error: 'Conflict', message: WAITLIST_CLOSED_MESSAGE });
     expect(db.update).not.toHaveBeenCalled();
   });
 });

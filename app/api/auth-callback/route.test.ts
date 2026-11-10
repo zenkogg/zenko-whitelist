@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { WAITLIST_CLOSED_MESSAGE } from '@/lib/waitlist-status';
 import { NextRequest, NextResponse } from 'next/server';
 import { SESSION_COOKIE } from '@/lib/session';
 import {
@@ -308,5 +309,51 @@ describe('waitlist sign-in callback', () => {
 
     expect(response.status).toBe(503);
     expect(sessionSubject(response)).toBeUndefined();
+  });
+});
+
+describe('waitlist sign-in callback while the waitlist is closed', () => {
+  beforeEach(() => {
+    vi.stubEnv('WAITLIST_STATUS', 'closed');
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('refuses a new sign-up and mints no row for it', async () => {
+    const idToken = await googleIdToken();
+
+    const response = await POST(callbackRequest({ idToken, provider: 'google' }));
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({ error: WAITLIST_CLOSED_MESSAGE });
+    expect(db.create).not.toHaveBeenCalled();
+    expect(response.cookies.get(SESSION_COOKIE)).toBeUndefined();
+  });
+
+  it('still signs a returning player in and leaves their row as it is', async () => {
+    db.findUnique.mockResolvedValueOnce({ id: 'existing-user-1', email: 'old@example.com' });
+    const idToken = await googleIdToken();
+
+    const response = await POST(callbackRequest({ idToken, provider: 'google' }));
+
+    expect(response.status).toBe(200);
+    expect(sessionSubject(response)).toBe('existing-user-1');
+    expect(db.update).not.toHaveBeenCalled();
+    expect(db.create).not.toHaveBeenCalled();
+  });
+
+  it('still refuses an unsigned token before looking at the waitlist state', async () => {
+    const idToken = forgeUnsignedToken({
+      iss: GOOGLE_ISSUER,
+      aud: TEST_CLIENT_ID,
+      sub: GOOGLE_SUBJECT,
+      exp: Math.floor(Date.now() / 1000) + 3600,
+    });
+
+    const response = await POST(callbackRequest({ idToken, provider: 'google' }));
+
+    expect(response.status).toBe(401);
+    expect(db.findUnique).not.toHaveBeenCalled();
   });
 });

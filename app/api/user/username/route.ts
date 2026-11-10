@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { isUsernameAvailable, validateUsernameInput } from '@/lib/username';
 import { syncWaitlistUser } from '@/lib/loops/sync';
 import { requireSession } from '@/lib/session';
+import { isWaitlistClosed, waitlistClosedResponse } from '@/lib/waitlist-status';
 
 // GET /api/user/username?username=foo
 // Lightweight availability check used by the edit-mode live feedback.
@@ -36,6 +37,7 @@ export async function PATCH(request: NextRequest) {
   try {
     const session = await requireSession(request);
     if (!session.ok) return session.response;
+    if (isWaitlistClosed()) return waitlistClosedResponse();
 
     const body = await request.json();
     const { username } = body;

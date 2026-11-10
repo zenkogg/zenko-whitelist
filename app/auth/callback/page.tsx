@@ -30,6 +30,12 @@ export default function AuthCallbackPage() {
         });
 
         if (!response.ok) {
+          // A closed waitlist refuses new sign-ups; say so rather than "failed".
+          const data = response.status === 409 ? await response.json().catch(() => ({})) : {};
+          if (typeof data.error === 'string') {
+            setError(data.error);
+            return;
+          }
           throw new Error('Failed to authenticate');
         }
 

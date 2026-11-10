@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import { proxyFetch } from '@/lib/proxy-fetch';
 import { generateUniqueUsername } from '@/lib/username';
 import { respondSignedIn } from '@/lib/session';
+import { WAITLIST_CLOSED_MESSAGE, isWaitlistClosed } from '@/lib/waitlist-status';
 
 function buildOAuthParams(consumerKey: string, oauthToken: string, extra: Record<string, string> = {}) {
   return {
@@ -94,6 +95,16 @@ export async function POST(req: NextRequest) {
     const existingUser = await prisma.waitlistUser.findUnique({
       where: { oauthProvider_oauthId: { oauthProvider: 'twitter', oauthId } },
     });
+
+    if (isWaitlistClosed()) {
+      if (!existingUser) {
+        return NextResponse.json({ error: WAITLIST_CLOSED_MESSAGE }, { status: 409 });
+      }
+      // A frozen row must still match the final snapshot, so sign-in leaves it alone.
+      const res = await respondSignedIn(existingUser);
+      res.cookies.delete('twitter_oauth_secret');
+      return res;
+    }
 
     const user = existingUser
       ? await prisma.waitlistUser.update({

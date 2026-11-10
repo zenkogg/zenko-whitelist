@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { put, del } from '@vercel/blob';
 import { RekognitionClient, DetectModerationLabelsCommand } from '@aws-sdk/client-rekognition';
 import { requireSession } from '@/lib/session';
+import { isWaitlistClosed, waitlistClosedResponse } from '@/lib/waitlist-status';
 
 const rekognition = new RekognitionClient({
   region: process.env.AWS_REGION || 'us-east-2',
@@ -16,6 +17,7 @@ export async function POST(request: NextRequest) {
   try {
     const session = await requireSession(request);
     if (!session.ok) return session.response;
+    if (isWaitlistClosed()) return waitlistClosedResponse();
     const userId = session.userId;
 
     const formData = await request.formData();
@@ -156,6 +158,7 @@ export async function DELETE(request: NextRequest) {
   try {
     const session = await requireSession(request);
     if (!session.ok) return session.response;
+    if (isWaitlistClosed()) return waitlistClosedResponse();
     const userId = session.userId;
 
     // Find user

@@ -12,6 +12,7 @@ import { NextRequest, NextResponse, after } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { syncWaitlistUser } from '@/lib/loops/sync';
 import { requireSession } from '@/lib/session';
+import { isWaitlistClosed, waitlistClosedResponse } from '@/lib/waitlist-status';
 
 interface VerifiedConnection {
   twitterId: string;
@@ -41,6 +42,7 @@ export async function POST(request: NextRequest) {
   try {
     const session = await requireSession(request);
     if (!session.ok) return session.response;
+    if (isWaitlistClosed()) return waitlistClosedResponse();
 
     const currentUser = await prisma.waitlistUser.findUnique({
       where: { id: session.userId },

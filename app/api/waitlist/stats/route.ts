@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { waitlistStatus } from '@/lib/waitlist-status';
 
 export async function GET() {
   try {
@@ -32,7 +33,7 @@ export async function GET() {
       data: {
         totalCount,
         recentUsers: users,
-        waitlistStatus: process.env.WAITLIST_STATUS === 'closed' ? 'closed' : 'open',
+        waitlistStatus: waitlistStatus(),
       },
     });
   } catch (error) {

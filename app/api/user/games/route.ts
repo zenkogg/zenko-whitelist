@@ -2,11 +2,13 @@ import { NextRequest, NextResponse, after } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { syncWaitlistUser } from '@/lib/loops/sync';
 import { requireSession } from '@/lib/session';
+import { isWaitlistClosed, waitlistClosedResponse } from '@/lib/waitlist-status';
 
 export async function POST(request: NextRequest) {
   try {
     const session = await requireSession(request);
     if (!session.ok) return session.response;
+    if (isWaitlistClosed()) return waitlistClosedResponse();
 
     // Parse request body
     const body = await request.json();

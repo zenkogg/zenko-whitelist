@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { REFERRAL_MAX_POINTS } from '@/lib/referral-config';
 import { formatDisplayName } from '@/lib/utils';
 import { requireSession } from '@/lib/session';
+import { waitlistStatus } from '@/lib/waitlist-status';
 
 export async function POST(request: NextRequest) {
   try {
@@ -155,7 +156,7 @@ export async function POST(request: NextRequest) {
           joinedAt: ref.createdAt,
         })),
         referrerInfo,
-        waitlistStatus: process.env.WAITLIST_STATUS === 'closed' ? 'closed' : 'open',
+        waitlistStatus: waitlistStatus(),
       },
     });
   } catch (error) {

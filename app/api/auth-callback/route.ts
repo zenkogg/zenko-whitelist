@@ -9,6 +9,7 @@ import { formatDisplayName } from '@/lib/utils';
 import { syncWaitlistUser } from '@/lib/loops/sync';
 import { LOOPS_EVENTS } from '@/lib/loops/events';
 import { betaMailingLists } from '@/lib/loops/client';
+import { WAITLIST_CLOSED_MESSAGE, isWaitlistClosed } from '@/lib/waitlist-status';
 
 export async function POST(req: NextRequest) {
   try {
@@ -56,6 +57,9 @@ export async function POST(req: NextRequest) {
     });
 
     if (existingUser) {
+      // A frozen row must still match the final snapshot, so sign-in leaves it alone.
+      if (isWaitlistClosed()) return respondSignedIn(existingUser);
+
       // Always update on login to refresh username, avatar, and client info
       const updatedUser = await prisma.waitlistUser.update({
         where: { id: existingUser.id },
@@ -72,6 +76,10 @@ export async function POST(req: NextRequest) {
       // Returning login: refresh the Loops contact's properties, no event.
       after(() => syncWaitlistUser(updatedUser.id));
       return respondSignedIn(updatedUser);
+    }
+
+    if (isWaitlistClosed()) {
+      return NextResponse.json({ error: WAITLIST_CLOSED_MESSAGE }, { status: 409 });
     }
 
     // Generate unique referral code

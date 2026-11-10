@@ -4,6 +4,7 @@ import { exchangeCode, fetchUser, VlOAuthError, vlEnabled } from '@/lib/virtuale
 import { generateUniqueUsername } from '@/lib/username';
 import { formatDisplayName } from '@/lib/utils';
 import { respondSignedIn } from '@/lib/session';
+import { WAITLIST_CLOSED_MESSAGE, isWaitlistClosed } from '@/lib/waitlist-status';
 
 const COOKIE_NAME = 'vl_oauth_state';
 const VL_PROVIDER = 'virtualeagues';
@@ -71,6 +72,16 @@ export async function POST(req: NextRequest) {
     const existingUser = await prisma.waitlistUser.findUnique({
       where: { oauthProvider_oauthId: { oauthProvider: VL_PROVIDER, oauthId: vlUser.sub } },
     });
+
+    if (isWaitlistClosed()) {
+      if (!existingUser) {
+        return NextResponse.json({ error: WAITLIST_CLOSED_MESSAGE }, { status: 409 });
+      }
+      // A frozen row must still match the final snapshot, so sign-in leaves it alone.
+      const res = await respondSignedIn(existingUser);
+      res.cookies.delete(COOKIE_NAME);
+      return res;
+    }
 
     const user = existingUser
       ? await prisma.waitlistUser.update({
