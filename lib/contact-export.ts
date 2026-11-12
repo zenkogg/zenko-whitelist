@@ -1,6 +1,6 @@
 /**
  * Plans the one-off contact export that has to land before the waitlist
- * database is dropped (zenkogg/zenko#694). Pure, so the rules are unit-tested.
+ * database is dropped. Pure, so the rules are unit-tested.
  *
  * Loops is the marketing contact store, but its contacts are keyed by email, so
  * two kinds of row cannot live there in full: a row with no email (an X sign-in
