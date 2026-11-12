@@ -1,3 +1,9 @@
+/**
+ * Finishes Virtualeagues sign-in (OAuth 2 with PKCE): checks the state cookie,
+ * trades the code for the account it belongs to, then signs in the waitlist row
+ * that account owns, creating it while the waitlist is open.
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { exchangeCode, fetchUser, VlOAuthError, vlEnabled } from '@/lib/virtualeagues';
@@ -27,7 +33,7 @@ function parseStateCookie(value: string | undefined): StateCookie | null {
       return { state: parsed.state, codeVerifier: parsed.codeVerifier };
     }
   } catch {
-    // fall through
+    // A cookie that is not JSON reads as missing.
   }
   return null;
 }
@@ -55,14 +61,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'State mismatch' }, { status: 400 });
     }
 
-    // Capture client info
     const ipAddress =
       req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
       req.headers.get('x-real-ip') ||
       null;
     const userAgent = req.headers.get('user-agent') || null;
 
-    // Exchange code for tokens, then fetch the VL user.
     const tokens = await exchangeCode({ code, codeVerifier: cookie.codeVerifier });
     const vlUser = await fetchUser({ accessToken: tokens.accessToken });
 
@@ -74,11 +78,11 @@ export async function POST(req: NextRequest) {
     });
 
     if (isWaitlistClosed()) {
-      if (!existingUser) {
-        return NextResponse.json({ error: WAITLIST_CLOSED_MESSAGE }, { status: 409 });
-      }
-      // A frozen row must still match the final snapshot, so sign-in leaves it alone.
-      const res = await respondSignedIn(existingUser);
+      // A frozen row must still match the final snapshot, so sign-in leaves it
+      // alone; the state cookie is spent either way.
+      const res = existingUser
+        ? await respondSignedIn(existingUser)
+        : NextResponse.json({ error: WAITLIST_CLOSED_MESSAGE }, { status: 409 });
       res.cookies.delete(COOKIE_NAME);
       return res;
     }

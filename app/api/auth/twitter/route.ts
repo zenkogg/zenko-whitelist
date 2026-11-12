@@ -1,3 +1,9 @@
+/**
+ * Finishes X sign-in: trades the request token for the account it belongs to,
+ * then signs in the waitlist row that account owns, creating it while the
+ * waitlist is open. X gives no email, so the row is keyed on the X user id.
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
@@ -57,7 +63,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Twitter API not configured' }, { status: 500 });
     }
 
-    // Capture client info
     const ipAddress =
       req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
       req.headers.get('x-real-ip') ||
@@ -91,17 +96,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid response from X' }, { status: 400 });
     }
 
-    // Check if user already exists
     const existingUser = await prisma.waitlistUser.findUnique({
       where: { oauthProvider_oauthId: { oauthProvider: 'twitter', oauthId } },
     });
 
     if (isWaitlistClosed()) {
-      if (!existingUser) {
-        return NextResponse.json({ error: WAITLIST_CLOSED_MESSAGE }, { status: 409 });
-      }
-      // A frozen row must still match the final snapshot, so sign-in leaves it alone.
-      const res = await respondSignedIn(existingUser);
+      // A frozen row must still match the final snapshot, so sign-in leaves it
+      // alone; the request secret is spent either way.
+      const res = existingUser
+        ? await respondSignedIn(existingUser)
+        : NextResponse.json({ error: WAITLIST_CLOSED_MESSAGE }, { status: 409 });
       res.cookies.delete('twitter_oauth_secret');
       return res;
     }
@@ -136,9 +140,8 @@ export async function POST(req: NextRequest) {
           },
         });
 
+    // The request secret is single use, so it goes once the exchange is done.
     const res = await respondSignedIn(user);
-
-    // Clear the temporary oauth secret cookie
     res.cookies.delete('twitter_oauth_secret');
     return res;
   } catch (error) {
