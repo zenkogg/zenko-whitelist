@@ -20,6 +20,8 @@ import { PrismaClient } from '@prisma/client';
 import { loops } from '../lib/loops/client';
 import { runContactExport, type WaitlistSource } from '../lib/contact-export-run';
 
+// Constructing the client copies the checkout's .env into process.env, without
+// overriding what the shell set; the run judges LOOPS_DRY_RUN only after this.
 function openWaitlistDatabase(): WaitlistSource {
   const prisma = new PrismaClient();
   return {

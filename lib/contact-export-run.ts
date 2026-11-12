@@ -7,7 +7,7 @@
 
 import { createHash } from 'node:crypto';
 import path from 'node:path';
-import type { LoopsClient } from './loops/client';
+import { isLoopsDryRun, type LoopsClient } from './loops/client';
 import {
   planContactExport,
   toCsv,
@@ -38,6 +38,7 @@ export interface WaitlistSource {
 }
 
 export interface ContactExportDeps {
+  /** The live environment, which opening the source may add the checkout's .env to. */
   env: Record<string, string | undefined>;
   openSource(): WaitlistSource;
   loops: Pick<LoopsClient, 'updateContact'>;
@@ -72,12 +73,22 @@ export async function runContactExport(
   if (options.apply && environment !== 'production' && environment !== 'staging') {
     throw new Error('--apply needs --environment production or --environment staging');
   }
+  // Judged before the database client loads the checkout's .env, so the key is
+  // the one this run was handed and never a file's key for another workspace.
   if (options.apply && !(deps.env.LOOPS_API_KEY ?? '').trim()) {
     throw new Error('--apply needs LOOPS_API_KEY for the target workspace');
   }
 
   const source = deps.openSource();
   try {
+    // Judged after it, because a dry run set only in that .env would log every
+    // contact and still report each one as sent.
+    if (options.apply && isLoopsDryRun(deps.env)) {
+      throw new Error(
+        '--apply refuses to run while LOOPS_DRY_RUN=1 is set, in the shell or the checkout .env: ' +
+          'a dry run only logs each contact and reports it as sent. Unset it and run again.'
+      );
+    }
     const rows = await source.read();
     const plan = planContactExport(rows.users, rows.entries, legacy);
     const report: Record<string, unknown> = { ...plan.counts };

@@ -1,13 +1,10 @@
 /**
  * Minimal Loops (loops.so) HTTP client.
  *
- * Mirrors the resilience contract of zenko-mono's cross-service callers
- * (services/waitlist-match.service.ts): every method returns a result object,
- * NEVER throws, and short-circuits to a no-op when `LOOPS_API_KEY` is unset —
- * so a Loops outage, a bad key, or a missing key can never break a signup.
- *
- * `LOOPS_DRY_RUN=1` logs the payload instead of sending; this is how the
- * integration is exercised locally without touching a real Loops workspace.
+ * Every method returns a result object and never throws, and it is a no-op
+ * while `LOOPS_API_KEY` is unset, so a Loops outage, a bad key or a missing key
+ * can never break a signup. `LOOPS_DRY_RUN=1` logs each payload instead of
+ * sending it, which is how the integration is exercised locally.
  */
 
 const LOOPS_BASE_URL = 'https://app.loops.so/api/v1';
@@ -22,17 +19,17 @@ export interface LoopsResult {
   /** HTTP status, or 0 when no request was attempted (disabled / dry-run). */
   status: number;
   error?: string;
-  /** True when `LOOPS_API_KEY` is unset — callers treat this as "nothing happened". */
+  /** True when `LOOPS_API_KEY` is unset; callers treat this as "nothing happened". */
   disabled?: boolean;
 }
 
 type PropertyValue = string | number | boolean | null;
 
 /**
- * Standard contact fields. Custom `waitlist*` / `zenko*` properties are NOT
- * listed here — they ride on the runtime object built by the typed mappers
- * (lib/loops/contact.ts) and serialize via JSON.stringify. The mapper is the
- * type authority for those; the client only needs `email` to be present.
+ * Standard contact fields. The custom `waitlist*` and `zenko*` properties are
+ * not listed: they ride on the object the typed mapper builds
+ * (lib/loops/contact.ts), which is their type authority. The client only needs
+ * `email` to be present.
  */
 export interface LoopsContactPayload {
   email: string;
@@ -55,16 +52,20 @@ export interface LoopsEventPayload {
 }
 
 export interface LoopsClient {
-  /** `PUT /v1/contacts/update` — upserts by email. */
+  /** `PUT /v1/contacts/update`: upserts by email. */
   updateContact(payload: LoopsContactPayload): Promise<LoopsResult>;
   /** `POST /v1/events/send`. */
   sendEvent(payload: LoopsEventPayload, idempotencyKey?: string): Promise<LoopsResult>;
-  /** `POST /v1/contacts/delete` — for future erasure requests. */
+  /** `POST /v1/contacts/delete`: for erasure requests. */
   deleteContact(email: string): Promise<LoopsResult>;
 }
 
-function isDryRun(): boolean {
-  return (process.env.LOOPS_DRY_RUN ?? '').trim() === '1';
+/**
+ * Whether requests only log their payload. Exported so a caller that must
+ * really send, like the sunset contact export, refuses on the same rule.
+ */
+export function isLoopsDryRun(env: Record<string, string | undefined> = process.env): boolean {
+  return (env.LOOPS_DRY_RUN ?? '').trim() === '1';
 }
 
 async function request(
@@ -76,7 +77,7 @@ async function request(
   const apiKey = (process.env.LOOPS_API_KEY ?? '').trim();
   if (!apiKey) return { ok: false, status: 0, disabled: true };
 
-  if (isDryRun()) {
+  if (isLoopsDryRun()) {
     console.info(`[loops] DRY_RUN ${method} ${path}`, JSON.stringify(body));
     return { ok: true, status: 0 };
   }
@@ -96,8 +97,8 @@ async function request(
   try {
     let res = await send();
 
-    // One retry on rate-limit (10 req/s per team). A single short backoff is
-    // enough to clear a burst; we do not loop, to bound request latency.
+    // One retry on rate limit (10 requests a second per team): a single short
+    // backoff clears a burst, and not looping bounds request latency.
     if (res.status === 429) {
       await new Promise((r) => setTimeout(r, RATE_LIMIT_RETRY_DELAY_MS));
       res = await send();
@@ -154,9 +155,9 @@ export const loops = createLoopsClient();
 
 /**
  * Beta mailing-list membership `{ id: true }`, or `undefined` when
- * `LOOPS_MAILING_LIST_ID` is unset. Attach ONLY to the one-time `waitlist_joined`
- * event, never to a steady-state sync — otherwise a repeat could re-subscribe
- * someone who left the list. See lib/loops/sync.ts.
+ * `LOOPS_MAILING_LIST_ID` is unset. Attach it only to the one-time
+ * `waitlist_joined` event, never to a steady-state sync, or a repeat could
+ * re-subscribe someone who left the list (see lib/loops/sync.ts).
  */
 export function betaMailingLists(): Record<string, boolean> | undefined {
   const id = (process.env.LOOPS_MAILING_LIST_ID ?? '').trim();
