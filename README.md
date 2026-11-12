@@ -108,6 +108,19 @@ Run the steps in this order; each one depends on the one before it.
 
 **Launch day**
 
+Production secrets come from 1Password one command at a time and are never
+typed inline. Keep a references-only env file outside the checkout, here called
+`<sunset env>`, and prefix each waitlist command with
+`op run --env-file=<sunset env> --`:
+
+```bash
+DATABASE_URL=op://Zenko/<waitlist production database item>/<field>
+LOOPS_API_KEY=op://Zenko/<production Loops API key item>/<field>
+# The shell wins over the checkout's .env, so a local dry-run line there cannot
+# reach the apply run, which refuses to run while one is in force.
+LOOPS_DRY_RUN=0
+```
+
 3. **Zenko goes public first** (closed-beta admin gate off).
 4. **Freeze the waitlist.** Set `WAITLIST_STATUS=closed` on the production
    Vercel deployment and redeploy. `GET /api/waitlist/stats` should report
@@ -115,12 +128,18 @@ Run the steps in this order; each one depends on the one before it.
    refused; the internal routes the backend calls stay open. Check the backend
    runs `REFERRAL_ENTRY_MODE=portal` (the default): in `waitlist` mode it can
    still create waitlist rows through `ensure-referral-owner`.
+   From here on, change no waitlist status. The waitlist admin approval
+   (`PATCH /api/admin/users`) still writes while closed, and the backend's
+   `mark-registered` call still flips a row to REGISTERED when a waitlister
+   joins Zenko, until step 8. Step 6 fingerprints id and XP only, so a status
+   changed after the step 5 snapshot does not show there: keep steps 5 to 8
+   together.
 5. **Final snapshot.** Export, then import straight away: the importer refuses
    a snapshot older than the last one the backend's live sync imported, so if
    it says the snapshot is older, export again.
    ```bash
    # here, against the production waitlist DB
-   node scripts/export-referral-migration.mjs /absolute/private/snapshot.json
+   op run --env-file=<sunset env> -- node scripts/export-referral-migration.mjs /absolute/private/snapshot.json
    # in packages/backend, against the main DB: dry run, then apply
    npx tsx scripts/import-waitlist-referrals.ts --file /absolute/private/snapshot.json
    npx tsx scripts/import-waitlist-referrals.ts --file /absolute/private/snapshot.json \
@@ -128,20 +147,37 @@ Run the steps in this order; each one depends on the one before it.
    ```
 6. **Verify the archive.** Query C on the main DB and query D on the waitlist
    DB must agree on rows, XP and the fingerprint, and C must show `frozen = t`.
-7. **Export contacts.** `npx tsx scripts/export-waitlist-contacts.ts` with no
-   flags prints the counts. Then, with the legacy-row decision recorded on #694:
+7. **Export contacts.** With no flags the export prints the counts. Then, with
+   the legacy-row decision recorded on #694, write the CSV and upload it to the
+   Zenko vault in 1Password. Never put it in the Obsidian vault: that is a git
+   repository, and the export refuses any directory inside a git checkout.
+   Delete the local copy once the upload is confirmed.
    ```bash
-   npx tsx scripts/export-waitlist-contacts.ts --legacy <keep|drop> --csv /absolute/private/contacts.csv
-   LOOPS_API_KEY=<production key> npx tsx scripts/export-waitlist-contacts.ts \
+   op run --env-file=<sunset env> -- npx tsx@4.23.1 scripts/export-waitlist-contacts.ts
+   OUT="$(mktemp -d)"
+   op run --env-file=<sunset env> -- npx tsx@4.23.1 scripts/export-waitlist-contacts.ts \
+     --legacy <keep|drop> --csv "$OUT/contacts.csv"
+   op document create "$OUT/contacts.csv" --vault Zenko --title "Waitlist contacts export"
+   rm "$OUT/contacts.csv" && rmdir "$OUT"
+   ```
+   Before the apply run, open the production Loops workspace and look for any
+   loop triggered by a contact being added or updated. The upsert creates the
+   contacts Loops does not have yet, subscribed by default, and updates the
+   rest, so pause each such loop first and note which ones you paused.
+   ```bash
+   op run --env-file=<sunset env> -- npx tsx@4.23.1 scripts/export-waitlist-contacts.ts \
      --legacy <keep|drop> --apply --environment production
    ```
    Every waitlist row lands exactly once: emailed rows as Loops contacts, rows
-   with no email or a shared email in the CSV, which goes to the vault. The
-   apply run must report `"failed": []`.
+   with no email or a shared email in the CSV. The apply run must report
+   `"failed": []`.
 8. **Switch to the archive.** Set `WAITLIST_ARCHIVE_ENABLED=true` on the
    backend. Waitlist history on zenko.gg/referrals is now served from the main
    DB, so it keeps rendering with the waitlist DB unreachable.
-9. **Retire the waitlist DB** only after steps 6 to 8 check out.
+9. **Retire the waitlist DB** only after steps 6 to 8 check out. This does not
+   retire the waitlist's Vercel Blob avatar store: the archive's `avatarUrl`
+   values point into it and it holds players' uploaded photos, so it outlives
+   the database and needs its own decision before anything deletes it.
 
 ```sql
 -- A (main DB): accounts matching a waitlist identity that were never linked

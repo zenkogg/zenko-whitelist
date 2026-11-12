@@ -1,17 +1,20 @@
 /**
  * Contact export for the waitlist sunset. Run it after the waitlist is frozen,
- * so the counts match the final referral snapshot.
+ * so the counts match the final referral snapshot. README.md, Sunset step 7,
+ * gives the full commands and where the secrets come from.
  *
- *   Dry run (counts only):  npx tsx scripts/export-waitlist-contacts.ts
- *   Vault CSV:              ... --legacy keep|drop --csv /absolute/private/contacts.csv
- *   Loops upsert:           ... --legacy keep|drop --apply --environment production
+ *   Counts only:   (no flags)
+ *   Vault CSV:     --legacy keep|drop --csv /absolute/private/contacts.csv
+ *   Loops upsert:  --legacy keep|drop --apply --environment production
  *
  * It reads the waitlist database in one read-only transaction and never writes
  * to it: stamping loops_synced_at would move updated_at past the snapshot.
- * Loops gets contact properties only, never an event or a list change, so no
- * workflow fires and nobody is resubscribed. `--environment` is required with
- * `--apply` because the runtime tag comes from VERCEL_ENV, which a laptop run
- * does not have, and a production contact tagged staging drops out of sends.
+ * Loops gets contact properties only, never an event or a list change, but a
+ * contact it did not have is created subscribed, and a loop triggered by
+ * contacts being added or updated still fires, so the runbook pauses those.
+ * `--environment` is required with `--apply` because the runtime tag comes from
+ * VERCEL_ENV, which a laptop run does not have, and a production contact tagged
+ * staging drops out of sends.
  */
 
 import { writeFile } from 'node:fs/promises';
