@@ -10,6 +10,7 @@ import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { signInWithOAuth, type OAuthProvider } from '@/lib/oauth-client';
+import { SAVE_GAMES_FAILED, saveGames } from '@/lib/save-games';
 import { GameBadge } from './GameBadge';
 import { WaitlistSignIn, type WaitlistStats } from './WaitlistSignIn';
 import { Button } from '@/components/ui/button';
@@ -187,27 +188,21 @@ export function StepperOnboarding() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/user/games', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ games: selectedGames }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save games');
+      const result = await saveGames(selectedGames);
+      if (!result.ok) {
+        setError(result.message);
+        return;
       }
 
-      const { data } = await response.json();
-
       if (user) {
-        const updatedUser = { ...user, games: data.games };
+        const updatedUser = { ...user, games: result.games };
         localStorage.setItem('waitlist_user', JSON.stringify(updatedUser));
       }
 
       router.push('/dashboard');
     } catch (error) {
       console.error('Save error:', error);
-      setError('Failed to save game selection. Please try again.');
+      setError(SAVE_GAMES_FAILED);
     } finally {
       setIsSubmitting(false);
     }
