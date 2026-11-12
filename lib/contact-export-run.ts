@@ -6,7 +6,9 @@
  */
 
 import { createHash } from 'node:crypto';
+import { existsSync, statSync } from 'node:fs';
 import path from 'node:path';
+import { isInsideGitCheckout } from './git-checkout';
 import { isLoopsDryRun, type LoopsClient } from './loops/client';
 import {
   planContactExport,
@@ -58,6 +60,26 @@ function legacyDecision(value: string | undefined): LegacyDecision | null {
   throw new Error('--legacy must be keep or drop');
 }
 
+/**
+ * The CSV holds the contact details Loops cannot, so it must never be written
+ * where a commit could pick it up. Checked before the database is read.
+ */
+function checkCsvTarget(file: string) {
+  if (!path.isAbsolute(file)) {
+    throw new Error('--csv needs an absolute path to a private location');
+  }
+  const dir = path.dirname(file);
+  if (!existsSync(dir) || !statSync(dir).isDirectory()) {
+    throw new Error(`--csv directory ${dir} does not exist`);
+  }
+  if (isInsideGitCheckout(dir)) {
+    throw new Error(
+      '--csv must point outside every git checkout, because the file holds contact details. ' +
+        'Write it to a private directory, such as one from mktemp -d.'
+    );
+  }
+}
+
 export async function runContactExport(
   options: ContactExportOptions,
   deps: ContactExportDeps
@@ -66,9 +88,7 @@ export async function runContactExport(
   if ((options.csv || options.apply) && !legacy) {
     throw new Error('Writing an export needs the recorded decision: --legacy keep or --legacy drop');
   }
-  if (options.csv && !path.isAbsolute(options.csv)) {
-    throw new Error('--csv needs an absolute path to a private location');
-  }
+  if (options.csv) checkCsvTarget(options.csv);
   const environment = options.environment;
   if (options.apply && environment !== 'production' && environment !== 'staging') {
     throw new Error('--apply needs --environment production or --environment staging');

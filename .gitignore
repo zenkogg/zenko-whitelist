@@ -24,6 +24,9 @@
 .DS_Store
 *.pem
 
+# contact exports hold personal data and never belong in the repository
+*.csv
+
 # debug
 npm-debug.log*
 yarn-debug.log*
